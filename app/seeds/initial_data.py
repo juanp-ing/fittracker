@@ -1,7 +1,13 @@
-"""Semillas iniciales idempotentes para el catálogo de grupos musculares y ejercicios."""
+"""Semillas iniciales idempotentes para el catálogo de grupos musculares, ejercicios y usuario demo."""
 
+from app import db
 from app.patterns.factory import EjercicioFactory
 from app.repositories.ejercicio_repository import EjercicioRepository
+from app.repositories.usuario_repository import UsuarioRepository
+
+DEMO_USER_EMAIL = "demo@fittracker.local"
+DEMO_USER_PASSWORD = "FitTracker123!"
+DEMO_USER_NOMBRE = "Atleta Demo"
 
 GRUPOS_MUSCULARES_BASE: list[str] = [
     "Pecho",
@@ -16,7 +22,7 @@ GRUPOS_MUSCULARES_BASE: list[str] = [
     "Core",
 ]
 
-# Catálogo base de 22 ejercicios predeterminados en español con músculos primarios y secundarios
+# Catálogo base de 23 ejercicios predeterminados en español con músculos primarios y secundarios
 EJERCICIOS_PREDETERMINADOS_BASE: list[dict] = [
     {
         "nombre": "Press de banca con barra",
@@ -136,9 +142,12 @@ EJERCICIOS_PREDETERMINADOS_BASE: list[dict] = [
 ]
 
 
-def seed_database() -> dict:
-    """Puebla de forma idempotente los grupos musculares y ejercicios predeterminados."""
+def seed_database(incluir_demo: bool = True) -> dict:
+    """Crea tablas si no existen y puebla de forma idempotente grupos, ejercicios y usuario demo."""
+    db.create_all()
+
     repo = EjercicioRepository()
+    usuario_repo = UsuarioRepository()
 
     grupos_existentes = {g.nombre: g for g in repo.listar_grupos_musculares()}
     grupos_creados = 0
@@ -177,10 +186,22 @@ def seed_database() -> dict:
             ejercicios_existentes[clave] = nuevo_ej
             ejercicios_creados += 1
 
+    demo_creado = False
+    if incluir_demo:
+        existente_demo = usuario_repo.obtener_por_email(DEMO_USER_EMAIL)
+        if existente_demo is None:
+            usuario_repo.crear(
+                nombre=DEMO_USER_NOMBRE,
+                email=DEMO_USER_EMAIL,
+                password=DEMO_USER_PASSWORD,
+            )
+            demo_creado = True
+
     return {
         "grupos_creados": grupos_creados,
         "ejercicios_creados": ejercicios_creados,
         "total_grupos": len(grupos_existentes),
         "total_ejercicios": len(ejercicios_existentes),
+        "demo_email": DEMO_USER_EMAIL if incluir_demo else None,
+        "demo_creado": demo_creado,
     }
-

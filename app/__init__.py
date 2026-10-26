@@ -100,12 +100,25 @@ def create_app(config_name="default") -> Flask:
     app.register_blueprint(resumen_bp)
 
     @app.cli.command("seed")
-    def seed_command():
-        """Puebla la base de datos con grupos musculares y ejercicios predeterminados."""
-        resultado = seed_database()
+    @click.option(
+        "--demo/--no-demo",
+        default=True,
+        help="Crea también el usuario de demostración (demo@fittracker.local / FitTracker123!).",
+    )
+    def seed_command(demo: bool):
+        """Crea las tablas e inicializa grupos musculares, ejercicios y usuario demo."""
+        db.create_all()
+        resultado = seed_database(incluir_demo=demo)
+        mensaje_demo = (
+            f" Usuario demo activo: {resultado['demo_email']}."
+            if resultado.get("demo_email")
+            else ""
+        )
         click.echo(
-            f"Semillas completadas: {resultado['total_grupos']} grupos musculares, "
-            f"{resultado['total_ejercicios']} ejercicios predeterminados."
+            f"Semillas completadas: {resultado['total_grupos']} grupos musculares "
+            f"({resultado['grupos_creados']} nuevos), "
+            f"{resultado['total_ejercicios']} ejercicios predeterminados "
+            f"({resultado['ejercicios_creados']} nuevos).{mensaje_demo}"
         )
 
     @app.route("/api/health", methods=["GET"])
