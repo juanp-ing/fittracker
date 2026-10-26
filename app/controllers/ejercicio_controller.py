@@ -59,3 +59,4 @@ def crear_ejercicio():
         )
 
     return jsonify(creado), 201
+

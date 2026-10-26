@@ -119,3 +119,4 @@ class EjercicioService:
             grupos_secundarios_ids=datos["grupos_secundarios_ids"],
         )
         return self._serializar_ejercicio(ejercicio, usuario_id=usuario_id)
+

@@ -183,3 +183,4 @@ def seed_database() -> dict:
         "total_grupos": len(grupos_existentes),
         "total_ejercicios": len(ejercicios_existentes),
     }
+

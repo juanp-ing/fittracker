@@ -11,3 +11,4 @@ __all__ = [
     "EJERCICIOS_PREDETERMINADOS_BASE",
     "seed_database",
 ]
+

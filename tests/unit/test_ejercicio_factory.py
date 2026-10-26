@@ -68,3 +68,4 @@ def test_crear_personalizado_exige_usuario_id_valido(usuario_invalido):
             usuario_id=usuario_invalido,
             grupos_primarios_ids=[2],
         )
+

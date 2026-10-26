@@ -61,6 +61,10 @@ class SesionRepository:
             db.session.commit()
         return serie
 
+    def confirmar_transaccion(self) -> None:
+        """Confirma de forma atómica los cambios pendientes en la sesión de base de datos."""
+        db.session.commit()
+
     def obtener_ultima_serie_ejercicio(
         self,
         usuario_id: int,
