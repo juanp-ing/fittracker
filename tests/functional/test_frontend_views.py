@@ -53,6 +53,10 @@ def test_vistas_html_mobile_first_y_archivos_estaticos(app, client):
     html_mapa = resp_mapa.get_data(as_text=True)
     assert "mapa-muscular-svg" in html_mapa
     assert 'data-grupo="Pecho"' in html_mapa
+    assert "muscle-region" in html_mapa
+    assert "btn-silueta-hombre" in html_mapa
+    assert "btn-silueta-mujer" in html_mapa
+    assert "modal-detalle-musculo" in html_mapa
 
     resp_resumen = client.get("/resumen")
     assert resp_resumen.status_code == 200
@@ -77,3 +81,9 @@ def test_vistas_html_mobile_first_y_archivos_estaticos(app, client):
 
     assert client.get("/static/manifest.json").status_code == 200
     assert client.get("/static/img/silueta.svg").status_code == 200
+    resp_svg_h = client.get("/static/img/silueta_hombre.svg")
+    resp_svg_m = client.get("/static/img/silueta_mujer.svg")
+    assert resp_svg_h.status_code == 200
+    assert resp_svg_m.status_code == 200
+    assert 'class="muscle-region muscle-zone"' in resp_svg_h.get_data(as_text=True)
+    assert 'class="muscle-region muscle-zone"' in resp_svg_m.get_data(as_text=True)

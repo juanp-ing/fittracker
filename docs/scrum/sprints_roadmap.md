@@ -25,3 +25,4 @@ El desarrollo de **FitTracker Web App** se estructuró en **8 Sprints incrementa
 2. **Pruebas automatizadas en verde**: 100% de las pruebas unitarias, de integración y funcionales E2E pasando en `pytest` sobre `sqlite:///:memory:`.
 3. **Cobertura de código**: cobertura global del paquete `app/` superior al 90%.
 4. **Calidad de interfaz móvil**: objetivos táctiles `>= 48px`, contraste WCAG AA/AAA sobre `#ffffff` y 0 advertencias/errores en el detector determinista `impeccable`.
+

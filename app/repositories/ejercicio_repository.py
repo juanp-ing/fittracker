@@ -1,7 +1,7 @@
 """Repositorio para operaciones de persistencia de GrupoMuscular y Ejercicio."""
 
 from typing import Optional
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 
 from app import db
 from app.models.ejercicio import Ejercicio, EjercicioGrupo, GrupoMuscular
@@ -16,6 +16,16 @@ class EjercicioRepository:
         db.session.add(grupo)
         db.session.commit()
         return grupo
+
+    def obtener_grupo_por_nombre(self, nombre: str) -> Optional[GrupoMuscular]:
+        """Busca un grupo muscular por su nombre (insensible a mayúsculas/minúsculas)."""
+        if not nombre or not nombre.strip():
+            return None
+        return (
+            db.session.query(GrupoMuscular)
+            .filter(func.lower(GrupoMuscular.nombre) == nombre.strip().lower())
+            .first()
+        )
 
     def listar_grupos_musculares(self) -> list[GrupoMuscular]:
         """Retorna todos los grupos musculares ordenados alfabéticamente."""
@@ -100,4 +110,26 @@ class EjercicioRepository:
             )
             .first()
         )
+
+    def listar_visibles_por_grupo_primario(
+        self,
+        usuario_id: int,
+        grupo_id: int,
+    ) -> list[Ejercicio]:
+        """Lista los ejercicios visibles para el usuario donde el grupo muscular indicado es primario."""
+        return (
+            db.session.query(Ejercicio)
+            .join(EjercicioGrupo, EjercicioGrupo.ejercicio_id == Ejercicio.id)
+            .filter(
+                EjercicioGrupo.grupo_id == grupo_id,
+                EjercicioGrupo.es_primario.is_(True),
+                or_(
+                    Ejercicio.es_predeterminado.is_(True),
+                    Ejercicio.creado_por == usuario_id,
+                ),
+            )
+            .order_by(Ejercicio.nombre.asc())
+            .all()
+        )
+
 

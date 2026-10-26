@@ -6,91 +6,141 @@
 
 {% block content %}
 <section class="duo-card muscle-map-wrapper">
-  <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
-    <h1 style="font-size: 1.25rem; margin: 0;">Mapa Muscular Bicolor</h1>
-    <div class="step-chips">
+  <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+    <h1 style="font-size: 1.25rem; margin: 0;">Mapa Muscular Anatómico</h1>
+    <div class="step-chips" role="group" aria-label="Ventana de días">
       <button type="button" class="step-chip is-active" data-mapa-dias="7">7d</button>
       <button type="button" class="step-chip" data-mapa-dias="14">14d</button>
       <button type="button" class="step-chip" data-mapa-dias="30">30d</button>
     </div>
   </div>
 
-  <div class="muscle-map-svg-container">
-    <svg id="mapa-muscular-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 320" role="img" aria-label="Mapa Muscular Anatómico Frontal y Posterior">
-      <text x="90" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="13" fill="#000437">FRONTAL</text>
-      <text x="270" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="13" fill="#000437">POSTERIOR</text>
+  <!-- Selector Tipo Píldora Duolingo (Hombre | Mujer) -->
+  <div class="muscle-map-toolbar">
+    <div class="gender-pill-group" role="group" aria-label="Selector de anatomía Hombre o Mujer">
+      <button type="button" id="btn-silueta-hombre" class="gender-pill-btn is-active" data-silueta-genero="hombre">
+        Hombre
+      </button>
+      <button type="button" id="btn-silueta-mujer" class="gender-pill-btn" data-silueta-genero="mujer">
+        Mujer
+      </button>
+    </div>
+    <span style="font-size: 0.78rem; font-weight: 700; color: var(--color-charcoal);">
+      Toca un músculo para ver PR y guía
+    </span>
+  </div>
 
-      <!-- Cabezas -->
-      <circle cx="90" cy="50" r="16" fill="#f7f7f7" stroke="#4b4b4b" stroke-width="2"/>
-      <circle cx="270" cy="50" r="16" fill="#f7f7f7" stroke="#4b4b4b" stroke-width="2"/>
+  <!-- Contenedor Anatómico SVG Dual (Frontal y Posterior estilo react-body-highlighter) -->
+  <div id="mapa-svg-host" class="muscle-map-svg-container"
+       data-url-hombre="{{ url_for('static', filename='img/silueta_hombre.svg') }}"
+       data-url-mujer="{{ url_for('static', filename='img/silueta_mujer.svg') }}">
+    <svg id="mapa-muscular-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 460" role="img" aria-label="Mapa Muscular Anatómico Frontal y Posterior">
+      <text x="105" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="12" fill="#000437" letter-spacing="0.06em">VISTA FRONTAL</text>
+      <text x="315" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="12" fill="#000437" letter-spacing="0.06em">VISTA POSTERIOR</text>
+
+      <!-- Base estructural no interactiva -->
+      <g class="body-outline-base" fill="#f2f4f7" stroke="#afafaf" stroke-width="1.6" stroke-linejoin="round">
+        <path d="M105,32 C93,32 85,41 85,54 C85,66 92,77 105,77 C118,77 125,66 125,54 C125,41 117,32 105,32 Z"/>
+        <path d="M96,75 L94,90 L116,90 L114,75 Z"/>
+        <path d="M46,176 C40,192 35,214 33,230 C31,238 36,244 42,242 C48,238 54,215 60,194 Z"/>
+        <path d="M164,176 C170,192 175,214 177,230 C179,238 174,244 168,242 C162,238 156,215 150,194 Z"/>
+        <path d="M74,322 C73,332 75,340 83,340 C91,340 94,332 93,322 Z"/>
+        <path d="M117,322 C116,332 119,340 127,340 C135,340 137,332 136,322 Z"/>
+        <path d="M75,415 L68,434 L92,436 L91,415 Z"/>
+        <path d="M119,415 L118,436 L142,434 L135,415 Z"/>
+        <path d="M315,32 C303,32 295,41 295,54 C295,66 302,77 315,77 C328,77 335,66 335,54 C335,41 327,32 315,32 Z"/>
+        <path d="M305,75 L303,88 L327,88 L325,75 Z"/>
+        <path d="M256,176 C250,192 245,214 243,230 C241,238 246,244 252,242 C258,238 264,215 270,194 Z"/>
+        <path d="M374,176 C380,192 385,214 387,230 C389,238 384,244 378,242 C372,238 366,215 360,194 Z"/>
+        <path d="M285,415 L278,434 L302,436 L301,415 Z"/>
+        <path d="M329,415 L328,436 L352,434 L345,415 Z"/>
+      </g>
 
       <!-- Hombros -->
-      <g id="svg-grupo-hombros" data-grupo="Hombros" class="muscle-zone">
-        <rect x="44" y="72" width="20" height="24" rx="8"/>
-        <rect x="116" y="72" width="20" height="24" rx="8"/>
-        <rect x="224" y="72" width="20" height="24" rx="8"/>
-        <rect x="296" y="72" width="20" height="24" rx="8"/>
+      <g id="svg-grupo-hombros" class="muscle-region muscle-zone" data-grupo="Hombros" data-anatomia="Deltoides anterior, lateral y posterior" tabindex="0" role="button" aria-label="Hombros">
+        <path d="M82,92 C66,94 52,105 50,122 C49,133 56,141 65,138 C72,128 78,112 83,98 Z"/>
+        <path d="M128,92 C144,94 158,105 160,122 C161,133 154,141 145,138 C138,128 132,112 127,98 Z"/>
+        <path d="M290,94 C274,96 262,107 260,123 C259,133 266,140 275,137 C282,127 287,112 292,100 Z"/>
+        <path d="M340,94 C356,96 368,107 370,123 C371,133 364,140 355,137 C348,127 343,112 338,100 Z"/>
       </g>
 
       <!-- Pecho -->
-      <g id="svg-grupo-pecho" data-grupo="Pecho" class="muscle-zone">
-        <rect x="66" y="72" width="23" height="32" rx="6"/>
-        <rect x="91" y="72" width="23" height="32" rx="6"/>
+      <g id="svg-grupo-pecho" class="muscle-region muscle-zone" data-grupo="Pecho" data-anatomia="Pectoral mayor izquierdo y derecho" tabindex="0" role="button" aria-label="Pecho">
+        <path d="M84,95 L103,95 L103,138 C92,141 77,139 70,130 C67,120 73,104 84,95 Z"/>
+        <path d="M126,95 L107,95 L107,138 C118,141 133,139 140,130 C143,120 137,104 126,95 Z"/>
       </g>
 
       <!-- Bíceps -->
-      <g id="svg-grupo-biceps" data-grupo="Bíceps" class="muscle-zone">
-        <rect x="42" y="99" width="18" height="42" rx="7"/>
-        <rect x="120" y="99" width="18" height="42" rx="7"/>
-      </g>
-
-      <!-- Core -->
-      <g id="svg-grupo-core" data-grupo="Core" class="muscle-zone">
-        <rect x="68" y="107" width="44" height="54" rx="7"/>
-      </g>
-
-      <!-- Cuádriceps -->
-      <g id="svg-grupo-cuadriceps" data-grupo="Cuádriceps" class="muscle-zone">
-        <rect x="65" y="166" width="22" height="68" rx="8"/>
-        <rect x="93" y="166" width="22" height="68" rx="8"/>
-      </g>
-
-      <!-- Espalda -->
-      <g id="svg-grupo-espalda" data-grupo="Espalda" class="muscle-zone">
-        <rect x="246" y="72" width="48" height="66" rx="8"/>
+      <g id="svg-grupo-biceps" class="muscle-region muscle-zone" data-grupo="Bíceps" data-anatomia="Bíceps braquial izquierdo y derecho" tabindex="0" role="button" aria-label="Bíceps">
+        <path d="M53,138 C47,150 45,166 48,178 C54,182 62,180 66,170 C69,158 68,145 63,138 Z"/>
+        <path d="M157,138 C163,150 165,166 162,178 C156,182 148,180 144,170 C141,158 142,145 147,138 Z"/>
       </g>
 
       <!-- Tríceps -->
-      <g id="svg-grupo-triceps" data-grupo="Tríceps" class="muscle-zone">
-        <rect x="222" y="99" width="18" height="42" rx="7"/>
-        <rect x="300" y="99" width="18" height="42" rx="7"/>
+      <g id="svg-grupo-triceps" class="muscle-region muscle-zone" data-grupo="Tríceps" data-anatomia="Tríceps braquial izquierdo y derecho" tabindex="0" role="button" aria-label="Tríceps">
+        <path d="M263,137 C257,149 255,166 258,178 C264,182 272,180 276,169 C279,157 278,144 273,137 Z"/>
+        <path d="M367,137 C373,149 375,166 372,178 C366,182 358,180 354,169 C351,157 352,144 357,137 Z"/>
+      </g>
+
+      <!-- Core -->
+      <g id="svg-grupo-core" class="muscle-region muscle-zone" data-grupo="Core" data-anatomia="Recto abdominal (6-pack) y oblicuos externos" tabindex="0" role="button" aria-label="Core">
+        <path d="M88,142 L103,142 L103,159 L86,159 Z"/>
+        <path d="M107,142 L122,142 L124,159 L107,159 Z"/>
+        <path d="M86,163 L103,163 L103,180 L87,180 Z"/>
+        <path d="M107,163 L124,163 L123,180 L107,180 Z"/>
+        <path d="M88,184 L103,184 L103,208 L92,206 Z"/>
+        <path d="M107,184 L122,184 L118,206 L107,208 Z"/>
+        <path d="M73,136 L85,142 L85,198 L76,192 C72,176 70,154 73,136 Z"/>
+        <path d="M137,136 L125,142 L125,198 L134,192 C138,176 140,154 137,136 Z"/>
+      </g>
+
+      <!-- Espalda -->
+      <g id="svg-grupo-espalda" class="muscle-region muscle-zone" data-grupo="Espalda" data-anatomia="Trapecio, dorsal ancho (latissimus dorsi) y zona lumbar" tabindex="0" role="button" aria-label="Espalda">
+        <path d="M294,88 L336,88 L342,102 L315,142 L288,102 Z"/>
+        <path d="M286,112 L312,145 L312,182 L288,176 C280,158 278,132 286,112 Z"/>
+        <path d="M344,112 L318,145 L318,182 L342,176 C350,158 352,132 344,112 Z"/>
+        <path d="M292,180 L313,184 L313,206 L294,202 Z"/>
+        <path d="M338,180 L317,184 L317,206 L336,202 Z"/>
       </g>
 
       <!-- Glúteos -->
-      <g id="svg-grupo-gluteos" data-grupo="Glúteos" class="muscle-zone">
-        <rect x="246" y="142" width="23" height="30" rx="8"/>
-        <rect x="271" y="142" width="23" height="30" rx="8"/>
+      <g id="svg-grupo-gluteos" class="muscle-region muscle-zone" data-grupo="Glúteos" data-anatomia="Glúteo mayor y medio izquierdo/derecho" tabindex="0" role="button" aria-label="Glúteos">
+        <path d="M286,204 L313,208 L313,252 C298,256 283,248 280,232 C279,220 282,210 286,204 Z"/>
+        <path d="M344,204 L317,208 L317,252 C332,256 347,248 350,232 C351,220 348,210 344,204 Z"/>
+      </g>
+
+      <!-- Cuádriceps -->
+      <g id="svg-grupo-cuadriceps" class="muscle-region muscle-zone" data-grupo="Cuádriceps" data-anatomia="Recto femoral, vasto lateral y vasto medial" tabindex="0" role="button" aria-label="Cuádriceps">
+        <path d="M74,202 L90,209 L86,316 L71,312 C64,282 65,235 74,202 Z"/>
+        <path d="M92,210 L102,212 L98,318 L88,316 Z"/>
+        <path d="M118,210 L108,212 L112,318 L122,316 Z"/>
+        <path d="M136,202 L120,209 L124,316 L139,312 C146,282 145,235 136,202 Z"/>
       </g>
 
       <!-- Isquiotibiales -->
-      <g id="svg-grupo-isquiotibiales" data-grupo="Isquiotibiales" class="muscle-zone">
-        <rect x="246" y="176" width="22" height="58" rx="8"/>
-        <rect x="272" y="176" width="22" height="58" rx="8"/>
+      <g id="svg-grupo-isquiotibiales" class="muscle-region muscle-zone" data-grupo="Isquiotibiales" data-anatomia="Bíceps femoral y semitendinoso" tabindex="0" role="button" aria-label="Isquiotibiales">
+        <path d="M282,254 L297,256 L295,326 L282,322 C277,298 278,274 282,254 Z"/>
+        <path d="M299,256 L311,256 L307,326 L297,326 Z"/>
+        <path d="M331,256 L319,256 L323,326 L333,326 Z"/>
+        <path d="M348,254 L333,256 L335,326 L348,322 C353,298 352,274 348,254 Z"/>
       </g>
 
       <!-- Pantorrillas -->
-      <g id="svg-grupo-pantorrillas" data-grupo="Pantorrillas" class="muscle-zone">
-        <rect x="67" y="238" width="18" height="54" rx="7"/>
-        <rect x="95" y="238" width="18" height="54" rx="7"/>
-        <rect x="248" y="238" width="18" height="54" rx="7"/>
-        <rect x="274" y="238" width="18" height="54" rx="7"/>
+      <g id="svg-grupo-pantorrillas" class="muscle-region muscle-zone" data-grupo="Pantorrillas" data-anatomia="Gastrocnemio y sóleo" tabindex="0" role="button" aria-label="Pantorrillas">
+        <path d="M72,342 L94,342 L91,414 L75,414 C68,390 68,364 72,342 Z"/>
+        <path d="M138,342 L116,342 L119,414 L135,414 C142,390 142,364 138,342 Z"/>
+        <path d="M281,336 L295,336 L294,414 L284,414 C277,390 277,360 281,336 Z"/>
+        <path d="M297,336 L308,336 L302,414 L295,414 Z"/>
+        <path d="M333,336 L322,336 L328,414 L335,414 Z"/>
+        <path d="M349,336 L335,336 L336,414 L346,414 C353,390 353,360 349,336 Z"/>
       </g>
     </svg>
   </div>
 
   <div class="muscle-legend">
-    <span><i class="legend-dot" style="background-color: #58cc02;"></i>Primario (#58cc02)</span>
-    <span><i class="legend-dot" style="background-color: #a5ed6e;"></i>Secundario (#a5ed6e)</span>
+    <span><i class="legend-dot" style="background-color: var(--color-eager-green);"></i>Primario (#58cc02)</span>
+    <span><i class="legend-dot" style="background-color: var(--color-fresh-leaf);"></i>Secundario (#a5ed6e)</span>
+    <span><i class="legend-dot" style="background-color: var(--color-border-light);"></i>Descansado</span>
   </div>
 
   <div id="mapa-muscular-lista" style="width: 100%; display: flex; flex-direction: column; gap: 0.45rem;"></div>
@@ -113,10 +163,58 @@
     <canvas id="grafica-progreso-canvas"></canvas>
   </div>
 </section>
+
+<!-- Bottom Sheet Interactivo de Detalle Muscular y Recomendador de Ejercicios -->
+<div id="modal-detalle-musculo" class="bottom-sheet-backdrop" hidden>
+  <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-musculo-nombre">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <h3 id="sheet-musculo-nombre" style="font-size: 1.35rem; margin: 0;">Grupo Muscular</h3>
+          <span id="sheet-musculo-estado" class="status-badge">Descansado</span>
+        </div>
+        <div id="sheet-musculo-anatomia" style="font-size: 0.82rem; font-weight: 700; color: var(--color-charcoal); margin-top: 0.15rem;">
+          Fascículos anatómicos
+        </div>
+      </div>
+      <button type="button" id="btn-cerrar-sheet-musculo" class="btn-duo btn-duo--sm">Cerrar</button>
+    </div>
+
+    <!-- Métricas Rápidas: Series esta semana y Mejor PR histórico -->
+    <div class="kpi-grid">
+      <div class="duo-list-row" style="flex-direction: column; align-items: flex-start; gap: 0.15rem;">
+        <span class="kpi-label">Series esta semana</span>
+        <strong id="sheet-musculo-series" class="kpi-value" style="font-size: 1.35rem;">0</strong>
+        <span id="sheet-musculo-series-sub" style="font-size: 0.76rem; font-weight: 700; color: var(--color-charcoal);">
+          0 primarias · 0 secundarias
+        </span>
+      </div>
+      <div class="duo-list-row" style="flex-direction: column; align-items: flex-start; gap: 0.15rem;">
+        <span class="kpi-label">Mejor PR histórico</span>
+        <strong id="sheet-musculo-pr" class="kpi-value" style="font-size: 1.35rem; color: var(--color-eager-green);">Sin PR</strong>
+        <span id="sheet-musculo-pr-ej" style="font-size: 0.76rem; font-weight: 700; color: var(--color-charcoal);">
+          Registra una serie para inaugurar
+        </span>
+      </div>
+    </div>
+
+    <!-- Lista de Ejercicios hechos esta semana -->
+    <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+      <span class="stepper-label">Ejercicios hechos esta semana</span>
+      <div id="sheet-ejercicios-recientes" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
+    </div>
+
+    <!-- Recomendador Inteligente de Ejercicios -->
+    <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+      <span id="sheet-recomendados-titulo" class="stepper-label">💡 Recomendados para entrenar</span>
+      <div id="sheet-ejercicios-recomendados" style="display: flex; flex-direction: column; gap: 0.45rem;"></div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/mapa.js') }}"></script>
 <script src="{{ url_for('static', filename='js/graficas.js') }}"></script>
 {% endblock %}
-

@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 460" role="img" aria-label="Mapa Muscular Anatómico Femenino Frontal y Posterior">
+  <!-- Etiquetas Superiores -->
+  <text x="105" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="12" fill="#000437" letter-spacing="0.06em">VISTA FRONTAL</text>
+  <text x="315" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="12" fill="#000437" letter-spacing="0.06em">VISTA POSTERIOR</text>
+
+  <!-- ==================== BASE ESTRUCTURAL NO INTERACTIVA (Cabeza, Cuello, Antebrazos, Manos, Pies) ==================== -->
+  <g class="body-outline-base" fill="#f2f4f7" stroke="#afafaf" stroke-width="1.6" stroke-linejoin="round">
+    <!-- Cabeza y silueta capilar frontal femenina -->
+    <path d="M105,32 C94,32 86,41 86,53 C86,65 93,75 105,75 C117,75 124,65 124,53 C124,41 116,32 105,32 Z"/>
+    <path d="M97,74 L95,90 L115,90 L113,74 Z"/>
+    <!-- Antebrazos y manos frontales -->
+    <path d="M52,175 C46,191 41,212 39,228 C37,235 42,240 47,238 C53,234 58,212 64,192 Z"/>
+    <path d="M158,175 C164,191 169,212 171,228 C173,235 168,240 163,238 C157,234 152,212 146,192 Z"/>
+    <!-- Rodillas y tobillos/pies frontales -->
+    <path d="M75,322 C74,332 76,340 84,340 C92,340 94,332 93,322 Z"/>
+    <path d="M117,322 C116,332 118,340 126,340 C134,340 136,332 135,322 Z"/>
+    <path d="M77,414 L71,433 L92,435 L91,414 Z"/>
+    <path d="M119,414 L118,435 L139,433 L133,414 Z"/>
+
+    <!-- Cabeza, recogido y cuello posterior femenino -->
+    <path d="M315,32 C304,32 296,41 296,53 C296,65 303,75 315,75 C327,75 334,65 334,53 C334,41 326,32 315,32 Z"/>
+    <circle cx="315" cy="27" r="7"/>
+    <path d="M306,74 L304,88 L326,88 L324,74 Z"/>
+    <!-- Antebrazos y manos posteriores -->
+    <path d="M262,175 C256,191 251,212 249,228 C247,235 252,240 257,238 C263,234 268,212 274,192 Z"/>
+    <path d="M368,175 C374,191 379,212 381,228 C383,235 378,240 373,238 C367,234 362,212 356,192 Z"/>
+    <!-- Pies posteriores -->
+    <path d="M287,414 L281,433 L302,435 L301,414 Z"/>
+    <path d="M329,414 L328,435 L349,433 L343,414 Z"/>
+  </g>
+
+  <!-- ==================== 1. HOMBROS (Deltoides Estilizados Femeninos) ==================== -->
+  <g id="svg-grupo-hombros" class="muscle-region muscle-zone" data-grupo="Hombros" data-anatomia="Deltoides anterior, lateral y posterior" tabindex="0" role="button" aria-label="Hombros: Deltoides anterior y posterior">
+    <path d="M84,93 C70,95 58,106 56,122 C55,131 61,138 69,135 C75,125 80,111 85,99 Z"/>
+    <path d="M126,93 C140,95 152,106 154,122 C155,131 149,138 141,135 C135,125 130,111 125,99 Z"/>
+    <path d="M292,94 C278,96 268,107 266,122 C265,131 271,138 279,135 C285,125 289,111 294,100 Z"/>
+    <path d="M338,94 C352,96 362,107 364,122 C365,131 359,138 351,135 C345,125 341,111 336,100 Z"/>
+  </g>
+
+  <!-- ==================== 2. PECHO (Pectoral Mayor Izquierdo y Derecho) ==================== -->
+  <g id="svg-grupo-pecho" class="muscle-region muscle-zone" data-grupo="Pecho" data-anatomia="Pectoral mayor izquierdo y derecho" tabindex="0" role="button" aria-label="Pecho: Pectoral mayor izquierdo y derecho">
+    <path d="M86,96 L103,96 L103,136 C93,140 79,138 74,128 C71,118 76,105 86,96 Z"/>
+    <path d="M124,96 L107,96 L107,136 C117,140 131,138 136,128 C139,118 134,105 124,96 Z"/>
+  </g>
+
+  <!-- ==================== 3. BÍCEPS (Bíceps Braquial Frontal) ==================== -->
+  <g id="svg-grupo-biceps" class="muscle-region muscle-zone" data-grupo="Bíceps" data-anatomia="Bíceps braquial izquierdo y derecho" tabindex="0" role="button" aria-label="Bíceps: Bíceps braquial izquierdo y derecho">
+    <path d="M58,136 C53,148 51,164 54,175 C59,179 66,177 69,167 C72,156 71,143 67,136 Z"/>
+    <path d="M152,136 C157,148 159,164 156,175 C151,179 144,177 141,167 C138,156 139,143 143,136 Z"/>
+  </g>
+
+  <!-- ==================== 4. TRÍCEPS (Tríceps Braquial Posterior) ==================== -->
+  <g id="svg-grupo-triceps" class="muscle-region muscle-zone" data-grupo="Tríceps" data-anatomia="Tríceps braquial izquierdo y derecho" tabindex="0" role="button" aria-label="Tríceps: Tríceps braquial izquierdo y derecho">
+    <path d="M268,136 C263,148 261,164 264,175 C269,179 276,177 279,167 C282,156 281,143 277,136 Z"/>
+    <path d="M362,136 C367,148 369,164 366,175 C361,179 354,177 351,167 C348,156 349,143 353,136 Z"/>
+  </g>
+
+  <!-- ==================== 5. CORE (Recto Abdominal y Cintura Definida con Oblicuos) ==================== -->
+  <g id="svg-grupo-core" class="muscle-region muscle-zone" data-grupo="Core" data-anatomia="Recto abdominal y oblicuos externos (cintura definida)" tabindex="0" role="button" aria-label="Core: Recto abdominal y oblicuos externos">
+    <path d="M90,140 L103,140 L103,158 L89,158 Z"/>
+    <path d="M107,140 L120,140 L121,158 L107,158 Z"/>
+    <path d="M89,162 L103,162 L103,179 L89,179 Z"/>
+    <path d="M107,162 L121,162 L121,179 L107,179 Z"/>
+    <path d="M89,183 L103,183 L103,207 L92,205 Z"/>
+    <path d="M107,183 L121,183 L118,205 L107,207 Z"/>
+    <!-- Oblicuos femeninos con curva de cintura acentuada -->
+    <path d="M77,136 L88,140 L87,196 L74,192 C79,174 80,154 77,136 Z"/>
+    <path d="M133,136 L122,140 L123,196 L136,192 C131,174 130,154 133,136 Z"/>
+  </g>
+
+  <!-- ==================== 6. ESPALDA (Trapecio, Dorsal Ancho y Zona Lumbar) ==================== -->
+  <g id="svg-grupo-espalda" class="muscle-region muscle-zone" data-grupo="Espalda" data-anatomia="Trapecio, dorsal ancho y zona lumbar" tabindex="0" role="button" aria-label="Espalda: Trapecio, dorsal ancho y zona lumbar">
+    <path d="M296,88 L334,88 L339,101 L315,139 L291,101 Z"/>
+    <path d="M289,112 L312,142 L312,178 L293,173 C286,156 284,132 289,112 Z"/>
+    <path d="M341,112 L318,142 L318,178 L337,173 C344,156 346,132 341,112 Z"/>
+    <path d="M294,176 L313,180 L313,202 L292,198 Z"/>
+    <path d="M336,176 L317,180 L317,202 L338,198 Z"/>
+  </g>
+
+  <!-- ==================== 7. GLÚTEOS (Glúteo Mayor y Medio con Proporción de Cadera Femenina) ==================== -->
+  <g id="svg-grupo-gluteos" class="muscle-region muscle-zone" data-grupo="Glúteos" data-anatomia="Glúteo mayor y glúteo medio (cadera anatómica)" tabindex="0" role="button" aria-label="Glúteos: Glúteo mayor y glúteo medio">
+    <path d="M286,200 L313,205 L313,256 C294,260 276,250 274,231 C273,217 279,206 286,200 Z"/>
+    <path d="M344,200 L317,205 L317,256 C336,260 354,250 356,231 C357,217 351,206 344,200 Z"/>
+  </g>
+
+  <!-- ==================== 8. CUÁDRICEPS (Recto Femoral, Vasto Lateral y Vasto Medial) ==================== -->
+  <g id="svg-grupo-cuadriceps" class="muscle-region muscle-zone" data-grupo="Cuádriceps" data-anatomia="Recto femoral, vasto lateral y vasto medial" tabindex="0" role="button" aria-label="Cuádriceps: Recto femoral, vasto lateral y vasto medial">
+    <path d="M71,196 L90,206 L87,316 L73,312 C62,280 61,232 71,196 Z"/>
+    <path d="M92,207 L102,210 L98,318 L89,316 Z"/>
+    <path d="M118,207 L108,210 L112,318 L121,316 Z"/>
+    <path d="M139,196 L120,206 L123,316 L137,312 C148,280 149,232 139,196 Z"/>
+  </g>
+
+  <!-- ==================== 9. ISQUIOTIBIALES (Bíceps Femoral y Semitendinoso Posterior) ==================== -->
+  <g id="svg-grupo-isquiotibiales" class="muscle-region muscle-zone" data-grupo="Isquiotibiales" data-anatomia="Bíceps femoral y semitendinoso" tabindex="0" role="button" aria-label="Isquiotibiales: Bíceps femoral y semitendinoso">
+    <path d="M278,254 L296,257 L295,326 L283,322 C275,298 274,274 278,254 Z"/>
+    <path d="M298,257 L311,257 L307,326 L297,326 Z"/>
+    <path d="M332,257 L319,257 L323,326 L333,326 Z"/>
+    <path d="M352,254 L334,257 L335,326 L347,322 C355,298 356,274 352,254 Z"/>
+  </g>
+
+  <!-- ==================== 10. PANTORRILLAS (Gastrocnemio y Sóleo Frontal y Posterior) ==================== -->
+  <g id="svg-grupo-pantorrillas" class="muscle-region muscle-zone" data-grupo="Pantorrillas" data-anatomia="Gastrocnemio y sóleo" tabindex="0" role="button" aria-label="Pantorrillas: Gastrocnemio y sóleo">
+    <path d="M74,342 L94,342 L91,413 L77,413 C70,390 70,364 74,342 Z"/>
+    <path d="M136,342 L116,342 L119,413 L133,413 C140,390 140,364 136,342 Z"/>
+    <path d="M283,336 L296,336 L295,413 L286,413 C279,390 279,360 283,336 Z"/>
+    <path d="M298,336 L308,336 L302,413 L296,413 Z"/>
+    <path d="M332,336 L322,336 L328,413 L334,413 Z"/>
+    <path d="M347,336 L334,336 L335,413 L344,413 C351,390 351,360 347,336 Z"/>
+  </g>
+</svg>

@@ -140,3 +140,27 @@ def test_resumen_mensual_mapa_muscular_bicolor_progreso_e_historial(app, client)
     assert len(historial) == 3
     assert historial[0]["total_series"] == 2
 
+    # 6. Verificar GET /api/mapa-muscular/<nombre_grupo> (Detalle + Recomendador de Ejercicios)
+    det_pecho_resp = client.get("/api/mapa-muscular/Pecho?dias=7")
+    assert det_pecho_resp.status_code == 200
+    det_pecho = det_pecho_resp.get_json()
+    assert det_pecho["nombre"] == "Pecho"
+    assert det_pecho["estado_activacion"] == "PRIMARIO"
+    assert det_pecho["series_semana"]["total"] == 1
+    assert det_pecho["series_semana"]["primarias"] == 1
+    assert det_pecho["pr_actual"] is not None
+    assert det_pecho["pr_actual"]["peso"] == pytest.approx(85.0)
+    assert len(det_pecho["ejercicios_recientes"]) == 1
+    assert det_pecho["ejercicios_recientes"][0]["ejercicio_id"] == banca_id
+
+    # El recomendador debe devolver hasta 4 ejercicios primarios de Pecho, priorizando los NO entrenados esta semana
+    recomendados = det_pecho["ejercicios_recomendados"]
+    assert 1 <= len(recomendados) <= 4
+    assert recomendados[0]["ejercicio_id"] != banca_id
+    assert recomendados[0]["entrenado_esta_semana"] is False
+
+    # Grupo inexistente retorna 404
+    resp_inexistente = client.get("/api/mapa-muscular/MusculoInexistente")
+    assert resp_inexistente.status_code == 404
+
+

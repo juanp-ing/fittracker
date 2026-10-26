@@ -88,6 +88,173 @@ class ResumenService:
             "grupos": grupos_lista,
         }
 
+    def obtener_detalle_grupo_muscular(
+        self,
+        usuario_id: int,
+        nombre_grupo: str,
+        dias: int = 7,
+    ) -> dict:
+        """
+        Retorna el detalle analítico y recomendador de ejercicios para un grupo muscular:
+        - series_semana (totales, primarias y secundarias)
+        - pr_actual (mayor PR en ejercicios donde el grupo es primario)
+        - ejercicios_recientes (entrenados en la ventana de días)
+        - ejercicios_recomendados (hasta 4 ejercicios donde el grupo es primario, priorizando no entrenados)
+        """
+        grupo = self.ejercicio_repo.obtener_grupo_por_nombre(nombre_grupo)
+        if grupo is None:
+            raise LookupError(f"El grupo muscular '{nombre_grupo}' no existe.")
+
+        dias_limpios = max(1, int(dias))
+        ahora = datetime.now(timezone.utc)
+        fecha_inicio = ahora - timedelta(days=dias_limpios)
+
+        series_ventana = self.sesion_repo.listar_series_por_rango_fechas(
+            usuario_id=usuario_id,
+            fecha_desde=fecha_inicio,
+        )
+
+        series_primarias = 0
+        series_secundarias = 0
+        recientes_por_ej: dict[int, dict] = {}
+
+        for serie in series_ventana:
+            if not serie.ejercicio:
+                continue
+            relacion_grupo = next(
+                (eg for eg in serie.ejercicio.ejercicio_grupos if eg.grupo_id == grupo.id),
+                None,
+            )
+            if relacion_grupo is None:
+                continue
+
+            if relacion_grupo.es_primario:
+                series_primarias += 1
+            else:
+                series_secundarias += 1
+
+            ej_id = serie.ejercicio_id
+            peso = float(serie.peso)
+            vol = float(serie.volumen)
+            if ej_id not in recientes_por_ej:
+                recientes_por_ej[ej_id] = {
+                    "ejercicio_id": ej_id,
+                    "nombre": serie.ejercicio.nombre,
+                    "es_primario": bool(relacion_grupo.es_primario),
+                    "series": 1,
+                    "peso_maximo": peso,
+                    "volumen_total": vol,
+                }
+            else:
+                item = recientes_por_ej[ej_id]
+                item["series"] += 1
+                item["volumen_total"] += vol
+                if peso > item["peso_maximo"]:
+                    item["peso_maximo"] = peso
+                if relacion_grupo.es_primario:
+                    item["es_primario"] = True
+
+        ejercicios_recientes = sorted(
+            recientes_por_ej.values(),
+            key=lambda x: (-int(x["es_primario"]), -x["series"], x["nombre"]),
+        )
+
+        # Ejercicios visibles donde este grupo muscular es primario
+        ejercicios_primarios = self.ejercicio_repo.listar_visibles_por_grupo_primario(
+            usuario_id=usuario_id,
+            grupo_id=grupo.id,
+        )
+        ids_primarios = [e.id for e in ejercicios_primarios]
+
+        # Mayor PR registrado por el usuario en ejercicios donde este grupo es primario
+        mejor_pr = self.pr_repo.obtener_mejor_pr_por_ejercicios(
+            usuario_id=usuario_id,
+            ejercicios_ids=ids_primarios,
+        )
+        pr_actual = None
+        if mejor_pr is not None:
+            nombre_ej_pr = mejor_pr.ejercicio.nombre if mejor_pr.ejercicio else ""
+            pr_actual = {
+                "id": mejor_pr.id,
+                "ejercicio_id": mejor_pr.ejercicio_id,
+                "ejercicio": nombre_ej_pr,
+                "ejercicio_nombre": nombre_ej_pr,
+                "peso": float(mejor_pr.peso),
+                "fecha": mejor_pr.fecha.isoformat() if mejor_pr.fecha else None,
+            }
+        else:
+            # Respaldo si existen series históricas sin fila en tabla PR
+            mejor_peso_hist = 0.0
+            mejor_ej_obj = None
+            for ej_prim in ejercicios_primarios:
+                max_p = self.pr_repo.obtener_max_peso_historico(
+                    usuario_id=usuario_id,
+                    ejercicio_id=ej_prim.id,
+                )
+                if max_p > mejor_peso_hist:
+                    mejor_peso_hist = max_p
+                    mejor_ej_obj = ej_prim
+            if mejor_ej_obj is not None and mejor_peso_hist > 0:
+                pr_actual = {
+                    "id": None,
+                    "ejercicio_id": mejor_ej_obj.id,
+                    "ejercicio": mejor_ej_obj.nombre,
+                    "ejercicio_nombre": mejor_ej_obj.nombre,
+                    "peso": float(mejor_peso_hist),
+                    "fecha": None,
+                }
+
+        # Recomendador: hasta 4 ejercicios donde el grupo sea primario, priorizando no entrenados esta semana
+        entrenados_ids = set(recientes_por_ej.keys())
+        candidatos_ordenados = sorted(
+            ejercicios_primarios,
+            key=lambda e: (e.id in entrenados_ids, e.nombre.lower()),
+        )[:4]
+
+        ejercicios_recomendados: list[dict] = []
+        for ej in candidatos_ordenados:
+            ultima = self.sesion_repo.obtener_ultima_serie_ejercicio(
+                usuario_id=usuario_id,
+                ejercicio_id=ej.id,
+            )
+            ejercicios_recomendados.append(
+                {
+                    "id": ej.id,
+                    "ejercicio_id": ej.id,
+                    "nombre": ej.nombre,
+                    "es_predeterminado": ej.es_predeterminado,
+                    "entrenado_esta_semana": ej.id in entrenados_ids,
+                    "ultimo_peso": float(ultima.peso) if ultima else None,
+                    "ultimas_repeticiones": int(ultima.repeticiones) if ultima else None,
+                }
+            )
+
+        total_series = series_primarias + series_secundarias
+        if series_primarias > 0:
+            estado_activacion = "PRIMARIO"
+        elif series_secundarias > 0:
+            estado_activacion = "SECUNDARIO"
+        else:
+            estado_activacion = "DESCANSADO"
+
+        return {
+            "grupo_id": grupo.id,
+            "nombre": grupo.nombre,
+            "dias_ventana": dias_limpios,
+            "estado_activacion": estado_activacion,
+            "series_semana": {
+                "total": total_series,
+                "primarias": series_primarias,
+                "secundarias": series_secundarias,
+            },
+            "total_series_semana": total_series,
+            "series_primarias": series_primarias,
+            "series_secundarias": series_secundarias,
+            "pr_actual": pr_actual,
+            "ejercicios_recientes": ejercicios_recientes,
+            "ejercicios_recomendados": ejercicios_recomendados,
+        }
+
     def obtener_progreso_ejercicio(
         self,
         usuario_id: int,

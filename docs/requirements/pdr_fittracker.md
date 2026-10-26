@@ -63,3 +63,4 @@
 | **RNF-07** | **Calidad y Cobertura de Pruebas**: suite automatizada con `pytest` y `sqlite:///:memory:`. | 43 pruebas automatizadas (unitarias, integración y funcionales E2E) con cobertura `> 90%`. |
 | **RNF-08** | **Integración Continua (CI) y Flujo Git**: pipeline automatizado en GitHub Actions y ramas por funcionalidad. | `.github/workflows/tests.yml` e historial de merges `--no-ff` en `main`. |
 | **RNF-09** | **Tolerancia a Fallos de Red en Gimnasio (Cola Offline)**: encolamiento local y resincronización automática. | Cola en `localStorage` (`fittracker_offline_series_queue`) y listener `window.addEventListener('online', ...)` en `registro.js`. |
+
