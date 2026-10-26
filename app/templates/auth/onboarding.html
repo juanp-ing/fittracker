@@ -2,24 +2,30 @@
 {% block title %}Configura tu Perfil Biométrico — FitTracker{% endblock %}
 
 {% block content %}
-<section class="duo-card" style="display: flex; flex-direction: column; gap: 1rem;">
-  <!-- Barra de Progreso Superior estilo Duolingo (#58cc02) -->
-  <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span id="wizard-paso-etiqueta" class="stepper-label">Paso 1 de 4</span>
-      <span style="font-family: var(--font-display); font-weight: 800; font-size: 0.82rem; color: var(--color-eager-green);">
+<section id="onboarding-wizard-card" class="duo-card" style="display: flex; flex-direction: column; gap: 1rem; scroll-margin-top: 80px;">
+  <!-- Barra de Progreso Superior estilo Duolingo (#58cc02) + 4 Pestañas de Paso -->
+  <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+      <span id="wizard-paso-etiqueta" class="stepper-label" aria-live="polite">Paso 1 de 4</span>
+      <span style="font-family: var(--font-display); font-weight: 800; font-size: 0.82rem; color: var(--color-eager-green-shade);">
         Perfil Biométrico
       </span>
     </div>
-    <div class="wizard-progress-track" role="progressbar" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1">
+    <div id="wizard-progress-track" class="wizard-progress-track" role="progressbar" aria-label="Progreso del perfil" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1">
       <div id="wizard-progress-bar" class="wizard-progress-fill" style="width: 25%;"></div>
     </div>
+    <nav class="onboarding-step-tabs" aria-label="Pasos del perfil">
+      <button type="button" class="onboarding-step-tab is-active" data-step-tab="1" aria-current="step">1. Silueta</button>
+      <button type="button" class="onboarding-step-tab" data-step-tab="2" disabled>2. Cuerpo</button>
+      <button type="button" class="onboarding-step-tab" data-step-tab="3" disabled>3. Meta</button>
+      <button type="button" class="onboarding-step-tab" data-step-tab="4" disabled>4. Tipo</button>
+    </nav>
   </div>
 
   <div id="onboarding-error-msg" class="duo-alert" role="alert" hidden></div>
 
   <!-- PASO 1: Sexo Biológico para Mapa Anatómico -->
-  <div data-wizard-step="1" style="display: flex; flex-direction: column; gap: 0.85rem;">
+  <div class="onboarding-step-pane" data-step="1">
     <div>
       <h1 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">1. Elige tu silueta anatómica</h1>
       <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
@@ -39,7 +45,7 @@
   </div>
 
   <!-- PASO 2: Métricas Corporales (Peso y % Grasa con Botones +/- y Guía Visual en un Vistazo) -->
-  <div data-wizard-step="2" style="display: flex; flex-direction: column; gap: 1rem;" hidden>
+  <div class="onboarding-step-pane" data-step="2" hidden>
     <div>
       <h2 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">2. Tus métricas corporales</h2>
       <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
@@ -99,8 +105,8 @@
           data-mujer-val="17"
         >
           <div class="bodyfat-guide-card__header">
-            <span class="bodyfat-guide-card__title">Atlético / Muy Definido</span>
             <span class="bodyfat-guide-card__range" data-card-range>8% – 12%</span>
+            <span class="bodyfat-guide-card__title">Atlético / Muy Definido</span>
           </div>
           <span class="bodyfat-guide-card__desc" data-card-desc>Abdominales marcados y vascularidad</span>
         </button>
@@ -118,8 +124,8 @@
           data-mujer-val="22"
         >
           <div class="bodyfat-guide-card__header">
-            <span class="bodyfat-guide-card__title">Fitness / Saludable</span>
             <span class="bodyfat-guide-card__range" data-card-range>13% – 17%</span>
+            <span class="bodyfat-guide-card__title">Fitness / Saludable</span>
           </div>
           <span class="bodyfat-guide-card__desc" data-card-desc>Cuerpo firme, abdomen plano sin marcar del todo</span>
         </button>
@@ -137,8 +143,8 @@
           data-mujer-val="28"
         >
           <div class="bodyfat-guide-card__header">
-            <span class="bodyfat-guide-card__title">Promedio / Normal</span>
             <span class="bodyfat-guide-card__range" data-card-range>18% – 24%</span>
+            <span class="bodyfat-guide-card__title">Promedio / Normal</span>
           </div>
           <span class="bodyfat-guide-card__desc" data-card-desc>Poca definición muscular, algo de grasa abdominal</span>
         </button>
@@ -156,8 +162,8 @@
           data-mujer-val="34"
         >
           <div class="bodyfat-guide-card__header">
-            <span class="bodyfat-guide-card__title">Alto / Sobrepeso Inicial</span>
             <span class="bodyfat-guide-card__range" data-card-range>25%+</span>
+            <span class="bodyfat-guide-card__title">Alto / Sobrepeso Inicial</span>
           </div>
           <span class="bodyfat-guide-card__desc" data-card-desc>Abdomen prominente, meta ideal recomposición/bajar peso</span>
         </button>
@@ -166,7 +172,7 @@
   </div>
 
   <!-- PASO 3: Meta Principal -->
-  <div data-wizard-step="3" style="display: flex; flex-direction: column; gap: 0.85rem;" hidden>
+  <div class="onboarding-step-pane" data-step="3" hidden>
     <div>
       <h2 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">3. ¿Cuál es tu meta principal?</h2>
       <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
@@ -191,7 +197,7 @@
   </div>
 
   <!-- PASO 4: Tipo de Metabolismo / Somatotipo -->
-  <div data-wizard-step="4" style="display: flex; flex-direction: column; gap: 0.85rem;" hidden>
+  <div class="onboarding-step-pane" data-step="4" hidden>
     <div>
       <h2 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">4. Tu tipo de metabolismo</h2>
       <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
@@ -215,13 +221,13 @@
     </button>
   </div>
 
-  <!-- Botonera de Navegación del Wizard -->
-  <div style="display: flex; gap: 0.65rem; margin-top: 0.25rem;">
-    <button type="button" id="btn-wizard-atras" class="btn-duo" style="flex: 1;" hidden>
-      Atrás
+  <!-- Botonera de Navegación del Wizard (por paso) -->
+  <div class="onboarding-nav">
+    <button type="button" id="btn-wizard-atras" class="btn-duo onboarding-nav__back" hidden>
+      ← Atrás
     </button>
-    <button type="button" id="btn-wizard-siguiente" class="btn-duo btn-duo--green btn-duo--giant" style="flex: 2;">
-      CONTINUAR
+    <button type="button" id="btn-wizard-siguiente" class="btn-duo btn-duo--green btn-duo--giant onboarding-nav__next">
+      Continuar →
     </button>
   </div>
 </section>
@@ -231,6 +237,7 @@
 <script>
   (function () {
     let pasoActual = 1;
+    let pasoMaximoAlcanzado = 1;
     const totalPasos = 4;
 
     let sexo = '{{ perfil.sexo | default("HOMBRE") }}';
@@ -242,6 +249,8 @@
 
     const etiquetaPasoEl = document.getElementById('wizard-paso-etiqueta');
     const barraProgresoEl = document.getElementById('wizard-progress-bar');
+    const trackProgresoEl = document.getElementById('wizard-progress-track');
+    const tarjetaWizardEl = document.getElementById('onboarding-wizard-card');
     const btnAtras = document.getElementById('btn-wizard-atras');
     const btnSiguiente = document.getElementById('btn-wizard-siguiente');
     const errorEl = document.getElementById('onboarding-error-msg');
@@ -278,24 +287,67 @@
       actualizarDisplaysMetricas();
     }
 
-    function actualizarVistaWizard() {
-      document.querySelectorAll('[data-wizard-step]').forEach((panel) => {
-        const num = Number(panel.getAttribute('data-wizard-step'));
-        panel.hidden = num !== pasoActual;
+    function actualizarVistaWizard(direccion) {
+      const reducirMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      document.querySelectorAll('.onboarding-step-pane').forEach((panel) => {
+        const num = Number(panel.getAttribute('data-step'));
+        const activo = num === pasoActual;
+        panel.hidden = !activo;
+        panel.classList.remove('is-entering', 'is-back');
+        if (activo && direccion && !reducirMovimiento) {
+          // Forzar reflow para reiniciar la micro-transición de 180ms
+          void panel.offsetWidth;
+          panel.classList.add('is-entering');
+          if (direccion === 'atras') panel.classList.add('is-back');
+        }
       });
+
+      document.querySelectorAll('[data-step-tab]').forEach((tab) => {
+        const num = Number(tab.getAttribute('data-step-tab'));
+        tab.classList.toggle('is-active', num === pasoActual);
+        tab.classList.toggle('is-done', num < pasoActual);
+        tab.disabled = num > pasoMaximoAlcanzado;
+        if (num === pasoActual) {
+          tab.setAttribute('aria-current', 'step');
+        } else {
+          tab.removeAttribute('aria-current');
+        }
+      });
+
       if (etiquetaPasoEl) {
         etiquetaPasoEl.textContent = `Paso ${pasoActual} de ${totalPasos}`;
       }
       if (barraProgresoEl) {
         barraProgresoEl.style.width = `${(pasoActual / totalPasos) * 100}%`;
       }
+      if (trackProgresoEl) {
+        trackProgresoEl.setAttribute('aria-valuenow', String(pasoActual));
+      }
       if (btnAtras) {
         btnAtras.hidden = pasoActual === 1;
       }
       if (btnSiguiente) {
         btnSiguiente.textContent =
-          pasoActual === totalPasos ? '¡GUARDAR Y ENTRENAR!' : 'CONTINUAR';
+          pasoActual === totalPasos ? '¡Guardar y empezar! →' : 'Continuar →';
       }
+
+      if (direccion && tarjetaWizardEl) {
+        tarjetaWizardEl.scrollIntoView({
+          behavior: reducirMovimiento ? 'auto' : 'smooth',
+          block: 'start',
+        });
+      }
+    }
+
+    function irAPaso(nuevoPaso) {
+      const destino = Math.min(totalPasos, Math.max(1, nuevoPaso));
+      if (destino === pasoActual) return;
+      const direccion = destino > pasoActual ? 'adelante' : 'atras';
+      pasoActual = destino;
+      pasoMaximoAlcanzado = Math.max(pasoMaximoAlcanzado, pasoActual);
+      if (errorEl) errorEl.hidden = true;
+      actualizarVistaWizard(direccion);
     }
 
     function actualizarDisplaysMetricas() {
@@ -386,18 +438,21 @@
       });
     });
 
+    document.querySelectorAll('[data-step-tab]').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const destino = Number(tab.getAttribute('data-step-tab'));
+        if (destino <= pasoMaximoAlcanzado) irAPaso(destino);
+      });
+    });
+
     btnAtras.addEventListener('click', () => {
-      if (pasoActual > 1) {
-        pasoActual -= 1;
-        actualizarVistaWizard();
-      }
+      if (pasoActual > 1) irAPaso(pasoActual - 1);
     });
 
     btnSiguiente.addEventListener('click', async () => {
       errorEl.hidden = true;
       if (pasoActual < totalPasos) {
-        pasoActual += 1;
-        actualizarVistaWizard();
+        irAPaso(pasoActual + 1);
         return;
       }
 

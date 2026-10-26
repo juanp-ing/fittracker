@@ -105,6 +105,15 @@ button,
   flex-direction: column;
   position: relative;
   padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 431px) {
+  .mobile-shell {
+    max-width: 430px;
+  }
 }
 
 @media (max-width: 430px) {
@@ -184,6 +193,10 @@ button,
   border-bottom-width: 4px;
   border-radius: var(--radius-card);
   padding: 1rem;
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .duo-card--highlight {
@@ -271,6 +284,115 @@ button,
   background-color: var(--color-eager-green);
   border-radius: 999px;
   transition: width 200ms var(--ease-out);
+}
+
+.onboarding-step-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.onboarding-step-tab {
+  min-height: var(--touch-target-min);
+  min-width: 0;
+  padding: 0.3rem 0.25rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.74rem;
+  line-height: 1.1;
+  border-radius: var(--radius-btn);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 4px;
+  background-color: var(--color-paper-white);
+  color: var(--color-charcoal);
+  cursor: pointer;
+  overflow-wrap: break-word;
+  transform: translateY(0);
+  transition: transform 75ms var(--ease-out), background-color 100ms var(--ease-out), border-color 100ms var(--ease-out);
+}
+
+.onboarding-step-tab:active {
+  transform: translateY(2px);
+}
+
+.onboarding-step-tab.is-done {
+  border-color: var(--color-eager-green);
+  color: var(--color-night-ink);
+}
+
+.onboarding-step-tab.is-active {
+  background-color: var(--color-storybook-green);
+  border-color: var(--color-eager-green);
+  border-bottom-color: var(--color-eager-green-shade);
+  color: var(--color-night-ink);
+}
+
+.onboarding-step-tab:disabled {
+  cursor: not-allowed;
+  color: var(--color-pencil-gray);
+}
+
+.onboarding-step-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.onboarding-step-pane[hidden] {
+  display: none;
+}
+
+.onboarding-step-pane.is-entering {
+  animation: onboarding-pane-in 180ms var(--ease-out) both;
+}
+
+.onboarding-step-pane.is-entering.is-back {
+  animation-name: onboarding-pane-in-back;
+}
+
+@keyframes onboarding-pane-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes onboarding-pane-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.onboarding-nav {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+  width: 100%;
+}
+
+.onboarding-nav .btn-duo[hidden] {
+  display: none;
+}
+
+.onboarding-nav__back {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.onboarding-nav__next {
+  flex: 2 1 0;
+  min-width: 0;
 }
 
 .onboarding-option-card {
@@ -393,9 +515,11 @@ button,
 
 .stepper-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 8px;
+  padding-top: 2px;
 }
 
 .stepper-label {
@@ -408,6 +532,7 @@ button,
 
 .step-chips {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 0.35rem;
 }
 
@@ -975,14 +1100,17 @@ button,
    ========================================================================== */
 .bodyfat-guide-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.55rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
   margin-top: 0.35rem;
 }
 
 .bodyfat-guide-card {
   width: 100%;
+  min-width: 0;
   min-height: 76px;
+  box-sizing: border-box;
   background-color: var(--color-paper-white);
   border: 2px solid var(--color-faded-gray);
   border-bottom-width: 4px;
@@ -992,8 +1120,11 @@ button,
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 0.25rem;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 6px;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
   transform: translateY(0);
   transition: transform 75ms var(--ease-out), background-color 120ms var(--ease-out), border-color 120ms var(--ease-out);
 }
@@ -1010,9 +1141,11 @@ button,
 
 .bodyfat-guide-card__header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.3rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
 }
 
 .bodyfat-guide-card__title {
@@ -1021,6 +1154,9 @@ button,
   font-size: 0.84rem;
   color: var(--color-night-ink);
   line-height: 1.15;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .bodyfat-guide-card__range {
@@ -1047,6 +1183,9 @@ button,
   font-size: 0.75rem;
   color: var(--color-charcoal);
   line-height: 1.25;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* ==========================================================================
@@ -1527,6 +1666,8 @@ button,
   .stepper-value.is-pulsing,
   .pr-banner.is-celebrating,
   .pr-banner.is-celebrating .status-badge,
+  .onboarding-step-tab:active,
+  .onboarding-step-pane.is-entering,
   .bottom-sheet {
     transform: none !important;
     animation: none !important;

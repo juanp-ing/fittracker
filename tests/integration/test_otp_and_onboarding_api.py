@@ -52,10 +52,21 @@ def test_flujo_otp_6_digitos_y_onboarding_biometrico(app, client):
     ok_data = resp_ok_otp.get_json()
     assert ok_data["email_verificado"] is True
 
-    # 6. Vista HTML /onboarding responde 200
+    # 6. Vista HTML /onboarding responde 200 como wizard de 4 paneles independientes
     resp_vista_onb = client.get("/onboarding")
     assert resp_vista_onb.status_code == 200
-    assert "Perfil Biométrico" in resp_vista_onb.get_data(as_text=True)
+    html_onb = resp_vista_onb.get_data(as_text=True)
+    assert "Perfil Biométrico" in html_onb
+    for paso in range(1, 5):
+        assert f'data-step="{paso}"' in html_onb
+        assert f'data-step-tab="{paso}"' in html_onb
+    # Solo el Paso 1 visible al cargar: los pasos 2-4 llevan el atributo hidden
+    assert html_onb.count('class="onboarding-step-pane"') == 4
+    for paso in range(2, 5):
+        assert f'class="onboarding-step-pane" data-step="{paso}" hidden' in html_onb
+    assert 'class="onboarding-step-pane" data-step="1" hidden' not in html_onb
+    assert 'id="btn-wizard-atras"' in html_onb
+    assert 'id="btn-wizard-siguiente"' in html_onb
 
     # 7. Guardar onboarding (PUT /api/perfil) con datos de Valeria y leer en GET /api/perfil
     resp_put_perfil = client.put(
