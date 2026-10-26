@@ -75,3 +75,4 @@ class ComparacionMensualStrategy(ResumenClasificacionStrategy):
 # Alias de conveniencia
 ResumenStrategy = ComparacionMensualStrategy
 ResumenMensualStrategy = ComparacionMensualStrategy
+

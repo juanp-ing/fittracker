@@ -3,11 +3,12 @@
 ## 1. Visión y Objetivo Crítico de UX
 FitTracker es una aplicación web mobile-first para registrar entrenamientos de gimnasio (series, repeticiones, peso) en menos de 10 segundos sin usar el teclado del móvil.
 - **Regla de Oro UX:** Toda acción durante el entrenamiento debe ejecutarse con una sola mano (pulgar), botones grandes (`+/-`) y peticiones `fetch` asíncronas (0 recargas de página).
+- **Tema Visual Oficial:** **Light Theme Gamificado de Duolingo (`DESIGN.md`)** sobre superficie plana `#ffffff`, tipografía redondeada (`Nunito` 800/900 y `Nunito Sans` 500/700), botones táctiles sticker/3D con borde inferior presionable de `4px` y paleta cromática `--color-eager-green: #58cc02`, `--color-storybook-green: #d7ffb8`, `--color-spark-blue: #1cb0f6`, `--color-fresh-leaf: #a5ed6e`.
 
 ## 2. Stack Tecnológico Oficial
 - **Backend:** Python 3.11+, Flask, SQLAlchemy (ORM), Flask-Login, Flask-Migrate.
 - **Base de Datos:** SQLite en modo WAL (`PRAGMA journal_mode=WAL;`) y claves foráneas activas (`PRAGMA foreign_keys=ON;`). En pruebas se usa `sqlite:///:memory:`.
-- **Frontend:** HTML5 (Jinja2 templates), CSS3 Mobile-First nativo, JavaScript Vanilla modular (`fetch`, `localStorage`, SVG inline, Chart.js).
+- **Frontend:** HTML5 (Jinja2 templates), CSS3 Mobile-First nativo (`styles.css`), JavaScript Vanilla modular (`fetch`, `localStorage`, SVG inline, Chart.js).
 - **Calidad y DevOps:** pytest (pruebas unitarias, integración y funcionales), Docker, Docker Compose, GitHub Actions (`tests.yml`).
 
 ## 3. Estructura de Directorios y Separación Estricta de Capas

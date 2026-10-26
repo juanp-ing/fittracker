@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Mapa Muscular y PRs — FitTracker{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<section class="duo-card muscle-map-wrapper">
+  <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+    <h1 style="font-size: 1.25rem; margin: 0;">Mapa Muscular Bicolor</h1>
+    <div class="step-chips">
+      <button type="button" class="step-chip is-active" data-mapa-dias="7">7d</button>
+      <button type="button" class="step-chip" data-mapa-dias="14">14d</button>
+      <button type="button" class="step-chip" data-mapa-dias="30">30d</button>
+    </div>
+  </div>
+
+  <div class="muscle-map-svg-container">
+    <svg id="mapa-muscular-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 320" role="img" aria-label="Mapa Muscular Anatómico Frontal y Posterior">
+      <text x="90" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="13" fill="#000437">FRONTAL</text>
+      <text x="270" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="13" fill="#000437">POSTERIOR</text>
+
+      <!-- Cabezas -->
+      <circle cx="90" cy="50" r="16" fill="#f7f7f7" stroke="#4b4b4b" stroke-width="2"/>
+      <circle cx="270" cy="50" r="16" fill="#f7f7f7" stroke="#4b4b4b" stroke-width="2"/>
+
+      <!-- Hombros -->
+      <g id="svg-grupo-hombros" data-grupo="Hombros" class="muscle-zone">
+        <rect x="44" y="72" width="20" height="24" rx="8"/>
+        <rect x="116" y="72" width="20" height="24" rx="8"/>
+        <rect x="224" y="72" width="20" height="24" rx="8"/>
+        <rect x="296" y="72" width="20" height="24" rx="8"/>
+      </g>
+
+      <!-- Pecho -->
+      <g id="svg-grupo-pecho" data-grupo="Pecho" class="muscle-zone">
+        <rect x="66" y="72" width="23" height="32" rx="6"/>
+        <rect x="91" y="72" width="23" height="32" rx="6"/>
+      </g>
+
+      <!-- Bíceps -->
+      <g id="svg-grupo-biceps" data-grupo="Bíceps" class="muscle-zone">
+        <rect x="42" y="99" width="18" height="42" rx="7"/>
+        <rect x="120" y="99" width="18" height="42" rx="7"/>
+      </g>
+
+      <!-- Core -->
+      <g id="svg-grupo-core" data-grupo="Core" class="muscle-zone">
+        <rect x="68" y="107" width="44" height="54" rx="7"/>
+      </g>
+
+      <!-- Cuádriceps -->
+      <g id="svg-grupo-cuadriceps" data-grupo="Cuádriceps" class="muscle-zone">
+        <rect x="65" y="166" width="22" height="68" rx="8"/>
+        <rect x="93" y="166" width="22" height="68" rx="8"/>
+      </g>
+
+      <!-- Espalda -->
+      <g id="svg-grupo-espalda" data-grupo="Espalda" class="muscle-zone">
+        <rect x="246" y="72" width="48" height="66" rx="8"/>
+      </g>
+
+      <!-- Tríceps -->
+      <g id="svg-grupo-triceps" data-grupo="Tríceps" class="muscle-zone">
+        <rect x="222" y="99" width="18" height="42" rx="7"/>
+        <rect x="300" y="99" width="18" height="42" rx="7"/>
+      </g>
+
+      <!-- Glúteos -->
+      <g id="svg-grupo-gluteos" data-grupo="Glúteos" class="muscle-zone">
+        <rect x="246" y="142" width="23" height="30" rx="8"/>
+        <rect x="271" y="142" width="23" height="30" rx="8"/>
+      </g>
+
+      <!-- Isquiotibiales -->
+      <g id="svg-grupo-isquiotibiales" data-grupo="Isquiotibiales" class="muscle-zone">
+        <rect x="246" y="176" width="22" height="58" rx="8"/>
+        <rect x="272" y="176" width="22" height="58" rx="8"/>
+      </g>
+
+      <!-- Pantorrillas -->
+      <g id="svg-grupo-pantorrillas" data-grupo="Pantorrillas" class="muscle-zone">
+        <rect x="67" y="238" width="18" height="54" rx="7"/>
+        <rect x="95" y="238" width="18" height="54" rx="7"/>
+        <rect x="248" y="238" width="18" height="54" rx="7"/>
+        <rect x="274" y="238" width="18" height="54" rx="7"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="muscle-legend">
+    <span><i class="legend-dot" style="background-color: #58cc02;"></i>Primario (#58cc02)</span>
+    <span><i class="legend-dot" style="background-color: #a5ed6e;"></i>Secundario (#a5ed6e)</span>
+  </div>
+
+  <div id="mapa-muscular-lista" style="width: 100%; display: flex; flex-direction: column; gap: 0.45rem;"></div>
+</section>
+
+<!-- Evolución de Peso y PR por Ejercicio -->
+<section class="duo-card" style="display: flex; flex-direction: column; gap: 0.75rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2 style="font-size: 1.15rem; margin: 0;">Progreso y PRs</h2>
+    <span id="progreso-pr-historico" class="status-badge status-badge--mejoro">PR: 0 kg</span>
+  </div>
+
+  <select id="selector-ejercicio-progreso" class="duo-input">
+    {% for ej in ejercicios %}
+    <option value="{{ ej.id }}">{{ ej.nombre }}</option>
+    {% endfor %}
+  </select>
+
+  <div style="height: 220px; width: 100%;">
+    <canvas id="grafica-progreso-canvas"></canvas>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/mapa.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graficas.js') }}"></script>
+{% endblock %}

@@ -1,12 +1,27 @@
-"""Controlador REST para Sesiones de entrenamiento y registro rápido de Series."""
+"""Controlador de vistas HTML y endpoints REST para Sesiones de entrenamiento y Series."""
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 
 from app.patterns.state import SesionCerradaError
+from app.services.rutina_service import RutinaService
 from app.services.sesion_service import SesionNoEncontradaError, SesionService
 
 sesion_bp = Blueprint("sesion", __name__)
+
+
+@sesion_bp.route("/", methods=["GET"])
+@sesion_bp.route("/entrenar", methods=["GET"])
+@login_required
+def vista_entrenar():
+    """Renderiza la pantalla principal de entrenamiento rápido en < 10 segundos."""
+    rutina_service = RutinaService()
+    rutinas = rutina_service.listar_rutinas_usuario(usuario_id=current_user.id)
+    return render_template(
+        "index.html",
+        active_tab="entrenar",
+        rutinas=rutinas,
+    )
 
 
 @sesion_bp.route("/api/sesiones", methods=["POST"])
@@ -83,4 +98,3 @@ def finalizar_sesion(sesion_id: int):
         return jsonify({"error": str(exc), "code": "SESION_CERRADA"}), 400
 
     return jsonify(resultado), 200
-

@@ -19,7 +19,7 @@ from app.config.settings import (
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
-login_manager.login_view = "auth.login"
+login_manager.login_view = "auth.vista_login"
 
 
 @event.listens_for(Engine, "connect")
@@ -56,7 +56,7 @@ def unauthorized():
             ),
             401,
         )
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("auth.vista_login"))
 
 
 def _resolve_config(config_name):

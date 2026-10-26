@@ -1,48 +1,41 @@
-# DESIGN.md — Sistema de Diseño y Reglas UI/UX para FitTracker Web App
+# DESIGN.md — Sistema de Diseño Oficial (Light Theme Gamificado de Duolingo)
 
-## 1. Principio Rector (Regla de Oro UX)
-FitTracker está diseñada para registrar una serie de gimnasio (peso y repeticiones) en **menos de 10 segundos** usando **una sola mano (pulgar)** y **sin abrir el teclado virtual del móvil**.
-- **Cero recargas de página:** Todas las acciones de entrenamiento usan `fetch` asíncrono.
-- **Zonas táctiles (Thumb-Zone):** Todo botón interactivo durante el entrenamiento (`+/-`, `Guardar Serie`, controles de cronómetro) debe tener un área mínima de `48px × 48px` (`min-height: 3rem`).
-
----
-
-## 2. Dirección Estética y Paleta de Colores (Dark Athletic UI)
-- **Fondo Principal (`--bg-primary`):** `#0B0F17` (Obsidian Gym Dark — máximo contraste bajo luces de gimnasio y ahorro de batería OLED).
-- **Superficie / Tarjetas (`--bg-surface`):** `#151C28` con borde sutil `#232F42`.
-- **Superficie Elevada (`--bg-elevated`):** `#1E293B`.
-- **Texto Primario (`--text-primary`):** `#F8FAFC` (números tabulares `font-variant-numeric: tabular-nums` para peso, repeticiones y cronómetro).
-- **Texto Secundario (`--text-secondary`):** `#94A3B8`.
-- **Acento Primario / Acción (`--accent-primary`):** `#10B981` (Emerald Energy — acción principal de registrar serie y músculo primario activo).
-- **Acento Secundario / Músculo Secundario (`--accent-secondary`):** `#F59E0B` (Amber — activación muscular secundaria y alertas de descanso).
-- **Récord Personal (`--accent-pr`):** `#8B5CF6` / `#FACC15` (insignia destacada de Nuevo PR).
-- **Peligro / Finalizar (`--danger`):** `#EF4444`.
+## 1. Filosofía Visual y UX Mobile-First
+FitTracker adopta el **Light Theme Gamificado de Duolingo**: superficies planas blancas (`#ffffff`), alto contraste legible a plena luz del gimnasio, geometría redondeada amigable (`border-radius: 12px`), y botones físicos táctiles tipo sticker/3D con borde inferior de `4px` que descienden `2px` al presionarlos (`:active`).
+- **Cero gradientes, cero sombras difusas (`box-shadow` borroso), cero glassmorphism.**
+- **Operación en `< 10` segundos sin teclado:** Controles gigantes `−` y `＋` (`min-height: 56px; min-width: 64px;`) operables con el pulgar de una sola mano.
 
 ---
 
-## 3. Tipografía y Escala Numérica
-- **Fuente UI:** `Inter`, `system-ui`, `-apple-system`, sans-serif.
-- **Números Tabulares (`tabular-nums`):** Obligatorios en contadores de peso (`kg`), repeticiones, volumen y cronómetro (`MM:SS`) para evitar saltos de layout al pulsar `+/-`.
-- **Tamaños clave:**
-  - Display de Cronómetro / Peso Activo: `2rem` – `2.5rem` (`font-weight: 800`).
-  - Botones `+/-`: `1.5rem` (`font-weight: 700`).
-  - Títulos de Sección: `1.25rem` (`font-weight: 700`).
-  - Cuerpo / Etiquetas: `0.9375rem` (`15px`).
+## 2. Tokens de Color Oficiales (`:root`)
+- `--color-eager-green: #58cc02` — CTAs primarios («¡SERIE TERMINADA!»), serie completada, récord personal (PR) logrado y músculo primario en el mapa SVG.
+- `--color-eager-green-shade: #46a302` — Borde inferior 3D (`4px`) de botones primarios verdes.
+- `--color-storybook-green: #d7ffb8` — Fondos suaves de énfasis, chips seleccionados y pestaña activa en el Bottom Nav.
+- `--color-spark-blue: #1cb0f6` — Acciones secundarias, cronómetro de descanso activo y enlaces.
+- `--color-spark-blue-shade: #1899d6` — Borde inferior 3D (`4px`) de botones azules.
+- `--color-fresh-leaf: #a5ed6e` — Activación de músculo secundario en el mapa anatómico SVG.
+- `--color-night-ink: #000437` — Títulos de alto contraste y números grandes de peso/repeticiones/cronómetro.
+- `--color-paper-white: #ffffff` — Superficie principal y fondo de tarjetas.
+- `--color-snow-bg: #f7f7f7` — Fondo sutil exterior del contenedor móvil en escritorio.
+- `--color-charcoal: #4b4b4b` — Texto de cuerpo principal y etiquetas.
+- `--color-pencil-gray: #777777` — Texto secundario, metadatos y subtítulos.
+- `--color-faded-gray: #afafaf` — Bordes estructurales (`2px solid`) y estados inactivos.
+- `--color-swan-border: #e5e5e5` — Divisores y bordes de tarjetas en reposo.
 
 ---
 
-## 4. Componentes Críticos Mobile-First
-1. **Control Stepper Sin Teclado (`+/-`):**
-   - Precarga automática con el último peso y repeticiones registrados por el usuario en ese ejercicio.
-   - Botones de incremento/decremento rápido (`-2.5`, `+2.5` kg para peso; `-1`, `+1` para repeticiones) al alcance del pulgar.
-2. **Cronómetro Flotante Persistente (`localStorage`):**
-   - Se activa automáticamente al guardar una serie con el `descanso_segundos` configurado.
-   - Botones rápidos `+15s`, `-15s` y `Saltar` sin bloquear la navegación.
-3. **Mapa Muscular Anatómico SVG (Vista Frontal y Posterior):**
-   - Coloreado dinámico:
-     - Músculo primario (`es_primario = true`): `--accent-primary` (`#10B981`).
-     - Músculo secundario (`es_primario = false`): `--accent-secondary` (`#F59E0B`).
-     - Sin actividad: `#1E293B`.
-4. **Barra de Navegación Inferior (Bottom Tab Bar):**
-   - Fija en la parte inferior del viewport móvil (`Entrenar`, `Rutinas`, `Ejercicios`, `Progreso / Resumen`).
+## 3. Tipografía
+- **Display y Títulos (`--font-display`):** `'Nunito'`, sans-serif (`font-weight: 800` / `900`) — sustituto web de `feather`.
+- **Cuerpo y Controles (`--font-sans`):** `'Nunito Sans'`, sans-serif (`font-weight: 500` / `700`) — sustituto web de `duolingo-sans`.
+- **Números Tabulares:** `font-variant-numeric: tabular-nums` en contadores de peso (`kg`), repeticiones y cronómetro (`MM:SS`) para evitar saltos horizontales al tocar `−` / `＋`.
 
+---
+
+## 4. Arquitectura del Mobile Viewport Shell
+- Contenedor `.mobile-shell` con `max-width: 430px; min-height: 100dvh; margin: 0 auto; background: var(--color-paper-white);`.
+- `touch-action: manipulation;` y `-webkit-tap-highlight-color: transparent;` en todos los controles interactivos.
+- **Bottom Navigation Bar fija (`min-height: 64px`)** con 4 pestañas de acceso directo (`min-height: 56px`):
+  1. **Hoy (Entrenar)**
+  2. **Rutinas**
+  3. **Mapa/PRs**
+  4. **Resumen 30d**

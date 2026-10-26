@@ -94,3 +94,4 @@ def test_resumen_strategy_clasifica_sin_datos():
         )
         == "SIN_DATOS"
     )
+

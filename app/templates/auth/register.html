@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Crear Cuenta — FitTracker{% endblock %}
+
+{% block content %}
+<section class="duo-card" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.65rem;">Crea tu perfil</h1>
+    <p style="margin: 0; color: var(--color-pencil-gray); font-weight: 700;">
+      Guarda tus récords personales y mide tu evolución mes a mes.
+    </p>
+  </div>
+
+  <div id="reg-error-msg" class="duo-card" style="background-color: #ffe5e5; border-color: var(--color-danger-red); color: var(--color-night-ink); font-weight: 700;" hidden></div>
+
+  <form id="form-register" style="display: flex; flex-direction: column; gap: 0.85rem;">
+    <div>
+      <label for="reg-nombre" class="stepper-label">Tu nombre</label>
+      <input id="reg-nombre" type="text" class="duo-input" placeholder="Ej. Carlos" required>
+    </div>
+    <div>
+      <label for="reg-email" class="stepper-label">Correo electrónico</label>
+      <input id="reg-email" type="email" class="duo-input" placeholder="tu@correo.com" required autocomplete="email">
+    </div>
+    <div>
+      <label for="reg-password" class="stepper-label">Contraseña (mín. 6 caracteres)</label>
+      <input id="reg-password" type="password" class="duo-input" placeholder="••••••••" required minlength="6">
+    </div>
+    <button type="submit" class="btn-duo btn-duo--green btn-duo--block btn-duo--giant">
+      EMPEZAR AHORA
+    </button>
+  </form>
+
+  <a href="{{ url_for('auth.vista_login') }}" class="btn-duo btn-duo--blue btn-duo--block">
+    YA TENGO CUENTA
+  </a>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('form-register').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('reg-error-msg');
+    errorEl.hidden = true;
+    const nombre = document.getElementById('reg-nombre').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+
+    const resp = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, email, password }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      errorEl.textContent = data.error || 'No se pudo completar el registro.';
+      errorEl.hidden = false;
+      return;
+    }
+    window.location.href = '/';
+  });
+</script>
+{% endblock %}

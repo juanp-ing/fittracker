@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#58cc02">
+  <title>{% block title %}FitTracker — Entrena en &lt;10s{% endblock %}</title>
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <div class="mobile-shell">
+    <header class="top-header">
+      <a href="{{ url_for('sesion.vista_entrenar') }}" class="brand-badge">
+        <span class="brand-dot"></span>
+        <span>FitTracker</span>
+      </a>
+      <div class="header-actions">
+        <span id="offline-sync-badge" class="sync-pill" hidden>0 en cola offline</span>
+        {% if current_user.is_authenticated %}
+        <button type="button" id="btn-header-logout" class="btn-duo btn-duo--sm">Salir</button>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    {% if current_user.is_authenticated %}
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <a href="{{ url_for('sesion.vista_entrenar') }}"
+         class="bottom-nav__item {% if active_tab == 'entrenar' %}is-active{% endif %}">
+        <svg class="bottom-nav__icon" viewBox="0 0 24 24">
+          <path d="M6 7v10M18 7v10M3 10v4M21 10v4M6 12h12" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Hoy</span>
+      </a>
+      <a href="{{ url_for('rutina.vista_rutinas') }}"
+         class="bottom-nav__item {% if active_tab == 'rutinas' %}is-active{% endif %}">
+        <svg class="bottom-nav__icon" viewBox="0 0 24 24">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Rutinas</span>
+      </a>
+      <a href="{{ url_for('resumen.vista_mapa') }}"
+         class="bottom-nav__item {% if active_tab == 'mapa' %}is-active{% endif %}">
+        <svg class="bottom-nav__icon" viewBox="0 0 24 24">
+          <path d="M12 2a4 4 0 100 8 4 4 0 000-8zM6 14a4 4 0 014-4h4a4 4 0 014 4v7H6v-7z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Mapa/PRs</span>
+      </a>
+      <a href="{{ url_for('resumen.vista_resumen') }}"
+         class="bottom-nav__item {% if active_tab == 'resumen' %}is-active{% endif %}">
+        <svg class="bottom-nav__icon" viewBox="0 0 24 24">
+          <path d="M4 19h16M7 15v-5M12 15V7M17 15v-8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Resumen 30d</span>
+      </a>
+    </nav>
+    {% endif %}
+  </div>
+
+  <script>
+    (function () {
+      const btnLogout = document.getElementById('btn-header-logout');
+      if (btnLogout) {
+        btnLogout.addEventListener('click', async () => {
+          await fetch('/api/auth/logout', { method: 'POST' });
+          window.location.href = '/login';
+        });
+      }
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

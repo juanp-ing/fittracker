@@ -1,0 +1,316 @@
+/**
+ * registro.js — Registro de series en < 10 segundos sin teclado y cola offline (RF-05, RF-06, RNF-09).
+ */
+(function () {
+  const OFFLINE_QUEUE_KEY = 'fittracker_offline_series_queue';
+  const ACTIVE_SESION_KEY = 'fittracker_active_sesion_id';
+
+  let sesionActivaId = Number(localStorage.getItem(ACTIVE_SESION_KEY)) || null;
+  let ejercicioActual = null;
+  let pesoActual = 20.0;
+  let repeticionesActuales = 10;
+  let pasoPeso = 2.5;
+
+  const nombreEjercicioEl = document.getElementById('ejercicio-activo-nombre');
+  const valorPesoEl = document.getElementById('stepper-peso-valor');
+  const valorRepsEl = document.getElementById('stepper-reps-valor');
+  const btnPesoMenos = document.getElementById('btn-peso-menos');
+  const btnPesoMas = document.getElementById('btn-peso-mas');
+  const btnRepsMenos = document.getElementById('btn-reps-menos');
+  const btnRepsMas = document.getElementById('btn-reps-mas');
+  const btnGuardarSerie = document.getElementById('btn-guardar-serie');
+  const btnFinalizarSesion = document.getElementById('btn-finalizar-sesion');
+  const listaSeriesHoy = document.getElementById('lista-series-sesion');
+  const prBanner = document.getElementById('pr-celebration-banner');
+  const prBannerTexto = document.getElementById('pr-celebration-texto');
+  const syncBadge = document.getElementById('offline-sync-badge');
+  const chipsPasoPeso = document.querySelectorAll('[data-weight-step]');
+  const selectorRutina = document.getElementById('selector-rutina-inicio');
+
+  function actualizarDisplays() {
+    if (valorPesoEl) {
+      valorPesoEl.textContent = Number.isInteger(pesoActual)
+        ? String(pesoActual)
+        : pesoActual.toFixed(1);
+    }
+    if (valorRepsEl) {
+      valorRepsEl.textContent = String(repeticionesActuales);
+    }
+    actualizarBadgeOffline();
+  }
+
+  function seleccionarEjercicio(ejercicio) {
+    if (!ejercicio) return;
+    ejercicioActual = ejercicio;
+    if (nombreEjercicioEl) {
+      nombreEjercicioEl.textContent = ejercicio.nombre;
+    }
+    if (ejercicio.ultimo_peso !== null && ejercicio.ultimo_peso !== undefined) {
+      pesoActual = Number(ejercicio.ultimo_peso);
+    }
+    if (
+      ejercicio.ultimas_repeticiones !== null &&
+      ejercicio.ultimas_repeticiones !== undefined
+    ) {
+      repeticionesActuales = Number(ejercicio.ultimas_repeticiones);
+    }
+    actualizarDisplays();
+  }
+
+  async function asegurarSesionActiva() {
+    if (sesionActivaId) {
+      return sesionActivaId;
+    }
+    const rutinaId =
+      selectorRutina && selectorRutina.value ? Number(selectorRutina.value) : null;
+    const resp = await fetch('/api/sesiones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rutina_id: rutinaId }),
+    });
+    if (!resp.ok) {
+      throw new Error('No se pudo iniciar la sesión');
+    }
+    const data = await resp.json();
+    sesionActivaId = data.id;
+    localStorage.setItem(ACTIVE_SESION_KEY, String(sesionActivaId));
+    if (btnFinalizarSesion) {
+      btnFinalizarSesion.hidden = false;
+    }
+    return sesionActivaId;
+  }
+
+  function obtenerColaOffline() {
+    try {
+      return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function guardarColaOffline(cola) {
+    localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(cola));
+    actualizarBadgeOffline();
+  }
+
+  function actualizarBadgeOffline() {
+    if (!syncBadge) return;
+    const cola = obtenerColaOffline();
+    if (cola.length > 0) {
+      syncBadge.textContent = `${cola.length} en cola offline`;
+      syncBadge.hidden = false;
+    } else {
+      syncBadge.hidden = true;
+    }
+  }
+
+  function agregarSerieEnUI(item, esOffline) {
+    if (!listaSeriesHoy) return;
+    const vacio = listaSeriesHoy.querySelector('[data-empty-series]');
+    if (vacio) vacio.remove();
+
+    const fila = document.createElement('div');
+    fila.className = 'duo-card' + (item.es_pr ? ' duo-card--highlight' : '');
+    fila.style.padding = '0.65rem 0.9rem';
+    fila.style.display = 'flex';
+    fila.style.justifyContent = 'space-between';
+    fila.style.alignItems = 'center';
+
+    const etiquetaEstado = esOffline
+      ? '<span class="status-badge status-badge--estancado">Pendiente Sync</span>'
+      : item.es_pr
+      ? '<span class="status-badge status-badge--mejoro">¡NUEVO PR!</span>'
+      : '<span class="status-badge">Completada</span>';
+
+    fila.innerHTML = `
+      <div>
+        <strong style="font-family: var(--font-display); color: var(--color-night-ink);">
+          ${ item.ejercicio_nombre || (ejercicioActual ? ejercicioActual.nombre : 'Ejercicio') }
+        </strong>
+        <div style="font-size: 0.88rem; font-weight: 700; color: var(--color-pencil-gray);">
+          ${item.peso} kg × ${item.repeticiones} reps (${(item.peso * item.repeticiones).toFixed(0)} kg vol)
+        </div>
+      </div>
+      ${etiquetaEstado}
+    `;
+    listaSeriesHoy.prepend(fila);
+  }
+
+  async function registrarSerieActual() {
+    if (!ejercicioActual) return;
+    if (prBanner) prBanner.hidden = true;
+
+    const payloadSerie = {
+      ejercicio_id: ejercicioActual.id,
+      ejercicio_nombre: ejercicioActual.nombre,
+      peso: pesoActual,
+      repeticiones: repeticionesActuales,
+      timestamp: Date.now(),
+    };
+
+    try {
+      const idSesion = await asegurarSesionActiva();
+      const resp = await fetch(`/api/sesiones/${idSesion}/series`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ejercicio_id: payloadSerie.ejercicio_id,
+          peso: payloadSerie.peso,
+          repeticiones: payloadSerie.repeticiones,
+        }),
+      });
+
+      if (resp.status === 400 || resp.status === 404) {
+        // Si la sesión previa ya estaba cerrada, limpiar e iniciar una nueva
+        localStorage.removeItem(ACTIVE_SESION_KEY);
+        sesionActivaId = null;
+        const nuevoId = await asegurarSesionActiva();
+        const retry = await fetch(`/api/sesiones/${nuevoId}/series`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ejercicio_id: payloadSerie.ejercicio_id,
+            peso: payloadSerie.peso,
+            repeticiones: payloadSerie.repeticiones,
+          }),
+        });
+        if (!retry.ok) throw new Error('Error al registrar serie');
+        return procesarRespuestaSerie(await retry.json());
+      }
+
+      if (!resp.ok) {
+        throw new Error('Fallo de red o servidor');
+      }
+
+      const data = await resp.json();
+      procesarRespuestaSerie(data);
+    } catch (err) {
+      // Encolar en localStorage si falla la red del gimnasio (RNF-09)
+      const cola = obtenerColaOffline();
+      cola.push(payloadSerie);
+      guardarColaOffline(cola);
+      agregarSerieEnUI(payloadSerie, true);
+      if (window.FitTrackerCronometro) {
+        window.FitTrackerCronometro.iniciar(90);
+      }
+    }
+  }
+
+  function procesarRespuestaSerie(data) {
+    ejercicioActual.ultimo_peso = data.peso;
+    ejercicioActual.ultimas_repeticiones = data.repeticiones;
+    agregarSerieEnUI(
+      {
+        ...data,
+        ejercicio_nombre: ejercicioActual ? ejercicioActual.nombre : '',
+      },
+      false
+    );
+
+    if (data.es_pr && prBanner && prBannerTexto) {
+      prBannerTexto.textContent = `¡NUEVO PR en ${ejercicioActual.nombre}: ${data.peso} kg!`;
+      prBanner.hidden = false;
+    }
+
+    if (window.FitTrackerCronometro) {
+      window.FitTrackerCronometro.iniciar(data.descanso_segundos || 90);
+    }
+  }
+
+  async function sincronizarColaOffline() {
+    const cola = obtenerColaOffline();
+    if (cola.length === 0 || !navigator.onLine) return;
+
+    const pendientes = [];
+    for (const item of cola) {
+      try {
+        const idSesion = await asegurarSesionActiva();
+        const resp = await fetch(`/api/sesiones/${idSesion}/series`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ejercicio_id: item.ejercicio_id,
+            peso: item.peso,
+            repeticiones: item.repeticiones,
+          }),
+        });
+        if (!resp.ok) {
+          pendientes.push(item);
+        }
+      } catch (_) {
+        pendientes.push(item);
+      }
+    }
+    guardarColaOffline(pendientes);
+  }
+
+  async function finalizarSesionActiva() {
+    if (!sesionActivaId) return;
+    try {
+      const resp = await fetch(`/api/sesiones/${sesionActivaId}/finalizar`, {
+        method: 'PATCH',
+      });
+      if (resp.ok) {
+        localStorage.removeItem(ACTIVE_SESION_KEY);
+        sesionActivaId = null;
+        if (btnFinalizarSesion) btnFinalizarSesion.hidden = true;
+        if (window.FitTrackerCronometro) window.FitTrackerCronometro.detener();
+      }
+    } catch (_) {}
+  }
+
+  // Eventos de botones gigantes +/-
+  if (btnPesoMenos) {
+    btnPesoMenos.addEventListener('click', () => {
+      pesoActual = Math.max(0, Math.round((pesoActual - pasoPeso) * 10) / 10);
+      actualizarDisplays();
+    });
+  }
+  if (btnPesoMas) {
+    btnPesoMas.addEventListener('click', () => {
+      pesoActual = Math.round((pesoActual + pasoPeso) * 10) / 10;
+      actualizarDisplays();
+    });
+  }
+  if (btnRepsMenos) {
+    btnRepsMenos.addEventListener('click', () => {
+      repeticionesActuales = Math.max(1, repeticionesActuales - 1);
+      actualizarDisplays();
+    });
+  }
+  if (btnRepsMas) {
+    btnRepsMas.addEventListener('click', () => {
+      repeticionesActuales += 1;
+      actualizarDisplays();
+    });
+  }
+
+  chipsPasoPeso.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      pasoPeso = Number(chip.getAttribute('data-weight-step')) || 2.5;
+      chipsPasoPeso.forEach((c) => c.classList.remove('is-active'));
+      chip.classList.add('is-active');
+    });
+  });
+
+  if (btnGuardarSerie) {
+    btnGuardarSerie.addEventListener('click', registrarSerieActual);
+  }
+  if (btnFinalizarSesion) {
+    btnFinalizarSesion.addEventListener('click', finalizarSesionActiva);
+    btnFinalizarSesion.hidden = !sesionActivaId;
+  }
+
+  window.addEventListener('online', sincronizarColaOffline);
+
+  window.FitTrackerRegistro = {
+    seleccionarEjercicio,
+    registrarSerieActual,
+    sincronizarColaOffline,
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    actualizarDisplays();
+    sincronizarColaOffline();
+  });
+})();

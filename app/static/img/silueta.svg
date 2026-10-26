@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 320" role="img" aria-label="Mapa Muscular Anatómico Frontal y Posterior">
+  <!-- Etiquetas de Vista -->
+  <text x="90" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="13" fill="#000437">FRONTAL</text>
+  <text x="270" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="13" fill="#000437">POSTERIOR</text>
+
+  <!-- ==================== VISTA FRONTAL (Izquierda) ==================== -->
+  <!-- Cabeza (Neutra) -->
+  <circle cx="90" cy="50" r="16" fill="#f7f7f7" stroke="#4b4b4b" stroke-width="2"/>
+
+  <!-- Hombros (Frontal) -->
+  <g id="svg-grupo-hombros" data-grupo="Hombros" class="muscle-zone">
+    <rect x="44" y="72" width="20" height="24" rx="8"/>
+    <rect x="116" y="72" width="20" height="24" rx="8"/>
+    <!-- Hombros Posterior -->
+    <rect x="224" y="72" width="20" height="24" rx="8"/>
+    <rect x="296" y="72" width="20" height="24" rx="8"/>
+  </g>
+
+  <!-- Pecho -->
+  <g id="svg-grupo-pecho" data-grupo="Pecho" class="muscle-zone">
+    <rect x="66" y="72" width="23" height="32" rx="6"/>
+    <rect x="91" y="72" width="23" height="32" rx="6"/>
+  </g>
+
+  <!-- Bíceps -->
+  <g id="svg-grupo-biceps" data-grupo="Bíceps" class="muscle-zone">
+    <rect x="42" y="99" width="18" height="42" rx="7"/>
+    <rect x="120" y="99" width="18" height="42" rx="7"/>
+  </g>
+
+  <!-- Core / Abdomen -->
+  <g id="svg-grupo-core" data-grupo="Core" class="muscle-zone">
+    <rect x="68" y="107" width="44" height="54" rx="7"/>
+  </g>
+
+  <!-- Cuádriceps -->
+  <g id="svg-grupo-cuadriceps" data-grupo="Cuádriceps" class="muscle-zone">
+    <rect x="65" y="166" width="22" height="68" rx="8"/>
+    <rect x="93" y="166" width="22" height="68" rx="8"/>
+  </g>
+
+  <!-- ==================== VISTA POSTERIOR (Derecha) ==================== -->
+  <!-- Cabeza Posterior (Neutra) -->
+  <circle cx="270" cy="50" r="16" fill="#f7f7f7" stroke="#4b4b4b" stroke-width="2"/>
+
+  <!-- Espalda -->
+  <g id="svg-grupo-espalda" data-grupo="Espalda" class="muscle-zone">
+    <rect x="246" y="72" width="48" height="66" rx="8"/>
+  </g>
+
+  <!-- Tríceps -->
+  <g id="svg-grupo-triceps" data-grupo="Tríceps" class="muscle-zone">
+    <rect x="222" y="99" width="18" height="42" rx="7"/>
+    <rect x="300" y="99" width="18" height="42" rx="7"/>
+  </g>
+
+  <!-- Glúteos -->
+  <g id="svg-grupo-gluteos" data-grupo="Glúteos" class="muscle-zone">
+    <rect x="246" y="142" width="23" height="30" rx="8"/>
+    <rect x="271" y="142" width="23" height="30" rx="8"/>
+  </g>
+
+  <!-- Isquiotibiales -->
+  <g id="svg-grupo-isquiotibiales" data-grupo="Isquiotibiales" class="muscle-zone">
+    <rect x="246" y="176" width="22" height="58" rx="8"/>
+    <rect x="272" y="176" width="22" height="58" rx="8"/>
+  </g>
+
+  <!-- Pantorrillas (Frontal y Posterior) -->
+  <g id="svg-grupo-pantorrillas" data-grupo="Pantorrillas" class="muscle-zone">
+    <rect x="67" y="238" width="18" height="54" rx="7"/>
+    <rect x="95" y="238" width="18" height="54" rx="7"/>
+    <rect x="248" y="238" width="18" height="54" rx="7"/>
+    <rect x="274" y="238" width="18" height="54" rx="7"/>
+  </g>
+</svg>

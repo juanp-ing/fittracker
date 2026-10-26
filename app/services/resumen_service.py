@@ -194,3 +194,4 @@ class ResumenService:
                 }
             )
         return resultado
+
