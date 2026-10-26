@@ -50,21 +50,21 @@
     if (!contenedor) return;
     if (!grupos || grupos.length === 0) {
       contenedor.innerHTML =
-        '<p style="color: var(--color-pencil-gray); font-weight: 700;">Registra tus primeras series para iluminar el mapa muscular.</p>';
+        '<p style="color: var(--color-charcoal); font-weight: 700; margin: 0;">Registra tus primeras series para iluminar el mapa muscular.</p>';
       return;
     }
     contenedor.innerHTML = grupos
       .map(
         (g) => `
-        <div class="duo-card" style="display:flex; justify-content:space-between; align-items:center; padding:0.65rem 0.9rem;">
+        <div class="duo-list-row">
           <div>
             <strong style="font-family:var(--font-display); color:var(--color-night-ink);">${g.nombre}</strong>
-            <div style="font-size:0.8rem; font-weight:700; color:var(--color-pencil-gray);">
+            <div style="font-size:0.8rem; font-weight:700; color:var(--color-charcoal);">
               ${g.series_primarias} series primarias · ${g.series_secundarias} secundarias
             </div>
           </div>
           <span class="status-badge ${g.es_primario ? 'status-badge--mejoro' : ''}"
-                style="background-color:${g.es_primario ? '#d7ffb8' : '#a5ed6e'}; border-color:#58cc02;">
+                style="background-color:${g.es_primario ? 'var(--color-storybook-green)' : 'var(--color-fresh-leaf)'}; border-color:var(--color-eager-green);">
             ${g.es_primario ? 'Primario' : 'Secundario'}
           </span>
         </div>

@@ -4,7 +4,7 @@
 {% block content %}
 <section class="duo-card" style="display: flex; flex-direction: column; gap: 0.85rem;">
   <h1 style="font-size: 1.35rem; margin: 0;">Crear Nueva Rutina</h1>
-  <div id="rutina-error-msg" class="duo-card" style="background-color: #ffe5e5; border-color: var(--color-danger-red); font-weight: 700;" hidden></div>
+  <div id="rutina-error-msg" class="duo-alert" role="alert" hidden></div>
 
   <div>
     <label for="rutina-nombre" class="stepper-label">Nombre de la rutina</label>
@@ -57,7 +57,7 @@
           </button>
         </div>
       </div>
-      <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-pencil-gray);">
+      <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-charcoal);">
         {% for item in r.ejercicios %}
           {{ item.orden }}. {{ item.nombre }} ({{ item.descanso_segundos }}s){% if not loop.last %} · {% endif %}
         {% endfor %}
@@ -67,7 +67,7 @@
       </a>
     </div>
     {% else %}
-    <div class="duo-card" style="text-align: center; color: var(--color-pencil-gray); font-weight: 700;">
+    <div class="duo-card" style="text-align: center; color: var(--color-charcoal); font-weight: 700;">
       Aún no has creado rutinas personalizadas.
     </div>
     {% endfor %}
@@ -88,7 +88,7 @@
       listaBorradorEl.innerHTML = borrador
         .map(
           (item, i) => `
-          <div class="duo-card" style="padding: 0.5rem 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+          <div class="duo-list-row">
             <span style="font-weight: 700;">${i + 1}. ${item.nombre} (${item.descanso_segundos}s)</span>
           </div>
         `

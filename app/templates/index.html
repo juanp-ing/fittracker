@@ -17,8 +17,8 @@
   </div>
 </section>
 
-<!-- Banner de Celebración de Nuevo PR (#58cc02 / #d7ffb8) -->
-<section id="pr-celebration-banner" class="pr-banner" hidden>
+<!-- Banner de Celebración Gamificada de Nuevo PR (#58cc02 / #d7ffb8, curva spring) -->
+<section id="pr-celebration-banner" class="pr-banner" role="status" aria-live="polite" hidden>
   <span id="pr-celebration-texto">¡NUEVO RÉCORD PERSONAL!</span>
   <span class="status-badge status-badge--mejoro">PR</span>
 </section>
@@ -27,7 +27,7 @@
 <section class="duo-card" style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;">
   <div style="flex: 1;">
     <label for="selector-rutina-inicio" class="stepper-label">Modo o Rutina</label>
-    <select id="selector-rutina-inicio" class="duo-input" style="min-height: 44px; padding: 0.45rem 0.75rem;">
+    <select id="selector-rutina-inicio" class="duo-input" style="padding: 0.55rem 0.75rem;">
       <option value="">Entrenamiento Libre</option>
       {% for r in rutinas %}
       <option value="{{ r.id }}" {% if r.es_favorita %}selected{% endif %}>
@@ -88,7 +88,7 @@
   <div class="stepper-group">
     <div class="stepper-header">
       <span class="stepper-label">Repeticiones</span>
-      <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-pencil-gray);">Paso: ±1 rep</span>
+      <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-charcoal);">Paso: ±1 rep</span>
     </div>
     <div class="stepper-control">
       <button type="button" id="btn-reps-menos" class="btn-stepper" aria-label="Disminuir repeticiones">−</button>
@@ -110,7 +110,7 @@
 <section style="display: flex; flex-direction: column; gap: 0.6rem;">
   <h3 style="font-size: 1.05rem; margin: 0;">Series de hoy</h3>
   <div id="lista-series-sesion" style="display: flex; flex-direction: column; gap: 0.5rem;">
-    <div data-empty-series class="duo-card" style="text-align: center; color: var(--color-pencil-gray); font-weight: 700;">
+    <div data-empty-series class="duo-card" style="text-align: center; color: var(--color-charcoal); font-weight: 700;">
       Toca «¡SERIE TERMINADA!» para registrar tu primera serie en menos de 10 segundos.
     </div>
   </div>
@@ -124,7 +124,7 @@
       <button type="button" id="btn-cerrar-modal-ejercicio" class="btn-duo btn-duo--sm">Cerrar</button>
     </div>
 
-    <div id="modal-ejercicio-error" class="duo-card" style="background-color: #ffe5e5; border-color: var(--color-danger-red); font-weight: 700;" hidden></div>
+    <div id="modal-ejercicio-error" class="duo-alert" role="alert" hidden></div>
 
     <div>
       <label for="nuevo-ejercicio-nombre" class="stepper-label">Nombre del ejercicio</label>

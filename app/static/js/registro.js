@@ -1,5 +1,6 @@
 /**
- * registro.js — Registro de series en < 10 segundos sin teclado y cola offline (RF-05, RF-06, RNF-09).
+ * registro.js — Registro de series en < 10 segundos sin teclado, micro-interacciones táctiles,
+ * celebración gamificada de PR (spring) y cola offline (RF-05, RF-06, RF-10, RNF-09).
  */
 (function () {
   const OFFLINE_QUEUE_KEY = 'fittracker_offline_series_queue';
@@ -10,6 +11,8 @@
   let pesoActual = 20.0;
   let repeticionesActuales = 10;
   let pasoPeso = 2.5;
+  let pulsePesoTimer = null;
+  let pulseRepsTimer = null;
 
   const nombreEjercicioEl = document.getElementById('ejercicio-activo-nombre');
   const valorPesoEl = document.getElementById('stepper-peso-valor');
@@ -26,6 +29,62 @@
   const syncBadge = document.getElementById('offline-sync-badge');
   const chipsPasoPeso = document.querySelectorAll('[data-weight-step]');
   const selectorRutina = document.getElementById('selector-rutina-inicio');
+
+  function prefiereMovimientoReducido() {
+    return (
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    );
+  }
+
+  function vincularFeedbackTactil(boton) {
+    if (!boton) return;
+    const presionar = () => boton.classList.add('is-pressed');
+    const soltar = () => boton.classList.remove('is-pressed');
+    boton.addEventListener('pointerdown', presionar, { passive: true });
+    boton.addEventListener('pointerup', soltar, { passive: true });
+    boton.addEventListener('pointercancel', soltar, { passive: true });
+    boton.addEventListener('pointerleave', soltar, { passive: true });
+  }
+
+  function pulsarValor(el, tipo) {
+    if (!el || prefiereMovimientoReducido()) return;
+    el.classList.add('is-pulsing');
+    if (tipo === 'peso') {
+      if (pulsePesoTimer) clearTimeout(pulsePesoTimer);
+      pulsePesoTimer = setTimeout(() => el.classList.remove('is-pulsing'), 110);
+    } else {
+      if (pulseRepsTimer) clearTimeout(pulseRepsTimer);
+      pulseRepsTimer = setTimeout(() => el.classList.remove('is-pulsing'), 110);
+    }
+  }
+
+  function celebrarNuevoPR(nombreEjercicio, peso) {
+    if (!prBanner || !prBannerTexto) return;
+    prBannerTexto.textContent = `¡NUEVO PR en ${nombreEjercicio}: ${peso} kg!`;
+    prBanner.hidden = false;
+
+    prBanner.classList.remove('is-celebrating');
+    if (!prefiereMovimientoReducido()) {
+      // Reiniciar animación spring sin bloquear el hilo principal ni el cronómetro
+      void prBanner.offsetWidth;
+      prBanner.classList.add('is-celebrating');
+      if (typeof prBanner.animate === 'function') {
+        prBanner.animate(
+          [
+            { opacity: 0, transform: 'translateY(8px) scale(0.92)' },
+            { opacity: 1, transform: 'translateY(-2px) scale(1.03)', offset: 0.65 },
+            { opacity: 1, transform: 'translateY(0) scale(1)' },
+          ],
+          {
+            duration: 380,
+            easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+            fill: 'forwards',
+          }
+        );
+      }
+    }
+  }
 
   function actualizarDisplays() {
     if (valorPesoEl) {
@@ -125,9 +184,9 @@
     fila.innerHTML = `
       <div>
         <strong style="font-family: var(--font-display); color: var(--color-night-ink);">
-          ${ item.ejercicio_nombre || (ejercicioActual ? ejercicioActual.nombre : 'Ejercicio') }
+          ${item.ejercicio_nombre || (ejercicioActual ? ejercicioActual.nombre : 'Ejercicio')}
         </strong>
-        <div style="font-size: 0.88rem; font-weight: 700; color: var(--color-pencil-gray);">
+        <div style="font-size: 0.88rem; font-weight: 700; color: var(--color-charcoal);">
           ${item.peso} kg × ${item.repeticiones} reps (${(item.peso * item.repeticiones).toFixed(0)} kg vol)
         </div>
       </div>
@@ -138,7 +197,10 @@
 
   async function registrarSerieActual() {
     if (!ejercicioActual) return;
-    if (prBanner) prBanner.hidden = true;
+    if (prBanner) {
+      prBanner.hidden = true;
+      prBanner.classList.remove('is-celebrating');
+    }
 
     const payloadSerie = {
       ejercicio_id: ejercicioActual.id,
@@ -207,13 +269,14 @@
       false
     );
 
-    if (data.es_pr && prBanner && prBannerTexto) {
-      prBannerTexto.textContent = `¡NUEVO PR en ${ejercicioActual.nombre}: ${data.peso} kg!`;
-      prBanner.hidden = false;
-    }
-
+    // Iniciar inmediatamente el cronómetro de descanso sin bloqueo
     if (window.FitTrackerCronometro) {
       window.FitTrackerCronometro.iniciar(data.descanso_segundos || 90);
+    }
+
+    // Disparar celebración gamificada estilo Duolingo en paralelo si es PR
+    if (data.es_pr) {
+      celebrarNuevoPR(ejercicioActual ? ejercicioActual.nombre : 'Ejercicio', data.peso);
     }
   }
 
@@ -259,33 +322,43 @@
     } catch (_) {}
   }
 
-  // Eventos de botones gigantes +/-
+  // Vincular feedback táctil instantáneo (pointerdown) en controles de pulgar
+  [btnPesoMenos, btnPesoMas, btnRepsMenos, btnRepsMas, btnGuardarSerie].forEach(
+    vincularFeedbackTactil
+  );
+
+  // Eventos de botones gigantes +/- (sin bloqueo para toques repetidos rápidos)
   if (btnPesoMenos) {
     btnPesoMenos.addEventListener('click', () => {
       pesoActual = Math.max(0, Math.round((pesoActual - pasoPeso) * 10) / 10);
       actualizarDisplays();
+      pulsarValor(valorPesoEl, 'peso');
     });
   }
   if (btnPesoMas) {
     btnPesoMas.addEventListener('click', () => {
       pesoActual = Math.round((pesoActual + pasoPeso) * 10) / 10;
       actualizarDisplays();
+      pulsarValor(valorPesoEl, 'peso');
     });
   }
   if (btnRepsMenos) {
     btnRepsMenos.addEventListener('click', () => {
       repeticionesActuales = Math.max(1, repeticionesActuales - 1);
       actualizarDisplays();
+      pulsarValor(valorRepsEl, 'reps');
     });
   }
   if (btnRepsMas) {
     btnRepsMas.addEventListener('click', () => {
       repeticionesActuales += 1;
       actualizarDisplays();
+      pulsarValor(valorRepsEl, 'reps');
     });
   }
 
   chipsPasoPeso.forEach((chip) => {
+    vincularFeedbackTactil(chip);
     chip.addEventListener('click', () => {
       pasoPeso = Number(chip.getAttribute('data-weight-step')) || 2.5;
       chipsPasoPeso.forEach((c) => c.classList.remove('is-active'));
@@ -306,6 +379,7 @@
   window.FitTrackerRegistro = {
     seleccionarEjercicio,
     registrarSerieActual,
+    celebrarNuevoPR,
     sincronizarColaOffline,
   };
 

@@ -117,7 +117,7 @@
   function renderizarListaClasificacion(el, items, tipo) {
     if (!el) return;
     if (!items.length) {
-      el.innerHTML = `<p style="color:var(--color-pencil-gray); font-weight:700; margin:0;">Sin ejercicios en esta categoría este mes.</p>`;
+      el.innerHTML = `<p style="color:var(--color-charcoal); font-weight:700; margin:0;">Sin ejercicios en esta categoría este mes.</p>`;
       return;
     }
     const badgeClass =
@@ -130,7 +130,7 @@
         <div class="duo-card" style="display:flex; justify-content:space-between; align-items:center; padding:0.7rem 0.9rem;">
           <div>
             <strong style="font-family:var(--font-display); color:var(--color-night-ink);">${item.nombre}</strong>
-            <div style="font-size:0.82rem; font-weight:700; color:var(--color-pencil-gray);">
+            <div style="font-size:0.82rem; font-weight:700; color:var(--color-charcoal);">
               Actual: ${item.max_peso_actual} kg · Previo: ${item.max_peso_previo} kg (${item.sesiones_actual} sesiones)
             </div>
           </div>
@@ -144,7 +144,7 @@
   function renderizarListaPRs(el, prs) {
     if (!el) return;
     if (!prs.length) {
-      el.innerHTML = `<p style="color:var(--color-pencil-gray); font-weight:700; margin:0;">Aún no hay récords registrados en los últimos 30 días.</p>`;
+      el.innerHTML = `<p style="color:var(--color-charcoal); font-weight:700; margin:0;">Aún no hay récords registrados en los últimos 30 días.</p>`;
       return;
     }
     el.innerHTML = prs
