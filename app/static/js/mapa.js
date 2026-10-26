@@ -10,13 +10,23 @@
   const STORAGE_PRESELECT_EJ_KEY = 'fittracker_preselect_ejercicio_id';
 
   let diasVentanaActual = 7;
-  let generoActual = localStorage.getItem(STORAGE_GENERO_KEY) === 'mujer' ? 'mujer' : 'hombre';
+  const hostSvgEl = document.getElementById('mapa-svg-host');
+  const sexoPerfilAttr = hostSvgEl
+    ? (hostSvgEl.getAttribute('data-sexo-perfil') || '').toUpperCase()
+    : '';
+  let generoActual =
+    sexoPerfilAttr === 'MUJER'
+      ? 'mujer'
+      : sexoPerfilAttr === 'HOMBRE'
+      ? 'hombre'
+      : localStorage.getItem(STORAGE_GENERO_KEY) === 'mujer'
+      ? 'mujer'
+      : 'hombre';
   let ultimosPrimarios = [];
   let ultimosSecundarios = [];
   let grupoSeleccionadoActual = null;
   const cacheSvgTexto = {};
 
-  const hostSvgEl = document.getElementById('mapa-svg-host');
   const resumenListaEl = document.getElementById('mapa-muscular-lista');
   const modalMusculo = document.getElementById('modal-detalle-musculo');
   const btnCerrarSheet = document.getElementById('btn-cerrar-sheet-musculo');

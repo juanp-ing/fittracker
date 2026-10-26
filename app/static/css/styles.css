@@ -244,6 +244,75 @@ button,
   font-weight: 500;
 }
 
+.otp-input {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.85rem;
+  letter-spacing: 0.35em;
+  font-variant-numeric: tabular-nums;
+  min-height: 62px;
+}
+
+/* ==========================================================================
+   Wizard de Onboarding Biométrico estilo Duolingo (4 Pasos)
+   ========================================================================== */
+.wizard-progress-track {
+  width: 100%;
+  height: 14px;
+  background-color: var(--color-border-light);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  width: 25%;
+  background-color: var(--color-eager-green);
+  border-radius: 999px;
+  transition: width 200ms var(--ease-out);
+}
+
+.onboarding-option-card {
+  width: 100%;
+  min-height: 64px;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-btn);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 4px;
+  background-color: var(--color-paper-white);
+  color: var(--color-night-ink);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  cursor: pointer;
+  transform: translateY(0);
+  transition: transform 75ms var(--ease-out), background-color 100ms var(--ease-out), border-color 100ms var(--ease-out);
+}
+
+.onboarding-option-card:active {
+  transform: translateY(2px);
+}
+
+.onboarding-option-card.is-selected {
+  background-color: var(--color-storybook-green);
+  border-color: var(--color-eager-green);
+}
+
+.onboarding-option-card__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: var(--color-night-ink);
+}
+
+.onboarding-option-card__desc {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--color-charcoal);
+}
+
 .btn-duo {
   display: inline-flex;
   align-items: center;

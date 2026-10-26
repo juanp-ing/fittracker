@@ -1,5 +1,7 @@
 """Semillas iniciales idempotentes para el catálogo de grupos musculares, ejercicios y usuario demo."""
 
+from sqlalchemy import inspect, text
+
 from app import db
 from app.patterns.factory import EjercicioFactory
 from app.repositories.ejercicio_repository import EjercicioRepository
@@ -142,9 +144,31 @@ EJERCICIOS_PREDETERMINADOS_BASE: list[dict] = [
 ]
 
 
+def _asegurar_esquema_actualizado() -> None:
+    """Asegura que tablas y nuevas columnas de OTP/PerfilUsuario existan en SQLite local."""
+    inspector = inspect(db.engine)
+    tablas = set(inspector.get_table_names())
+    if "usuarios" in tablas:
+        columnas_usuarios = {c["name"] for c in inspector.get_columns("usuarios")}
+        if "email_verificado" not in columnas_usuarios:
+            db.session.execute(
+                text("ALTER TABLE usuarios ADD COLUMN email_verificado BOOLEAN NOT NULL DEFAULT 0")
+            )
+        if "codigo_verificacion" not in columnas_usuarios:
+            db.session.execute(
+                text("ALTER TABLE usuarios ADD COLUMN codigo_verificacion VARCHAR(6)")
+            )
+        if "codigo_expiracion" not in columnas_usuarios:
+            db.session.execute(
+                text("ALTER TABLE usuarios ADD COLUMN codigo_expiracion DATETIME")
+            )
+        db.session.commit()
+    db.create_all()
+
+
 def seed_database(incluir_demo: bool = True) -> dict:
     """Crea tablas si no existen y puebla de forma idempotente grupos, ejercicios y usuario demo."""
-    db.create_all()
+    _asegurar_esquema_actualizado()
 
     repo = EjercicioRepository()
     usuario_repo = UsuarioRepository()
@@ -190,12 +214,25 @@ def seed_database(incluir_demo: bool = True) -> dict:
     if incluir_demo:
         existente_demo = usuario_repo.obtener_por_email(DEMO_USER_EMAIL)
         if existente_demo is None:
-            usuario_repo.crear(
+            existente_demo = usuario_repo.crear(
                 nombre=DEMO_USER_NOMBRE,
                 email=DEMO_USER_EMAIL,
                 password=DEMO_USER_PASSWORD,
+                email_verificado=True,
             )
             demo_creado = True
+        elif not existente_demo.email_verificado:
+            usuario_repo.marcar_email_verificado(existente_demo.id)
+
+        usuario_repo.guardar_perfil_usuario(
+            usuario_id=existente_demo.id,
+            sexo="HOMBRE",
+            peso_kg=75.0,
+            porcentaje_grasa=15.0,
+            meta="GANAR_MASA",
+            somatotipo="MESOMORFO",
+            onboarding_completado=True,
+        )
 
     return {
         "grupos_creados": grupos_creados,

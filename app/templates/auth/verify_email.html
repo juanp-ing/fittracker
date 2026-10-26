@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Verificar Correo (OTP) — FitTracker{% endblock %}
+
+{% block content %}
+<section class="duo-card" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+  <div>
+    <span class="stepper-label">Seguridad de Cuenta</span>
+    <h1 style="font-size: 1.55rem; margin: 0.2rem 0 0.35rem 0;">Verifica tu correo</h1>
+    <p style="margin: 0; color: var(--color-charcoal); font-weight: 700;">
+      Ingresa el código numérico de 6 dígitos enviado a <strong>{{ email_usuario }}</strong>.
+    </p>
+  </div>
+
+  <!-- Aviso de código en modo demo/desarrollo para pruebas rápidas -->
+  <div id="otp-demo-banner" class="duo-list-row" style="background-color: var(--color-storybook-green); border-color: var(--color-eager-green);" {% if not codigo_demo %}hidden{% endif %}>
+    <div>
+      <span class="stepper-label" style="font-size: 0.75rem;">Modo Demo — Código activo:</span>
+      <div id="otp-demo-codigo" style="font-family: var(--font-display); font-weight: 900; font-size: 1.35rem; color: var(--color-night-ink); font-variant-numeric: tabular-nums;">
+        {{ codigo_demo or '------' }}
+      </div>
+    </div>
+    <button type="button" id="btn-usar-codigo-demo" class="btn-duo btn-duo--sm">
+      Autocompletar
+    </button>
+  </div>
+
+  <div id="otp-error-msg" class="duo-alert" role="alert" hidden></div>
+
+  <form id="form-verify-otp" style="display: flex; flex-direction: column; gap: 0.9rem;">
+    <div>
+      <label for="input-codigo-otp" class="stepper-label">Código de 6 dígitos</label>
+      <input id="input-codigo-otp"
+             type="text"
+             inputmode="numeric"
+             pattern="[0-9]{6}"
+             maxlength="6"
+             class="duo-input otp-input"
+             placeholder="000000"
+             required
+             autocomplete="one-time-code">
+    </div>
+
+    <button type="submit" id="btn-verificar-otp" class="btn-duo btn-duo--green btn-duo--block btn-duo--giant">
+      VERIFICAR CÓDIGO
+    </button>
+  </form>
+
+  <button type="button" id="btn-reenviar-otp" class="btn-duo btn-duo--blue btn-duo--block">
+    REENVIAR CÓDIGO NUEVO
+  </button>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const inputOtp = document.getElementById('input-codigo-otp');
+    const errorEl = document.getElementById('otp-error-msg');
+    const demoCodigoEl = document.getElementById('otp-demo-codigo');
+    const demoBannerEl = document.getElementById('otp-demo-banner');
+    const btnUsarDemo = document.getElementById('btn-usar-codigo-demo');
+    const btnReenviar = document.getElementById('btn-reenviar-otp');
+
+    if (btnUsarDemo && inputOtp && demoCodigoEl) {
+      btnUsarDemo.addEventListener('click', () => {
+        inputOtp.value = demoCodigoEl.textContent.trim();
+      });
+    }
+
+    document.getElementById('form-verify-otp').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.hidden = true;
+      const codigo = (inputOtp.value || '').trim();
+
+      const resp = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        errorEl.textContent = data.error || 'Código inválido o expirado.';
+        errorEl.hidden = false;
+        return;
+      }
+      window.location.href = '/onboarding';
+    });
+
+    if (btnReenviar) {
+      btnReenviar.addEventListener('click', async () => {
+        errorEl.hidden = true;
+        const resp = await fetch('/api/auth/resend-code', { method: 'POST' });
+        const data = await resp.json();
+        if (resp.ok && data.codigo_verificacion) {
+          if (demoCodigoEl) demoCodigoEl.textContent = data.codigo_verificacion;
+          if (demoBannerEl) demoBannerEl.hidden = false;
+          if (inputOtp) inputOtp.value = data.codigo_verificacion;
+        }
+      });
+    }
+  })();
+</script>
+{% endblock %}

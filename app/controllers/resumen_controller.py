@@ -5,6 +5,7 @@ from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 
 from app.patterns.facade import ResumenFacade
+from app.services.auth_service import AuthService
 from app.services.ejercicio_service import EjercicioService
 from app.services.resumen_service import ResumenService
 
@@ -16,11 +17,14 @@ resumen_bp = Blueprint("resumen", __name__)
 def vista_mapa():
     """Renderiza la vista del Mapa Muscular Bicolor y Gráficas de Progreso/PRs."""
     ej_service = EjercicioService()
+    auth_service = AuthService()
     ejercicios = ej_service.buscar_ejercicios_usuario(usuario_id=current_user.id)
+    perfil = auth_service.obtener_perfil_usuario(usuario_id=current_user.id)
     return render_template(
         "resumen/mapa.html",
         active_tab="mapa",
         ejercicios=ejercicios,
+        sexo_perfil=perfil.get("sexo", "HOMBRE"),
     )
 
 
