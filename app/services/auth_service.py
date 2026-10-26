@@ -51,3 +51,4 @@ class AuthService:
         if usuario is not None and usuario.check_password(password):
             return usuario
         return None
+

@@ -169,3 +169,4 @@ def test_flujo_busqueda_creacion_al_vuelo_y_aislamiento_entre_usuarios(app, clie
     todos_b = client.get("/api/ejercicios").get_json()["ejercicios"]
     assert len(todos_b) >= 20
     assert all(e["es_predeterminado"] is True for e in todos_b)
+
