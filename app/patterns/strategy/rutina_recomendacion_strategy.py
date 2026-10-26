@@ -71,3 +71,4 @@ class RutinaRecomendacionStrategy:
             reverse=True,
         )
         return puntuadas
+

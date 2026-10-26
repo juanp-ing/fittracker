@@ -23,6 +23,113 @@
   <span class="status-badge status-badge--mejoro">PR</span>
 </section>
 
+<!-- Mini-Calendario Semanal y Checklist de Tareas Diarias / Tu Rutina de Hoy -->
+<section
+  id="agenda-diaria-card"
+  class="duo-card"
+  data-fecha-actual="{{ agenda_hoy.fecha if agenda_hoy else '' }}"
+  style="display: flex; flex-direction: column; gap: 0.85rem;"
+>
+  <!-- Fila Superior: Mes actual + Switch táctil "Mostrar completados" -->
+  <div class="calendar-header-row">
+    <div>
+      <h1 id="calendario-mes-nombre" class="calendar-month-title">
+        {{ agenda_hoy.mes_nombre if agenda_hoy else 'octubre' }}
+      </h1>
+      <span id="calendario-rutina-subtitulo" style="font-size: 0.78rem; font-weight: 800; color: var(--color-eager-green-shade);">
+        {% if agenda_hoy and agenda_hoy.rutina %}
+          Tareas diarias · {{ agenda_hoy.rutina.nombre }}
+        {% else %}
+          Tareas diarias · Tu Rutina de Hoy
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="completed-toggle-wrap">
+      <span class="completed-toggle-label">Mostrar completados</span>
+      <button
+        type="button"
+        id="switch-mostrar-completados"
+        class="duo-switch"
+        role="switch"
+        aria-checked="false"
+        aria-label="Mostrar completados"
+      >
+        <span class="duo-switch__track">
+          <span id="switch-completados-icon" class="duo-switch__thumb">✕</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tira Semanal de 7 Días (dom, lun, mar, mié, jue, vie, sáb) con Puntos Indicadores -->
+  <div class="weekly-strip-wrap">
+    <button type="button" id="btn-semana-anterior" class="btn-week-nav" aria-label="Semana anterior">&lt;</button>
+    <div id="calendario-tira-dias" class="weekly-days-grid" role="group" aria-label="Días de la semana">
+      {% if agenda_hoy and agenda_hoy.dias_semana %}
+        {% for d in agenda_hoy.dias_semana %}
+        <button
+          type="button"
+          class="weekly-day-btn {% if d.seleccionado %}is-selected{% endif %} {% if d.es_hoy %}is-today{% endif %}"
+          data-agenda-fecha="{{ d.fecha }}"
+        >
+          <span class="calendar-day-abbr">{{ d.abreviatura }}</span>
+          <span class="calendar-day-num">{{ d.dia_numero }}</span>
+          <span class="calendar-dots-row">
+            {% for _ in range(d.puntos) %}
+            <span class="calendar-dot"></span>
+            {% endfor %}
+          </span>
+        </button>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <button type="button" id="btn-semana-siguiente" class="btn-week-nav" aria-label="Semana siguiente">&gt;</button>
+  </div>
+
+  <!-- Lista de Ejercicios del Día (Checklist Interactivo con Auto-Ocultado y Explosión POP) -->
+  <div id="lista-checklist-diario" class="daily-checklist">
+    {% if agenda_hoy and agenda_hoy.ejercicios %}
+      {% for ej in agenda_hoy.ejercicios %}
+      <button
+        type="button"
+        class="daily-task-item {% if ej.completado %}is-completed{% endif %}"
+        data-task-ejercicio-id="{{ ej.ejercicio_id }}"
+        data-task-nombre="{{ ej.ejercicio_nombre }}"
+        data-task-orden="{{ ej.orden }}"
+        data-task-series-objetivo="{{ ej.series_objetivo }}"
+        data-task-series-completadas="{{ ej.series_completadas_hoy }}"
+        data-task-descanso="{{ ej.descanso_segundos }}"
+        data-task-peso="{{ ej.ultimo_peso }}"
+        data-task-reps="{{ ej.ultimas_repeticiones }}"
+        data-task-completado="{{ 'true' if ej.completado else 'false' }}"
+        {% if ej.completado %}hidden{% endif %}
+      >
+        <div class="daily-task-item__info">
+          <span class="daily-task-item__title">{{ ej.orden }}. {{ ej.ejercicio_nombre }}</span>
+          <span class="daily-task-item__meta" data-task-meta-text>
+            {{ ej.series_completadas_hoy }}/{{ ej.series_objetivo }} series · {{ ej.descanso_segundos }}s descanso
+          </span>
+        </div>
+        <span class="task-checkbox {% if ej.completado %}is-checked{% endif %}" aria-hidden="true">✓</span>
+      </button>
+      {% endfor %}
+    {% else %}
+      <div id="checklist-sin-rutina" style="font-size: 0.86rem; font-weight: 700; color: var(--color-charcoal); text-align: center; padding: 0.35rem 0;">
+        Activa o clona una rutina en la pestaña <strong>Rutinas</strong> para ver tu checklist diario aquí.
+      </div>
+    {% endif %}
+  </div>
+
+  <div
+    id="checklist-todo-completado"
+    style="font-size: 0.88rem; font-weight: 800; color: var(--color-eager-green-shade); text-align: center; padding: 0.35rem 0;"
+    hidden
+  >
+    🎉 ¡Completaste todos los ejercicios programados para hoy! Activa «Mostrar completados» para verlos.
+  </div>
+</section>
+
 <!-- Selector de Rutina y Cierre de Sesión -->
 <section class="duo-card" style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;">
   <div style="flex: 1;">
@@ -54,7 +161,7 @@
 </section>
 
 <!-- Panel Táctil de Registro en < 10 segundos (Sin Teclado) -->
-<section class="duo-card" style="display: flex; flex-direction: column; gap: 1rem;">
+<section id="panel-registro-tactil" class="duo-card" style="display: flex; flex-direction: column; gap: 1rem;">
   <div style="display: flex; justify-content: space-between; align-items: center;">
     <div>
       <span class="stepper-label">2. Ajusta con el pulgar</span>
@@ -62,6 +169,7 @@
         Selecciona un ejercicio
       </h2>
     </div>
+    <span id="ejercicio-activo-progreso-pill" class="routine-day-pill" hidden>0/3 series</span>
   </div>
 
   <!-- Control de Peso (+/-) -->
@@ -115,6 +223,45 @@
     </div>
   </div>
 </section>
+
+<!-- Modal / Overlay Gamificado de ¡EJERCICIO TERMINADO! + Recordatorio de Hidratación -->
+<div id="modal-ejercicio-terminado" class="bottom-sheet-backdrop" hidden>
+  <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-terminado-titulo">
+    <div class="sheet-handle"></div>
+    <span class="celebration-trophy-badge">💥 ¡EJERCICIO TERMINADO!</span>
+
+    <div style="text-align: center;">
+      <h3 id="modal-terminado-titulo" style="font-size: 1.35rem; margin: 0 0 0.25rem 0; color: var(--color-night-ink);">
+        ¡Completaste todas las series!
+      </h3>
+      <p id="modal-terminado-subtitulo" style="margin: 0; font-weight: 800; font-size: 0.92rem; color: var(--color-charcoal);">
+        Has cumplido tu objetivo en este ejercicio.
+      </p>
+    </div>
+
+    <div class="hydration-callout">
+      <span style="font-size: 1.45rem; line-height: 1;" aria-hidden="true">💧</span>
+      <span>Recuerda tomar agua: hidrátate bien antes de tu siguiente bloque</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+      <button
+        type="button"
+        id="btn-modal-seguir-siguiente"
+        class="btn-duo btn-duo--green btn-duo--block btn-duo--giant"
+      >
+        ▶ SEGUIR CON EL SIGUIENTE EJERCICIO
+      </button>
+      <button
+        type="button"
+        id="btn-modal-descanso-agua"
+        class="btn-duo btn-duo--blue btn-duo--block btn-duo--giant"
+      >
+        ⏱️ HACER DESCANSO Y TOMAR AGUA
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Bottom Sheet Modal para Crear Ejercicio al Vuelo (RF-07) -->
 <div id="modal-crear-ejercicio" class="bottom-sheet-backdrop" hidden>
