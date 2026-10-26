@@ -5,11 +5,15 @@
 (function () {
   const COLOR_PRIMARIO = '#58cc02';
   const COLOR_SECUNDARIO = '#a5ed6e';
-  const COLOR_INACTIVO = '#e5e5e5';
+  const COLOR_INACTIVO = '#d8dfe6';
+  const GRAD_PRIMARIO = 'url(#grad-muscle-primary)';
+  const GRAD_SECUNDARIO = 'url(#grad-muscle-secondary)';
+  const GRAD_INACTIVO = 'url(#grad-muscle-rest)';
   const STORAGE_GENERO_KEY = 'fittracker_body_gender';
   const STORAGE_PRESELECT_EJ_KEY = 'fittracker_preselect_ejercicio_id';
 
   let diasVentanaActual = 7;
+  let mostrarNombresAnatomicos = false;
   const hostSvgEl = document.getElementById('mapa-svg-host');
   const sexoPerfilAttr = hostSvgEl
     ? (hostSvgEl.getAttribute('data-sexo-perfil') || '').toUpperCase()
@@ -85,7 +89,16 @@
     const svgRoot = document.getElementById('mapa-muscular-svg');
     if (svgRoot) {
       vincularInteraccionRegionesSVG(svgRoot);
+      sincronizarEtiquetasAnatomicas(svgRoot);
       aplicarColoresSVG(svgRoot, ultimosPrimarios, ultimosSecundarios);
+    }
+  }
+
+  function sincronizarEtiquetasAnatomicas(svgRoot) {
+    if (!svgRoot) return;
+    const capaEtiquetas = svgRoot.querySelector('#svg-etiquetas-anatomicas');
+    if (capaEtiquetas) {
+      capaEtiquetas.hidden = !mostrarNombresAnatomicos;
     }
   }
 
@@ -116,6 +129,7 @@
   function aplicarColoresSVG(svgRoot, primarios, secundarios) {
     const setPrimarios = new Set((primarios || []).map((n) => n.toLowerCase()));
     const setSecundarios = new Set((secundarios || []).map((n) => n.toLowerCase()));
+    const tieneGradientes3D = Boolean(svgRoot.querySelector('#grad-muscle-primary'));
 
     const zonas = svgRoot.querySelectorAll('.muscle-region, [data-grupo]');
     zonas.forEach((zona) => {
@@ -126,16 +140,19 @@
         nombre === grupoSeleccionadoActual.toLowerCase()
       ) {
         zona.classList.add('is-selected');
+        zona.style.filter = tieneGradientes3D ? 'url(#muscle-glow)' : '';
+      } else {
+        zona.style.filter = '';
       }
 
       if (setPrimarios.has(nombre)) {
         zona.classList.add('is-primario');
-        zona.style.fill = COLOR_PRIMARIO;
+        zona.style.fill = tieneGradientes3D ? GRAD_PRIMARIO : COLOR_PRIMARIO;
       } else if (setSecundarios.has(nombre)) {
         zona.classList.add('is-secundario');
-        zona.style.fill = COLOR_SECUNDARIO;
+        zona.style.fill = tieneGradientes3D ? GRAD_SECUNDARIO : COLOR_SECUNDARIO;
       } else {
-        zona.style.fill = COLOR_INACTIVO;
+        zona.style.fill = tieneGradientes3D ? GRAD_INACTIVO : COLOR_INACTIVO;
       }
     });
   }
@@ -375,6 +392,17 @@
       cambiarGeneroSilueta(gen);
     });
   });
+
+  const btnToggleNombres = document.getElementById('btn-toggle-nombres-anatomicos');
+  if (btnToggleNombres) {
+    btnToggleNombres.addEventListener('click', () => {
+      mostrarNombresAnatomicos = !mostrarNombresAnatomicos;
+      btnToggleNombres.classList.toggle('is-active', mostrarNombresAnatomicos);
+      btnToggleNombres.setAttribute('aria-pressed', mostrarNombresAnatomicos ? 'true' : 'false');
+      const svgRoot = document.getElementById('mapa-muscular-svg');
+      sincronizarEtiquetasAnatomicas(svgRoot);
+    });
+  }
 
   if (btnCerrarSheet) {
     btnCerrarSheet.addEventListener('click', cerrarDetalleMusculo);

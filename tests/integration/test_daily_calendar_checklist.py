@@ -191,3 +191,4 @@ def test_registrar_series_dispara_ejercicio_completado_ahora_y_siguiente_ejercic
         assert "Recuerda tomar agua: hidrátate bien antes de tu siguiente bloque" in html_index
 
         db.drop_all()
+

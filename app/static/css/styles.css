@@ -733,7 +733,7 @@ button,
 
 .muscle-map-svg-container {
   width: 100%;
-  max-width: 380px;
+  max-width: 440px;
   margin: 0 auto;
 }
 
@@ -743,32 +743,53 @@ button,
   display: block;
 }
 
+.body-silhouette-base {
+  pointer-events: none;
+}
+
 .muscle-region,
 .muscle-zone {
-  fill: var(--color-border-light);
-  stroke: var(--color-faded-gray);
-  stroke-width: 1.75px;
+  fill: url(#grad-muscle-rest);
+  stroke: var(--color-paper-white);
+  stroke-width: 1.05px;
   stroke-linejoin: round;
   cursor: pointer;
-  transition: fill 150ms var(--ease-out), opacity 150ms var(--ease-out);
+  transition: opacity 150ms var(--ease-out);
+}
+
+.muscle-region:active,
+.muscle-zone:active {
+  opacity: 0.88;
 }
 
 .muscle-region.is-primario,
 .muscle-zone.is-primario {
-  fill: var(--color-eager-green);
+  fill: url(#grad-muscle-primary);
   stroke: var(--color-eager-green-shade);
+  stroke-width: 1.25px;
 }
 
 .muscle-region.is-secundario,
 .muscle-zone.is-secundario {
-  fill: var(--color-fresh-leaf);
+  fill: url(#grad-muscle-secondary);
   stroke: var(--color-eager-green);
+  stroke-width: 1.15px;
 }
 
 .muscle-region.is-selected,
 .muscle-zone.is-selected {
   stroke: var(--color-night-ink);
-  stroke-width: 2.8px;
+  stroke-width: 2.1px;
+  filter: url(#muscle-glow);
+}
+
+.muscle-fibers {
+  pointer-events: none;
+  opacity: 0.95;
+}
+
+.anatomical-labels-layer[hidden] {
+  display: none;
 }
 
 .muscle-legend {

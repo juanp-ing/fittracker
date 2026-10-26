@@ -52,8 +52,13 @@ def test_vistas_html_mobile_first_y_archivos_estaticos(app, client):
     assert resp_mapa.status_code == 200
     html_mapa = resp_mapa.get_data(as_text=True)
     assert "mapa-muscular-svg" in html_mapa
+    assert 'viewBox="0 0 500 520"' in html_mapa
     assert 'data-grupo="Pecho"' in html_mapa
     assert "muscle-region" in html_mapa
+    assert "body-silhouette-base" in html_mapa
+    assert "muscle-fibers" in html_mapa
+    assert "svg-etiquetas-anatomicas" in html_mapa
+    assert "btn-toggle-nombres-anatomicos" in html_mapa
     assert "btn-silueta-hombre" in html_mapa
     assert "btn-silueta-mujer" in html_mapa
     assert "modal-detalle-musculo" in html_mapa
@@ -85,5 +90,15 @@ def test_vistas_html_mobile_first_y_archivos_estaticos(app, client):
     resp_svg_m = client.get("/static/img/silueta_mujer.svg")
     assert resp_svg_h.status_code == 200
     assert resp_svg_m.status_code == 200
-    assert 'class="muscle-region muscle-zone"' in resp_svg_h.get_data(as_text=True)
-    assert 'class="muscle-region muscle-zone"' in resp_svg_m.get_data(as_text=True)
+    svg_h_text = resp_svg_h.get_data(as_text=True)
+    svg_m_text = resp_svg_m.get_data(as_text=True)
+    assert 'class="muscle-region muscle-zone"' in svg_h_text
+    assert 'class="muscle-region muscle-zone"' in svg_m_text
+    assert 'id="grad-muscle-primary"' in svg_h_text
+    assert 'id="grad-muscle-secondary"' in svg_h_text
+    assert 'id="grad-muscle-rest"' in svg_h_text
+    assert 'id="muscle-glow"' in svg_h_text
+    assert 'class="muscle-fibers"' in svg_h_text
+    assert 'class="muscle-fibers"' in svg_m_text
+    assert 'id="svg-etiquetas-anatomicas"' in svg_h_text
+    assert 'id="svg-etiquetas-anatomicas"' in svg_m_text
