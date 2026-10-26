@@ -1,7 +1,8 @@
 """Application Factory e inicialización de extensiones de FitTracker."""
 
 import sqlite3
-from flask import Flask, jsonify
+import click
+from flask import Flask, jsonify, redirect, request, url_for
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -42,6 +43,22 @@ def load_user(user_id: str):
         return None
 
 
+@login_manager.unauthorized_handler
+def unauthorized():
+    """Devuelve 401 JSON para rutas /api/* o redirige al login en vistas HTML."""
+    if request.path.startswith("/api/"):
+        return (
+            jsonify(
+                {
+                    "error": "Autenticación requerida.",
+                    "code": "NO_AUTENTICADO",
+                }
+            ),
+            401,
+        )
+    return redirect(url_for("auth.login"))
+
+
 def _resolve_config(config_name):
     """Resuelve el objeto de configuración a partir de su nombre o clase."""
     if isinstance(config_name, str):
@@ -67,6 +84,20 @@ def create_app(config_name="default") -> Flask:
 
     # Importar modelos para que SQLAlchemy y Flask-Migrate los registren
     from app import models  # noqa: F401
+    from app.controllers import auth_bp, ejercicio_bp
+    from app.seeds import seed_database
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(ejercicio_bp)
+
+    @app.cli.command("seed")
+    def seed_command():
+        """Puebla la base de datos con grupos musculares y ejercicios predeterminados."""
+        resultado = seed_database()
+        click.echo(
+            f"Semillas completadas: {resultado['total_grupos']} grupos musculares, "
+            f"{resultado['total_ejercicios']} ejercicios predeterminados."
+        )
 
     @app.route("/api/health", methods=["GET"])
     def health_check():

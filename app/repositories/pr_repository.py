@@ -98,3 +98,4 @@ class PRRepository:
             query = query.filter(PR.fecha <= fecha_hasta)
 
         return query.order_by(PR.fecha.desc(), PR.id.desc()).all()
+

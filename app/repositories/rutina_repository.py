@@ -100,3 +100,4 @@ class RutinaRepository:
         """Elimina una rutina de la base de datos."""
         db.session.delete(rutina)
         db.session.commit()
+

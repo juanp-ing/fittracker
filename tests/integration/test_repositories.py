@@ -226,3 +226,4 @@ def test_sesion_y_pr_repositories_ultima_serie_maximos_y_rango_fechas(app):
         # 5. Historial de sesiones del usuario
         historial_sesiones = sesion_repo.listar_historial_usuario(user.id)
         assert len(historial_sesiones) == 2
+

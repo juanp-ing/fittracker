@@ -96,3 +96,4 @@ Para ejecutar con reporte de cobertura:
 ```bash
 .venv/bin/pytest --cov=app -v
 ```
+

@@ -33,3 +33,4 @@ class UsuarioRepository:
             .filter(func.lower(Usuario.email) == email_normalizado)
             .first()
         )
+
