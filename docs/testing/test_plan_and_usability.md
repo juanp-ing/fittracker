@@ -53,3 +53,4 @@ Comprobar empíricamente que un usuario puede registrar una serie durante su ent
 | **3** | Toca una vez el botón gigante **`＋`** de Repeticiones (`58×64 px`, paso `±1 rep`). | Compresión táctil (`70ms`), incremento a `9 reps` y micro-pulso numérico. | `0.8 s` |
 | **4** | Toca el botón gigante verde **«¡SERIE TERMINADA!»** (`min-height: 62px`). | Envío asíncrono `fetch` (`0 recargas`), inicio inmediato del cronómetro de descanso y badge *spring* de nuevo PR. | `1.4 s` |
 | **Total** | **4 toques de pulgar (0 uso de teclado)** | **Serie registrada + PR celebrado + Cronómetro corriendo** | **`4.2 segundos` (`< 10s` cumplido)** |
+

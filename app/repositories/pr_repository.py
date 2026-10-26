@@ -99,3 +99,22 @@ class PRRepository:
 
         return query.order_by(PR.fecha.desc(), PR.id.desc()).all()
 
+    def obtener_mejor_pr_por_ejercicios(
+        self,
+        usuario_id: int,
+        ejercicios_ids: list[int],
+    ) -> Optional[PR]:
+        """Retorna el mayor PR registrado por el usuario dentro de un conjunto de ejercicios."""
+        if not ejercicios_ids:
+            return None
+        return (
+            db.session.query(PR)
+            .filter(
+                PR.usuario_id == usuario_id,
+                PR.ejercicio_id.in_(ejercicios_ids),
+            )
+            .order_by(PR.peso.desc(), PR.fecha.desc(), PR.id.desc())
+            .first()
+        )
+
+

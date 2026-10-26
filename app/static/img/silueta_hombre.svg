@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 460" role="img" aria-label="Mapa Muscular Anatómico Masculino Frontal y Posterior">
+  <!-- Etiquetas Superiores -->
+  <text x="105" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="12" fill="#000437" letter-spacing="0.06em">VISTA FRONTAL</text>
+  <text x="315" y="22" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="12" fill="#000437" letter-spacing="0.06em">VISTA POSTERIOR</text>
+
+  <!-- ==================== BASE ESTRUCTURAL NO INTERACTIVA (Cabeza, Cuello, Antebrazos, Manos, Pies) ==================== -->
+  <g class="body-outline-base" fill="#f2f4f7" stroke="#afafaf" stroke-width="1.6" stroke-linejoin="round">
+    <!-- Cabeza y cuello frontal -->
+    <path d="M105,32 C93,32 85,41 85,54 C85,66 92,77 105,77 C118,77 125,66 125,54 C125,41 117,32 105,32 Z"/>
+    <path d="M96,75 L94,90 L116,90 L114,75 Z"/>
+    <!-- Antebrazos y manos frontales -->
+    <path d="M46,176 C40,192 35,214 33,230 C31,238 36,244 42,242 C48,238 54,215 60,194 Z"/>
+    <path d="M164,176 C170,192 175,214 177,230 C179,238 174,244 168,242 C162,238 156,215 150,194 Z"/>
+    <!-- Rodillas y tobillos/pies frontales -->
+    <path d="M74,322 C73,332 75,340 83,340 C91,340 94,332 93,322 Z"/>
+    <path d="M117,322 C116,332 119,340 127,340 C135,340 137,332 136,322 Z"/>
+    <path d="M75,415 L68,434 L92,436 L91,415 Z"/>
+    <path d="M119,415 L118,436 L142,434 L135,415 Z"/>
+
+    <!-- Cabeza y cuello posterior -->
+    <path d="M315,32 C303,32 295,41 295,54 C295,66 302,77 315,77 C328,77 335,66 335,54 C335,41 327,32 315,32 Z"/>
+    <path d="M305,75 L303,88 L327,88 L325,75 Z"/>
+    <!-- Antebrazos y manos posteriores -->
+    <path d="M256,176 C250,192 245,214 243,230 C241,238 246,244 252,242 C258,238 264,215 270,194 Z"/>
+    <path d="M374,176 C380,192 385,214 387,230 C389,238 384,244 378,242 C372,238 366,215 360,194 Z"/>
+    <!-- Hueco poplíteo y pies posteriores -->
+    <path d="M285,415 L278,434 L302,436 L301,415 Z"/>
+    <path d="M329,415 L328,436 L352,434 L345,415 Z"/>
+  </g>
+
+  <!-- ==================== 1. HOMBROS (Deltoides Anterior, Lateral y Posterior) ==================== -->
+  <g id="svg-grupo-hombros" class="muscle-region muscle-zone" data-grupo="Hombros" data-anatomia="Deltoides anterior, lateral y posterior" tabindex="0" role="button" aria-label="Hombros: Deltoides anterior y posterior">
+    <!-- Deltoides frontal izquierdo y derecho (hombros anchos masculinos) -->
+    <path d="M82,92 C66,94 52,105 50,122 C49,133 56,141 65,138 C72,128 78,112 83,98 Z"/>
+    <path d="M128,92 C144,94 158,105 160,122 C161,133 154,141 145,138 C138,128 132,112 127,98 Z"/>
+    <!-- Deltoides posterior izquierdo y derecho -->
+    <path d="M290,94 C274,96 262,107 260,123 C259,133 266,140 275,137 C282,127 287,112 292,100 Z"/>
+    <path d="M340,94 C356,96 368,107 370,123 C371,133 364,140 355,137 C348,127 343,112 338,100 Z"/>
+  </g>
+
+  <!-- ==================== 2. PECHO (Pectoral Mayor Izquierdo y Derecho) ==================== -->
+  <g id="svg-grupo-pecho" class="muscle-region muscle-zone" data-grupo="Pecho" data-anatomia="Pectoral mayor izquierdo y derecho" tabindex="0" role="button" aria-label="Pecho: Pectoral mayor izquierdo y derecho">
+    <!-- Pectoral mayor izquierdo -->
+    <path d="M84,95 L103,95 L103,138 C92,141 77,139 70,130 C67,120 73,104 84,95 Z"/>
+    <!-- Pectoral mayor derecho -->
+    <path d="M126,95 L107,95 L107,138 C118,141 133,139 140,130 C143,120 137,104 126,95 Z"/>
+  </g>
+
+  <!-- ==================== 3. BÍCEPS (Bíceps Braquial Izquierdo y Derecho - Frontal) ==================== -->
+  <g id="svg-grupo-biceps" class="muscle-region muscle-zone" data-grupo="Bíceps" data-anatomia="Bíceps braquial y braquial anterior" tabindex="0" role="button" aria-label="Bíceps: Bíceps braquial izquierdo y derecho">
+    <path d="M53,138 C47,150 45,166 48,178 C54,182 62,180 66,170 C69,158 68,145 63,138 Z"/>
+    <path d="M157,138 C163,150 165,166 162,178 C156,182 148,180 144,170 C141,158 142,145 147,138 Z"/>
+  </g>
+
+  <!-- ==================== 4. TRÍCEPS (Tríceps Braquial Cabeza Larga y Lateral - Posterior) ==================== -->
+  <g id="svg-grupo-triceps" class="muscle-region muscle-zone" data-grupo="Tríceps" data-anatomia="Tríceps braquial (cabeza larga, lateral y medial)" tabindex="0" role="button" aria-label="Tríceps: Tríceps braquial izquierdo y derecho">
+    <path d="M263,137 C257,149 255,166 258,178 C264,182 272,180 276,169 C279,157 278,144 273,137 Z"/>
+    <path d="M367,137 C373,149 375,166 372,178 C366,182 358,180 354,169 C351,157 352,144 357,137 Z"/>
+  </g>
+
+  <!-- ==================== 5. CORE (Recto Abdominal 6-Pack Dividido y Oblicuos Externos) ==================== -->
+  <g id="svg-grupo-core" class="muscle-region muscle-zone" data-grupo="Core" data-anatomia="Recto abdominal (6-pack) y oblicuos externos" tabindex="0" role="button" aria-label="Core: Recto abdominal y oblicuos externos">
+    <!-- Segmentos superiores del recto abdominal -->
+    <path d="M88,142 L103,142 L103,159 L86,159 Z"/>
+    <path d="M107,142 L122,142 L124,159 L107,159 Z"/>
+    <!-- Segmentos medios del recto abdominal -->
+    <path d="M86,163 L103,163 L103,180 L87,180 Z"/>
+    <path d="M107,163 L124,163 L123,180 L107,180 Z"/>
+    <!-- Segmentos inferiores del recto abdominal -->
+    <path d="M88,184 L103,184 L103,208 L92,206 Z"/>
+    <path d="M107,184 L122,184 L118,206 L107,208 Z"/>
+    <!-- Oblicuos externos izquierdo y derecho -->
+    <path d="M73,136 L85,142 L85,198 L76,192 C72,176 70,154 73,136 Z"/>
+    <path d="M137,136 L125,142 L125,198 L134,192 C138,176 140,154 137,136 Z"/>
+  </g>
+
+  <!-- ==================== 6. ESPALDA (Trapecio, Dorsal Ancho V-Taper y Lumbar) ==================== -->
+  <g id="svg-grupo-espalda" class="muscle-region muscle-zone" data-grupo="Espalda" data-anatomia="Trapecio, dorsal ancho (latissimus dorsi) y erectores lumbares" tabindex="0" role="button" aria-label="Espalda: Trapecio, dorsal ancho y zona lumbar">
+    <!-- Trapecio superior, medio e inferior -->
+    <path d="M294,88 L336,88 L342,102 L315,142 L288,102 Z"/>
+    <!-- Dorsal ancho izquierdo (V-taper masculino) -->
+    <path d="M286,112 L312,145 L312,182 L288,176 C280,158 278,132 286,112 Z"/>
+    <!-- Dorsal ancho derecho (V-taper masculino) -->
+    <path d="M344,112 L318,145 L318,182 L342,176 C350,158 352,132 344,112 Z"/>
+    <!-- Erectores espinales / Zona lumbar -->
+    <path d="M292,180 L313,184 L313,206 L294,202 Z"/>
+    <path d="M338,180 L317,184 L317,206 L336,202 Z"/>
+  </g>
+
+  <!-- ==================== 7. GLÚTEOS (Glúteo Medio y Glúteo Mayor Izquierdo/Derecho) ==================== -->
+  <g id="svg-grupo-gluteos" class="muscle-region muscle-zone" data-grupo="Glúteos" data-anatomia="Glúteo mayor y glúteo medio izquierdo y derecho" tabindex="0" role="button" aria-label="Glúteos: Glúteo mayor y medio">
+    <!-- Glúteo izquierdo -->
+    <path d="M286,204 L313,208 L313,252 C298,256 283,248 280,232 C279,220 282,210 286,204 Z"/>
+    <!-- Glúteo derecho -->
+    <path d="M344,204 L317,208 L317,252 C332,256 347,248 350,232 C351,220 348,210 344,204 Z"/>
+  </g>
+
+  <!-- ==================== 8. CUÁDRICEPS (Recto Femoral, Vasto Lateral y Vasto Medial) ==================== -->
+  <g id="svg-grupo-cuadriceps" class="muscle-region muscle-zone" data-grupo="Cuádriceps" data-anatomia="Recto femoral, vasto lateral y vasto medial" tabindex="0" role="button" aria-label="Cuádriceps: Recto femoral, vasto lateral y vasto medial">
+    <!-- Muslo izquierdo: vasto lateral + recto femoral + vasto medial -->
+    <path d="M74,202 L90,209 L86,316 L71,312 C64,282 65,235 74,202 Z"/>
+    <path d="M92,210 L102,212 L98,318 L88,316 Z"/>
+    <!-- Muslo derecho: vasto medial + recto femoral + vasto lateral -->
+    <path d="M118,210 L108,212 L112,318 L122,316 Z"/>
+    <path d="M136,202 L120,209 L124,316 L139,312 C146,282 145,235 136,202 Z"/>
+  </g>
+
+  <!-- ==================== 9. ISQUIOTIBIALES (Bíceps Femoral y Semitendinoso - Posterior) ==================== -->
+  <g id="svg-grupo-isquiotibiales" class="muscle-region muscle-zone" data-grupo="Isquiotibiales" data-anatomia="Bíceps femoral, semitendinoso y semimembranoso" tabindex="0" role="button" aria-label="Isquiotibiales: Bíceps femoral y semitendinoso">
+    <!-- Isquiotibiales izquierdos divididos en fascículos -->
+    <path d="M282,254 L297,256 L295,326 L282,322 C277,298 278,274 282,254 Z"/>
+    <path d="M299,256 L311,256 L307,326 L297,326 Z"/>
+    <!-- Isquiotibiales derechos divididos en fascículos -->
+    <path d="M331,256 L319,256 L323,326 L333,326 Z"/>
+    <path d="M348,254 L333,256 L335,326 L348,322 C353,298 352,274 348,254 Z"/>
+  </g>
+
+  <!-- ==================== 10. PANTORRILLAS (Gastrocnemio Medial/Lateral y Sóleo) ==================== -->
+  <g id="svg-grupo-pantorrillas" class="muscle-region muscle-zone" data-grupo="Pantorrillas" data-anatomia="Gastrocnemio (gemelos medial y lateral) y sóleo" tabindex="0" role="button" aria-label="Pantorrillas: Gastrocnemio y sóleo">
+    <!-- Pantorrillas frontales (tibial/gastrocnemio) -->
+    <path d="M72,342 L94,342 L91,414 L75,414 C68,390 68,364 72,342 Z"/>
+    <path d="M138,342 L116,342 L119,414 L135,414 C142,390 142,364 138,342 Z"/>
+    <!-- Pantorrillas posteriores (gemelos medial y lateral) -->
+    <path d="M281,336 L295,336 L294,414 L284,414 C277,390 277,360 281,336 Z"/>
+    <path d="M297,336 L308,336 L302,414 L295,414 Z"/>
+    <path d="M333,336 L322,336 L328,414 L335,414 Z"/>
+    <path d="M349,336 L335,336 L336,414 L346,414 C353,390 353,360 349,336 Z"/>
+  </g>
+</svg>

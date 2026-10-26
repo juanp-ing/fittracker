@@ -34,7 +34,17 @@
       }
       renderizarResultados(inputBusqueda ? inputBusqueda.value : '');
       if (catalogoEjercicios.length > 0 && !ejercicioSeleccionadoId) {
-        seleccionarEjercicio(catalogoEjercicios[0]);
+        const params = new URLSearchParams(window.location.search);
+        const preId = Number(
+          params.get('ejercicio_id') ||
+            localStorage.getItem('fittracker_preselect_ejercicio_id') ||
+            0
+        );
+        localStorage.removeItem('fittracker_preselect_ejercicio_id');
+        const preseleccionado = preId
+          ? catalogoEjercicios.find((e) => e.id === preId)
+          : null;
+        seleccionarEjercicio(preseleccionado || catalogoEjercicios[0]);
       }
     } catch (err) {
       console.warn('Modo sin conexión al cargar catálogo:', err);

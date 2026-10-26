@@ -113,6 +113,29 @@ def obtener_mapa_muscular():
     return jsonify(mapa), 200
 
 
+@resumen_bp.route("/api/mapa-muscular/<string:nombre_grupo>", methods=["GET"])
+@login_required
+def obtener_detalle_grupo_muscular(nombre_grupo: str):
+    """Retorna el detalle semanal, PR actual, ejercicios recientes y recomendados de un músculo."""
+    try:
+        dias = int(request.args.get("dias", "7"))
+    except ValueError:
+        dias = 7
+
+    service = ResumenService()
+    try:
+        detalle = service.obtener_detalle_grupo_muscular(
+            usuario_id=current_user.id,
+            nombre_grupo=nombre_grupo,
+            dias=dias,
+        )
+    except LookupError as exc:
+        return jsonify({"error": str(exc), "code": "NO_ENCONTRADO"}), 404
+
+    return jsonify(detalle), 200
+
+
+
 @resumen_bp.route("/api/resumen-mensual", methods=["GET"])
 @login_required
 def obtener_resumen_mensual():
