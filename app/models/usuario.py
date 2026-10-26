@@ -1,4 +1,4 @@
-"""Modelo de Usuario con soporte de autenticación para FitTracker."""
+"""Modelo de Usuario con soporte de autenticación y verificación OTP para FitTracker."""
 
 from datetime import datetime, timezone
 from flask_login import UserMixin
@@ -16,12 +16,22 @@ class Usuario(UserMixin, db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, index=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    email_verificado = db.Column(db.Boolean, default=False, nullable=False)
+    codigo_verificacion = db.Column(db.String(6), nullable=True)
+    codigo_expiracion = db.Column(db.DateTime, nullable=True)
     fecha_registro = db.Column(
         db.DateTime,
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 
+    perfil = db.relationship(
+        "PerfilUsuario",
+        back_populates="usuario",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
     ejercicios_creados = db.relationship(
         "Ejercicio",
         back_populates="creador",
@@ -57,4 +67,3 @@ class Usuario(UserMixin, db.Model):
 
     def __repr__(self) -> str:
         return f"<Usuario id={self.id} email={self.email!r}>"
-

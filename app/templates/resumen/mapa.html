@@ -18,10 +18,10 @@
   <!-- Selector Tipo Píldora Duolingo (Hombre | Mujer) -->
   <div class="muscle-map-toolbar">
     <div class="gender-pill-group" role="group" aria-label="Selector de anatomía Hombre o Mujer">
-      <button type="button" id="btn-silueta-hombre" class="gender-pill-btn is-active" data-silueta-genero="hombre">
+      <button type="button" id="btn-silueta-hombre" class="gender-pill-btn {% if (sexo_perfil | default('HOMBRE')) != 'MUJER' %}is-active{% endif %}" data-silueta-genero="hombre">
         Hombre
       </button>
-      <button type="button" id="btn-silueta-mujer" class="gender-pill-btn" data-silueta-genero="mujer">
+      <button type="button" id="btn-silueta-mujer" class="gender-pill-btn {% if (sexo_perfil | default('HOMBRE')) == 'MUJER' %}is-active{% endif %}" data-silueta-genero="mujer">
         Mujer
       </button>
     </div>
@@ -32,6 +32,7 @@
 
   <!-- Contenedor Anatómico SVG Dual (Frontal y Posterior estilo react-body-highlighter) -->
   <div id="mapa-svg-host" class="muscle-map-svg-container"
+       data-sexo-perfil="{{ sexo_perfil | default('HOMBRE') }}"
        data-url-hombre="{{ url_for('static', filename='img/silueta_hombre.svg') }}"
        data-url-mujer="{{ url_for('static', filename='img/silueta_mujer.svg') }}">
     <svg id="mapa-muscular-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 460" role="img" aria-label="Mapa Muscular Anatómico Frontal y Posterior">
