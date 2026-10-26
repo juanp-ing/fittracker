@@ -81,3 +81,4 @@ class PRService:
             "nuevo_pr_peso": nuevo_pr_peso,
             "pr_id": pr_registrado.id if pr_registrado else None,
         }
+

@@ -173,3 +173,4 @@ class SesionService:
 
         sesion_cerrada = self.sesion_repo.finalizar_sesion(sesion)
         return self._serializar_sesion(sesion_cerrada)
+

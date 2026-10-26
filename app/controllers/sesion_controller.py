@@ -83,3 +83,4 @@ def finalizar_sesion(sesion_id: int):
         return jsonify({"error": str(exc), "code": "SESION_CERRADA"}), 400
 
     return jsonify(resultado), 200
+

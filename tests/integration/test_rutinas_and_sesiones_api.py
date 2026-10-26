@@ -188,3 +188,4 @@ def test_seguridad_multiusuario_rutinas_y_sesiones(app, client):
         },
     )
     assert post_serie.status_code in (403, 404)
+

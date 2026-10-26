@@ -115,3 +115,4 @@ def alternar_favorita(rutina_id: int):
         return jsonify({"error": str(exc), "code": "NO_ENCONTRADO"}), 404
 
     return jsonify(actualizada), 200
+

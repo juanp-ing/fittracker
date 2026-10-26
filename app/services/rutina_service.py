@@ -184,3 +184,4 @@ class RutinaService:
             raise RutinaNoEncontradaError("Rutina no encontrada o acceso denegado.")
 
         self.rutina_repo.eliminar(rutina)
+

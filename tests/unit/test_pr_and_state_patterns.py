@@ -57,3 +57,4 @@ def test_sesion_state_activa_vs_finalizada():
 
     with pytest.raises(SesionCerradaError):
         estado_finalizada.validar_finalizacion()
+
