@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# SQLite databases and WAL/SHM files
+*.db
+*.db-wal
+*.db-shm
+
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Flask instance & environment
+instance/
+.env
+.flaskenv
+

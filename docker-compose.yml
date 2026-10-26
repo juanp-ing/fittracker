@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    container_name: fittracker_web
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_CONFIG=production
+      - SECRET_KEY=${SECRET_KEY:-fittracker-prod-secret-key}
+      - DATABASE_URL=sqlite:////app/data/fittracker.db
+    volumes:
+      - sqlite_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
+
