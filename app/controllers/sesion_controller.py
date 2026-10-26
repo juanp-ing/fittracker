@@ -1,4 +1,4 @@
-"""Controlador de vistas HTML y endpoints REST para Sesiones de entrenamiento y Series."""
+"""Controlador de vistas HTML y endpoints REST para Sesiones de entrenamiento, Agenda Diaria y Series."""
 
 from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
@@ -14,14 +14,36 @@ sesion_bp = Blueprint("sesion", __name__)
 @sesion_bp.route("/entrenar", methods=["GET"])
 @login_required
 def vista_entrenar():
-    """Renderiza la pantalla principal de entrenamiento rápido en < 10 segundos."""
+    """Renderiza la pantalla principal de entrenamiento rápido con Mini-Calendario Semanal y Checklist."""
     rutina_service = RutinaService()
+    sesion_service = SesionService()
     rutinas = rutina_service.listar_rutinas_usuario(usuario_id=current_user.id)
+    agenda_hoy = sesion_service.obtener_agenda_diaria(usuario_id=current_user.id)
     return render_template(
         "index.html",
         active_tab="entrenar",
         rutinas=rutinas,
+        agenda_hoy=agenda_hoy,
     )
+
+
+@sesion_bp.route("/api/sesiones/agenda-diaria", methods=["GET"])
+@login_required
+def obtener_agenda_diaria():
+    """Devuelve los 7 días de la semana con puntos indicadores y el checklist de ejercicios del día."""
+    fecha = request.args.get("fecha")
+    rutina_id = request.args.get("rutina_id", type=int)
+    service = SesionService()
+    try:
+        agenda = service.obtener_agenda_diaria(
+            usuario_id=current_user.id,
+            fecha_str=fecha,
+            rutina_id=rutina_id,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc), "code": "FECHA_INVALIDA"}), 400
+
+    return jsonify(agenda), 200
 
 
 @sesion_bp.route("/api/sesiones", methods=["POST"])
@@ -48,7 +70,7 @@ def iniciar_sesion():
 @sesion_bp.route("/api/sesiones/<int:sesion_id>/series", methods=["POST"])
 @login_required
 def registrar_serie(sesion_id: int):
-    """Registra una serie en la sesión activa, evalúa PRs y devuelve el descanso sugerido."""
+    """Registra una serie en la sesión activa, evalúa PRs y devuelve el descanso y progreso diario."""
     payload = request.get_json(silent=True) or {}
     ejercicio_id = payload.get("ejercicio_id")
     peso = payload.get("peso")
