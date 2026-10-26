@@ -1,10 +1,14 @@
-"""Servicio de dominio para la gestión de rutinas personalizadas de entrenamiento."""
+"""Servicio de dominio para la gestión de rutinas personalizadas y catálogo de Rutinas Famosas."""
 
 from typing import Optional
 
 from app.models.rutina import Rutina
+from app.patterns.strategy.rutina_recomendacion_strategy import (
+    RutinaRecomendacionStrategy,
+)
 from app.repositories.ejercicio_repository import EjercicioRepository
 from app.repositories.rutina_repository import RutinaRepository
+from app.repositories.usuario_repository import UsuarioRepository
 
 
 class RutinaNoEncontradaError(LookupError):
@@ -12,15 +16,21 @@ class RutinaNoEncontradaError(LookupError):
 
 
 class RutinaService:
-    """Lógica de negocio para crear, listar, actualizar, marcar favorita y eliminar rutinas."""
+    """Lógica de negocio para crear, listar, actualizar, recomendar y clonar rutinas."""
 
     def __init__(
         self,
         rutina_repo: Optional[RutinaRepository] = None,
         ejercicio_repo: Optional[EjercicioRepository] = None,
+        usuario_repo: Optional[UsuarioRepository] = None,
+        recomendacion_strategy: Optional[RutinaRecomendacionStrategy] = None,
     ) -> None:
         self.rutina_repo = rutina_repo or RutinaRepository()
         self.ejercicio_repo = ejercicio_repo or EjercicioRepository()
+        self.usuario_repo = usuario_repo or UsuarioRepository()
+        self.recomendacion_strategy = (
+            recomendacion_strategy or RutinaRecomendacionStrategy()
+        )
 
     def _validar_items_ejercicios(
         self,
@@ -88,6 +98,12 @@ class RutinaService:
             "usuario_id": rutina.usuario_id,
             "nombre": rutina.nombre,
             "es_favorita": rutina.es_favorita,
+            "es_plantilla_famosa": bool(rutina.es_plantilla_famosa),
+            "descripcion": rutina.descripcion,
+            "meta_objetivo": rutina.meta_objetivo,
+            "somatotipo_ideal": rutina.somatotipo_ideal,
+            "nivel": rutina.nivel or "INTERMEDIO",
+            "dias_semana": rutina.dias_semana or "LUN,MIE,VIE",
             "ejercicios": ejercicios_serializados,
         }
 
@@ -97,6 +113,8 @@ class RutinaService:
         nombre: str,
         ejercicios_items: list[dict],
         es_favorita: bool = False,
+        dias_semana: Optional[str] = "LUN,MIE,VIE",
+        descripcion: Optional[str] = None,
     ) -> dict:
         """Valida y crea una nueva rutina personalizada para el usuario."""
         if not isinstance(nombre, str) or not nombre.strip():
@@ -108,6 +126,8 @@ class RutinaService:
             nombre=nombre.strip(),
             es_favorita=bool(es_favorita),
             ejercicios_items=items_validados,
+            dias_semana=dias_semana or "LUN,MIE,VIE",
+            descripcion=descripcion,
         )
         return self._serializar_rutina(rutina)
 
@@ -122,6 +142,41 @@ class RutinaService:
             solo_favoritas=solo_favoritas,
         )
         return [self._serializar_rutina(r) for r in rutinas]
+
+    def listar_rutinas_famosas(
+        self,
+        usuario_id: int,
+        meta: Optional[str] = None,
+        somatotipo: Optional[str] = None,
+    ) -> list[dict]:
+        """Devuelve las 12 rutinas famosas puntuadas y ordenadas según el perfil del usuario."""
+        perfil_obj = self.usuario_repo.obtener_perfil(usuario_id)
+        perfil_dict = {
+            "sexo": perfil_obj.sexo if perfil_obj else "HOMBRE",
+            "meta": perfil_obj.meta if perfil_obj else "GANAR_MASA",
+            "somatotipo": perfil_obj.somatotipo if perfil_obj else "MESOMORFO",
+        }
+        plantillas = self.rutina_repo.listar_plantillas_famosas()
+        serializadas = [self._serializar_rutina(p) for p in plantillas]
+        return self.recomendacion_strategy.ordenar_y_filtrar(
+            rutinas=serializadas,
+            perfil=perfil_dict,
+            filtro_meta=meta,
+            filtro_somatotipo=somatotipo,
+        )
+
+    def clonar_rutina_famosa(self, usuario_id: int, plantilla_id: int) -> dict:
+        """Clona una de las 12 rutinas famosas en las rutinas personales del usuario."""
+        plantilla = self.rutina_repo.obtener_plantilla_famosa_por_id(plantilla_id)
+        if plantilla is None:
+            raise RutinaNoEncontradaError("Plantilla de rutina famosa no encontrada.")
+
+        clonada = self.rutina_repo.clonar_plantilla_para_usuario(
+            plantilla=plantilla,
+            usuario_id=usuario_id,
+            es_favorita=True,
+        )
+        return self._serializar_rutina(clonada)
 
     def obtener_rutina(self, usuario_id: int, rutina_id: int) -> dict:
         """Obtiene el detalle de una rutina verificando la propiedad del usuario."""
@@ -184,4 +239,3 @@ class RutinaService:
             raise RutinaNoEncontradaError("Rutina no encontrada o acceso denegado.")
 
         self.rutina_repo.eliminar(rutina)
-

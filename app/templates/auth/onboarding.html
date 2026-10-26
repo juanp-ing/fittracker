@@ -23,7 +23,7 @@
     <div>
       <h1 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">1. Elige tu silueta anatómica</h1>
       <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
-        Personaliza las proporciones de tu Mapa Muscular Bicolor.
+        Personaliza las proporciones de tu Mapa Muscular Bicolor y tu guía de grasa corporal.
       </p>
     </div>
 
@@ -38,12 +38,12 @@
     </button>
   </div>
 
-  <!-- PASO 2: Métricas Corporales (Peso y % Grasa con Botones +/- sin teclado) -->
+  <!-- PASO 2: Métricas Corporales (Peso y % Grasa con Botones +/- y Guía Visual en un Vistazo) -->
   <div data-wizard-step="2" style="display: flex; flex-direction: column; gap: 1rem;" hidden>
     <div>
       <h2 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">2. Tus métricas corporales</h2>
       <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
-        Ajusta con el pulgar sin usar el teclado.
+        Ajusta con el pulgar o toca una tarjeta de referencia visual rápida.
       </p>
     </div>
 
@@ -67,25 +67,100 @@
       </div>
     </div>
 
-    <!-- Stepper de % de Grasa Corporal con Guía Visual Rápida -->
+    <!-- Stepper de % de Grasa Corporal con Guía Visual de Referencia en un Vistazo -->
     <div class="stepper-group">
       <div class="stepper-header">
         <span class="stepper-label">% Grasa Corporal (Estimado)</span>
-        <span style="font-size: 0.78rem; font-weight: 700; color: var(--color-charcoal);">Paso: ±1%</span>
+        <span id="guia-grasa-genero-tag" style="font-size: 0.78rem; font-weight: 800; color: var(--color-eager-green-shade);">
+          Referencia: Hombre
+        </span>
       </div>
       <div class="stepper-control">
         <button type="button" id="btn-onb-grasa-menos" class="btn-stepper" aria-label="Disminuir porcentaje de grasa">−</button>
         <div class="stepper-display">
-          <span id="onb-grasa-valor" class="stepper-value">{{ perfil.porcentaje_grasa or 18.0 }}</span>
+          <span id="onb-grasa-valor" class="stepper-value">{{ perfil.porcentaje_grasa or 15.0 }}</span>
           <span class="stepper-unit">% grasa corporal</span>
         </div>
         <button type="button" id="btn-onb-grasa-mas" class="btn-stepper" aria-label="Aumentar porcentaje de grasa">＋</button>
       </div>
-      <div class="muscle-chips" role="group" aria-label="Guía rápida de porcentaje de grasa">
-        <button type="button" class="step-chip" data-grasa-preset="12">Atlético (12%)</button>
-        <button type="button" class="step-chip is-active" data-grasa-preset="18">Fitness (18%)</button>
-        <button type="button" class="step-chip" data-grasa-preset="24">Promedio (24%)</button>
-        <button type="button" class="step-chip" data-grasa-preset="30">Alto (30%)</button>
+
+      <!-- Cuadrícula de 4 Tarjetas Stickers de Referencia Visual Rápida (Hombre / Mujer) -->
+      <div class="bodyfat-guide-grid" role="group" aria-label="Guía visual de porcentaje de grasa corporal">
+        <button
+          type="button"
+          class="bodyfat-guide-card"
+          data-grasa-card="atletico"
+          data-grasa-preset="10"
+          data-hombre-range="8% – 12%"
+          data-mujer-range="15% – 19%"
+          data-hombre-desc="Abdominales marcados y vascularidad"
+          data-mujer-desc="Tono muscular marcado y cintura definida"
+          data-hombre-val="10"
+          data-mujer-val="17"
+        >
+          <div class="bodyfat-guide-card__header">
+            <span class="bodyfat-guide-card__title">Atlético / Muy Definido</span>
+            <span class="bodyfat-guide-card__range" data-card-range>8% – 12%</span>
+          </div>
+          <span class="bodyfat-guide-card__desc" data-card-desc>Abdominales marcados y vascularidad</span>
+        </button>
+
+        <button
+          type="button"
+          class="bodyfat-guide-card is-selected"
+          data-grasa-card="fitness"
+          data-grasa-preset="15"
+          data-hombre-range="13% – 17%"
+          data-mujer-range="20% – 24%"
+          data-hombre-desc="Cuerpo firme, abdomen plano sin marcar del todo"
+          data-mujer-desc="Silueta atlética y saludable"
+          data-hombre-val="15"
+          data-mujer-val="22"
+        >
+          <div class="bodyfat-guide-card__header">
+            <span class="bodyfat-guide-card__title">Fitness / Saludable</span>
+            <span class="bodyfat-guide-card__range" data-card-range>13% – 17%</span>
+          </div>
+          <span class="bodyfat-guide-card__desc" data-card-desc>Cuerpo firme, abdomen plano sin marcar del todo</span>
+        </button>
+
+        <button
+          type="button"
+          class="bodyfat-guide-card"
+          data-grasa-card="promedio"
+          data-grasa-preset="20"
+          data-hombre-range="18% – 24%"
+          data-mujer-range="25% – 31%"
+          data-hombre-desc="Poca definición muscular, algo de grasa abdominal"
+          data-mujer-desc="Contextura media natural"
+          data-hombre-val="20"
+          data-mujer-val="28"
+        >
+          <div class="bodyfat-guide-card__header">
+            <span class="bodyfat-guide-card__title">Promedio / Normal</span>
+            <span class="bodyfat-guide-card__range" data-card-range>18% – 24%</span>
+          </div>
+          <span class="bodyfat-guide-card__desc" data-card-desc>Poca definición muscular, algo de grasa abdominal</span>
+        </button>
+
+        <button
+          type="button"
+          class="bodyfat-guide-card"
+          data-grasa-card="alto"
+          data-grasa-preset="28"
+          data-hombre-range="25%+"
+          data-mujer-range="32%+"
+          data-hombre-desc="Abdomen prominente, meta ideal recomposición/bajar peso"
+          data-mujer-desc="Acumulación mayor, ideal quema grasa"
+          data-hombre-val="28"
+          data-mujer-val="34"
+        >
+          <div class="bodyfat-guide-card__header">
+            <span class="bodyfat-guide-card__title">Alto / Sobrepeso Inicial</span>
+            <span class="bodyfat-guide-card__range" data-card-range>25%+</span>
+          </div>
+          <span class="bodyfat-guide-card__desc" data-card-desc>Abdomen prominente, meta ideal recomposición/bajar peso</span>
+        </button>
       </div>
     </div>
   </div>
@@ -95,7 +170,7 @@
     <div>
       <h2 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">3. ¿Cuál es tu meta principal?</h2>
       <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
-        Enfocaremos tus métricas e indicadores mensuales en este objetivo.
+        Enfocaremos tus métricas y tus Rutinas Famosas recomendadas en este objetivo.
       </p>
     </div>
 
@@ -160,7 +235,7 @@
 
     let sexo = '{{ perfil.sexo | default("HOMBRE") }}';
     let pesoKg = Number('{{ perfil.peso_kg | default(70.0) }}') || 70.0;
-    let porcentajeGrasa = Number('{{ perfil.porcentaje_grasa or 18.0 }}') || 18.0;
+    let porcentajeGrasa = Number('{{ perfil.porcentaje_grasa or 15.0 }}') || 15.0;
     let pasoPeso = 1.0;
     let meta = '{{ perfil.meta | default("GANAR_MASA") }}';
     let somatotipo = '{{ perfil.somatotipo | default("ECTOMORFO") }}';
@@ -172,6 +247,36 @@
     const errorEl = document.getElementById('onboarding-error-msg');
     const displayPeso = document.getElementById('onb-peso-valor');
     const displayGrasa = document.getElementById('onb-grasa-valor');
+    const tagGeneroGrasa = document.getElementById('guia-grasa-genero-tag');
+
+    function actualizarGuiaVisualGrasa(ajustarValorPorDefecto) {
+      const esMujer = sexo === 'MUJER';
+      if (tagGeneroGrasa) {
+        tagGeneroGrasa.textContent = esMujer ? 'Referencia: Mujer' : 'Referencia: Hombre';
+      }
+      document.querySelectorAll('[data-grasa-card]').forEach((card) => {
+        const rango = esMujer
+          ? card.getAttribute('data-mujer-range')
+          : card.getAttribute('data-hombre-range');
+        const desc = esMujer
+          ? card.getAttribute('data-mujer-desc')
+          : card.getAttribute('data-hombre-desc');
+        const val = esMujer
+          ? card.getAttribute('data-mujer-val')
+          : card.getAttribute('data-hombre-val');
+
+        card.setAttribute('data-grasa-preset', val);
+        const rangeEl = card.querySelector('[data-card-range]');
+        const descEl = card.querySelector('[data-card-desc]');
+        if (rangeEl) rangeEl.textContent = rango;
+        if (descEl) descEl.textContent = desc;
+
+        if (ajustarValorPorDefecto && card.classList.contains('is-selected')) {
+          porcentajeGrasa = Number(val);
+        }
+      });
+      actualizarDisplaysMetricas();
+    }
 
     function actualizarVistaWizard() {
       document.querySelectorAll('[data-wizard-step]').forEach((panel) => {
@@ -216,6 +321,7 @@
         sexo = btn.getAttribute('data-select-sexo');
         document.querySelectorAll('[data-select-sexo]').forEach((b) => b.classList.remove('is-selected'));
         btn.classList.add('is-selected');
+        actualizarGuiaVisualGrasa(true);
       });
     });
 
@@ -270,11 +376,12 @@
       actualizarDisplaysMetricas();
     });
 
-    document.querySelectorAll('[data-grasa-preset]').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        porcentajeGrasa = Number(chip.getAttribute('data-grasa-preset')) || 18;
-        document.querySelectorAll('[data-grasa-preset]').forEach((c) => c.classList.remove('is-active'));
-        chip.classList.add('is-active');
+    document.querySelectorAll('[data-grasa-card]').forEach((card) => {
+      card.addEventListener('click', () => {
+        const presetVal = Number(card.getAttribute('data-grasa-preset')) || 15;
+        porcentajeGrasa = presetVal;
+        document.querySelectorAll('[data-grasa-card]').forEach((c) => c.classList.remove('is-selected'));
+        card.classList.add('is-selected');
         actualizarDisplaysMetricas();
       });
     });
@@ -318,6 +425,7 @@
       window.location.href = '/';
     });
 
+    actualizarGuiaVisualGrasa(false);
     actualizarDisplaysMetricas();
     actualizarVistaWizard();
   })();

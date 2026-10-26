@@ -1,78 +1,198 @@
 {% extends "base.html" %}
-{% block title %}Mis Rutinas — FitTracker{% endblock %}
+{% block title %}Mis Rutinas y Rutinas Famosas — FitTracker{% endblock %}
 
 {% block content %}
-<section class="duo-card" style="display: flex; flex-direction: column; gap: 0.85rem;">
-  <h1 style="font-size: 1.35rem; margin: 0;">Crear Nueva Rutina</h1>
-  <div id="rutina-error-msg" class="duo-alert" role="alert" hidden></div>
+<!-- Pestañas Píldora Estilo Duolingo -->
+<div class="duo-tabs-pill" role="tablist" aria-label="Secciones de Rutinas">
+  <button
+    type="button"
+    id="tab-btn-mis-rutinas"
+    class="duo-tab-btn is-active"
+    role="tab"
+    aria-selected="true"
+    data-rutina-tab="mis-rutinas"
+  >
+    Mis Rutinas ({{ rutinas | length }})
+  </button>
+  <button
+    type="button"
+    id="tab-btn-famosas"
+    class="duo-tab-btn"
+    role="tab"
+    aria-selected="false"
+    data-rutina-tab="rutinas-famosas"
+  >
+    🔥 Rutinas Famosas ({{ rutinas_famosas | default([]) | length or 12 }})
+  </button>
+</div>
 
-  <div>
-    <label for="rutina-nombre" class="stepper-label">Nombre de la rutina</label>
-    <input id="rutina-nombre" type="text" class="duo-input" placeholder="Ej. Día de Empuje (Push)">
-  </div>
+<div id="rutina-feedback-banner" class="pr-banner" hidden>
+  <span id="rutina-feedback-text">¡Rutina agregada a tus favoritas!</span>
+  <span class="status-badge status-badge--mejoro">LISTA</span>
+</div>
 
-  <div>
-    <label for="rutina-ejercicio-select" class="stepper-label">Agregar ejercicio y descanso</label>
-    <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
-      <select id="rutina-ejercicio-select" class="duo-input" style="flex: 1;">
-        {% for ej in ejercicios %}
-        <option value="{{ ej.id }}" data-nombre="{{ ej.nombre }}">{{ ej.nombre }}</option>
-        {% endfor %}
-      </select>
-      <select id="rutina-descanso-select" class="duo-input" style="width: 105px;">
-        <option value="60">60s</option>
-        <option value="90" selected>90s</option>
-        <option value="120">120s</option>
-        <option value="180">180s</option>
-      </select>
+<!-- PANEL 1: MIS RUTINAS PERSONALIZADAS -->
+<div id="panel-mis-rutinas" style="display: flex; flex-direction: column; gap: 1rem;">
+  <section class="duo-card" style="display: flex; flex-direction: column; gap: 0.85rem;">
+    <h1 style="font-size: 1.35rem; margin: 0;">Crear Nueva Rutina</h1>
+    <div id="rutina-error-msg" class="duo-alert" role="alert" hidden></div>
+
+    <div>
+      <label for="rutina-nombre" class="stepper-label">Nombre de la rutina</label>
+      <input id="rutina-nombre" type="text" class="duo-input" placeholder="Ej. Día de Empuje (Push)">
     </div>
-  </div>
 
-  <button type="button" id="btn-agregar-ej-rutina" class="btn-duo btn-duo--blue btn-duo--block">
-    ＋ AÑADIR EJERCICIO A LA LISTA
-  </button>
+    <div>
+      <label for="rutina-ejercicio-select" class="stepper-label">Agregar ejercicio y descanso</label>
+      <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+        <select id="rutina-ejercicio-select" class="duo-input" style="flex: 1;">
+          {% for ej in ejercicios %}
+          <option value="{{ ej.id }}" data-nombre="{{ ej.nombre }}">{{ ej.nombre }}</option>
+          {% endfor %}
+        </select>
+        <select id="rutina-descanso-select" class="duo-input" style="width: 105px;">
+          <option value="60">60s</option>
+          <option value="90" selected>90s</option>
+          <option value="120">120s</option>
+          <option value="150">150s</option>
+          <option value="180">180s</option>
+        </select>
+      </div>
+    </div>
 
-  <div id="lista-ejercicios-borrador" style="display: flex; flex-direction: column; gap: 0.45rem;"></div>
+    <button type="button" id="btn-agregar-ej-rutina" class="btn-duo btn-duo--blue btn-duo--block">
+      ＋ AÑADIR EJERCICIO A LA LISTA
+    </button>
 
-  <button type="button" id="btn-guardar-rutina" class="btn-duo btn-duo--green btn-duo--block">
-    GUARDAR RUTINA
-  </button>
-</section>
+    <div id="lista-ejercicios-borrador" style="display: flex; flex-direction: column; gap: 0.45rem;"></div>
 
-<section style="display: flex; flex-direction: column; gap: 0.75rem;">
-  <h2 style="font-size: 1.2rem; margin: 0;">Mis Rutinas Guardadas</h2>
-  <div id="contenedor-rutinas-usuario" style="display: flex; flex-direction: column; gap: 0.65rem;">
-    {% for r in rutinas %}
-    <div class="duo-card {% if r.es_favorita %}duo-card--highlight{% endif %}" style="display: flex; flex-direction: column; gap: 0.6rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <strong style="font-family: var(--font-display); font-size: 1.1rem; color: var(--color-night-ink);">
-          {% if r.es_favorita %}★ {% endif %}{{ r.nombre }}
-        </strong>
-        <div style="display: flex; gap: 0.35rem;">
-          <button type="button" class="btn-duo btn-duo--sm" data-fav-rutina="{{ r.id }}">
-            {% if r.es_favorita %}Quitar ★{% else %}Favorita ★{% endif %}
-          </button>
-          <button type="button" class="btn-duo btn-duo--danger btn-duo--sm" data-del-rutina="{{ r.id }}">
-            Borrar
-          </button>
+    <button type="button" id="btn-guardar-rutina" class="btn-duo btn-duo--green btn-duo--block">
+      GUARDAR RUTINA
+    </button>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 0.75rem;">
+    <h2 style="font-size: 1.2rem; margin: 0;">Mis Rutinas Guardadas</h2>
+    <div id="contenedor-rutinas-usuario" style="display: flex; flex-direction: column; gap: 0.65rem;">
+      {% for r in rutinas %}
+      <div class="duo-card {% if r.es_favorita %}duo-card--highlight{% endif %}" style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+          <div>
+            <strong style="font-family: var(--font-display); font-size: 1.1rem; color: var(--color-night-ink); display: block;">
+              {% if r.es_favorita %}★ {% endif %}{{ r.nombre }}
+            </strong>
+            {% if r.dias_semana %}
+            <span style="font-size: 0.76rem; font-weight: 800; color: var(--color-eager-green-shade);">
+              Días: {{ r.dias_semana | replace(',', ' · ') }}
+            </span>
+            {% endif %}
+          </div>
+          <div style="display: flex; gap: 0.35rem;">
+            <button type="button" class="btn-duo btn-duo--sm" data-fav-rutina="{{ r.id }}">
+              {% if r.es_favorita %}Quitar ★{% else %}Favorita ★{% endif %}
+            </button>
+            <button type="button" class="btn-duo btn-duo--danger btn-duo--sm" data-del-rutina="{{ r.id }}">
+              Borrar
+            </button>
+          </div>
         </div>
+        <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-charcoal);">
+          {% for item in r.ejercicios %}
+            {{ item.orden }}. {{ item.nombre }} ({{ item.series_objetivo }}x · {{ item.descanso_segundos }}s){% if not loop.last %} · {% endif %}
+          {% endfor %}
+        </div>
+        <a href="{{ url_for('sesion.vista_entrenar') }}" class="btn-duo btn-duo--green btn-duo--sm">
+          ENTRENAR ESTA RUTINA
+        </a>
       </div>
-      <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-charcoal);">
-        {% for item in r.ejercicios %}
-          {{ item.orden }}. {{ item.nombre }} ({{ item.descanso_segundos }}s){% if not loop.last %} · {% endif %}
+      {% else %}
+      <div class="duo-card" style="text-align: center; color: var(--color-charcoal); font-weight: 700;">
+        Aún no has creado rutinas personalizadas. Explora la pestaña <strong>🔥 Rutinas Famosas (12)</strong> para clonar una en un toque.
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<!-- PANEL 2: CATÁLOGO DE 12 RUTINAS FAMOSAS INTELIGENTES -->
+<div id="panel-rutinas-famosas" style="display: flex; flex-direction: column; gap: 0.85rem;" hidden>
+  <div>
+    <h2 style="font-size: 1.25rem; margin: 0 0 0.2rem 0;">Catálogo de 12 Rutinas Famosas</h2>
+    <p style="margin: 0; font-size: 0.86rem; font-weight: 700; color: var(--color-charcoal);">
+      Ordenadas automáticamente según tu perfil biométrico (meta y somatotipo).
+    </p>
+  </div>
+
+  <!-- Chips de Filtro Rápido con una sola mano -->
+  <div class="muscle-chips" role="group" aria-label="Filtrar rutinas famosas">
+    <button type="button" class="muscle-chip is-active" data-famous-filter="TODOS">Todos</button>
+    <button type="button" class="muscle-chip" data-famous-filter="ECTO_VOLUMEN">Ectomorfo / Volumen</button>
+    <button type="button" class="muscle-chip" data-famous-filter="ENDO_QUEMA">Endomorfo / Quema Grasa</button>
+    <button type="button" class="muscle-chip" data-famous-filter="DEFINICION">Definición</button>
+    <button type="button" class="muscle-chip" data-famous-filter="GLUTEO_PIERNA">Glúteo / Pierna</button>
+  </div>
+
+  <!-- Lista de Tarjetas de Rutinas Famosas -->
+  <div id="contenedor-rutinas-famosas" style="display: flex; flex-direction: column; gap: 0.75rem;">
+    {% for rf in rutinas_famosas | default([]) %}
+    <article
+      class="duo-card {% if rf.recomendada_para_ti %}duo-card--highlight{% endif %}"
+      data-famous-card
+      data-meta="{{ rf.meta_objetivo }}"
+      data-somatotipo="{{ rf.somatotipo_ideal }}"
+      data-nombre="{{ rf.nombre | lower }}"
+      style="display: flex; flex-direction: column; gap: 0.65rem;"
+    >
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.4rem;">
+        {% if rf.recomendada_para_ti %}
+        <span class="famous-badge-ideal">★ IDEAL PARA TU PERFIL ({{ rf.match_score }}%)</span>
+        {% else %}
+        <span class="status-badge">Afinidad {{ rf.match_score }}%</span>
+        {% endif %}
+        <span class="routine-day-pill">{{ rf.dias_semana | replace(',', ' · ') }}</span>
+      </div>
+
+      <div>
+        <h3 style="font-size: 1.12rem; margin: 0 0 0.25rem 0; color: var(--color-night-ink);">
+          {{ rf.nombre }}
+        </h3>
+        {% if rf.descripcion %}
+        <p style="margin: 0; font-size: 0.84rem; font-weight: 700; color: var(--color-charcoal);">
+          {{ rf.descripcion }}
+        </p>
+        {% endif %}
+      </div>
+
+      <div class="routine-days-row">
+        <span class="routine-day-pill">Meta: {{ rf.meta_objetivo | replace('_', ' ') }}</span>
+        <span class="routine-day-pill">Somatotipo: {{ rf.somatotipo_ideal }}</span>
+        <span class="routine-day-pill">Nivel: {{ rf.nivel }}</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+        {% for item in rf.ejercicios %}
+        <div class="duo-list-row" style="padding: 0.45rem 0.65rem;">
+          <span style="font-weight: 800; font-size: 0.85rem; color: var(--color-night-ink);">
+            {{ item.orden }}. {{ item.nombre }}
+          </span>
+          <span style="font-family: var(--font-display); font-weight: 800; font-size: 0.78rem; color: var(--color-charcoal);">
+            {{ item.series_objetivo }} series · {{ item.descanso_segundos }}s
+          </span>
+        </div>
         {% endfor %}
       </div>
-      <a href="{{ url_for('sesion.vista_entrenar') }}" class="btn-duo btn-duo--green btn-duo--sm">
-        ENTRENAR ESTA RUTINA
-      </a>
-    </div>
-    {% else %}
-    <div class="duo-card" style="text-align: center; color: var(--color-charcoal); font-weight: 700;">
-      Aún no has creado rutinas personalizadas.
-    </div>
+
+      <button
+        type="button"
+        class="btn-duo btn-duo--green btn-duo--block"
+        data-clonar-famosa="{{ rf.id }}"
+      >
+        ＋ USAR ESTA RUTINA
+      </button>
+    </article>
     {% endfor %}
   </div>
-</section>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -83,6 +203,86 @@
     const selectDesc = document.getElementById('rutina-descanso-select');
     const listaBorradorEl = document.getElementById('lista-ejercicios-borrador');
     const errorEl = document.getElementById('rutina-error-msg');
+    const panelMisRutinas = document.getElementById('panel-mis-rutinas');
+    const panelFamosas = document.getElementById('panel-rutinas-famosas');
+    const feedbackBanner = document.getElementById('rutina-feedback-banner');
+    const feedbackText = document.getElementById('rutina-feedback-text');
+
+    // Conmutación de pestañas píldora («Mis Rutinas» vs «🔥 Rutinas Famosas (12)»)
+    document.querySelectorAll('[data-rutina-tab]').forEach((tabBtn) => {
+      tabBtn.addEventListener('click', () => {
+        const target = tabBtn.getAttribute('data-rutina-tab');
+        document.querySelectorAll('[data-rutina-tab]').forEach((b) => {
+          const activo = b === tabBtn;
+          b.classList.toggle('is-active', activo);
+          b.setAttribute('aria-selected', activo ? 'true' : 'false');
+        });
+        if (target === 'rutinas-famosas') {
+          panelMisRutinas.hidden = true;
+          panelFamosas.hidden = false;
+        } else {
+          panelMisRutinas.hidden = false;
+          panelFamosas.hidden = true;
+        }
+      });
+    });
+
+    // Filtro rápido en cliente sobre las 12 Rutinas Famosas
+    document.querySelectorAll('[data-famous-filter]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const filtro = chip.getAttribute('data-famous-filter');
+        document.querySelectorAll('[data-famous-filter]').forEach((c) => c.classList.remove('is-active'));
+        chip.classList.add('is-active');
+
+        document.querySelectorAll('[data-famous-card]').forEach((card) => {
+          const meta = card.getAttribute('data-meta') || '';
+          const soma = card.getAttribute('data-somatotipo') || '';
+          const nombre = card.getAttribute('data-nombre') || '';
+
+          let visible = true;
+          if (filtro === 'ECTO_VOLUMEN') {
+            visible = soma === 'ECTOMORFO' || meta === 'GANAR_MASA';
+          } else if (filtro === 'ENDO_QUEMA') {
+            visible = soma === 'ENDOMORFO' || meta === 'BAJAR_PESO';
+          } else if (filtro === 'DEFINICION') {
+            visible = meta === 'DEFINIR';
+          } else if (filtro === 'GLUTEO_PIERNA') {
+            visible =
+              nombre.includes('glúteo') ||
+              nombre.includes('pierna') ||
+              nombre.includes('strong curves') ||
+              nombre.includes('upper / lower');
+          }
+          card.hidden = !visible;
+        });
+      });
+    });
+
+    // Clonar Rutina Famosa con un toque (POST /api/rutinas/famosas/<id>/clonar)
+    document.querySelectorAll('[data-clonar-famosa]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const plantillaId = btn.getAttribute('data-clonar-famosa');
+        const textoOriginal = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'CLONANDO RUTINA...';
+
+        const resp = await fetch(`/api/rutinas/famosas/${plantillaId}/clonar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (feedbackBanner && feedbackText) {
+            feedbackText.textContent = `¡"${data.nombre}" añadida a Mis Rutinas!`;
+            feedbackBanner.hidden = false;
+          }
+          window.location.reload();
+        } else {
+          btn.disabled = false;
+          btn.textContent = textoOriginal;
+        }
+      });
+    });
 
     function renderizarBorrador() {
       listaBorradorEl.innerHTML = borrador

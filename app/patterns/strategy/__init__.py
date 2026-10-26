@@ -11,6 +11,9 @@ from app.patterns.strategy.resumen_strategy import (
     ResumenMensualStrategy,
     ResumenStrategy,
 )
+from app.patterns.strategy.rutina_recomendacion_strategy import (
+    RutinaRecomendacionStrategy,
+)
 
 __all__ = [
     "PRStrategy",
@@ -20,4 +23,5 @@ __all__ = [
     "ComparacionMensualStrategy",
     "ResumenStrategy",
     "ResumenMensualStrategy",
+    "RutinaRecomendacionStrategy",
 ]
