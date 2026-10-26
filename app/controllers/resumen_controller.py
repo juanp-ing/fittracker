@@ -1,13 +1,37 @@
-"""Controlador REST para Historial, Progreso, Mapa Muscular y Resumen Mensual."""
+"""Controlador de vistas HTML y endpoints REST para Historial, Progreso, Mapa Muscular y Resumen."""
 
 from datetime import datetime, timezone
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 
 from app.patterns.facade import ResumenFacade
+from app.services.ejercicio_service import EjercicioService
 from app.services.resumen_service import ResumenService
 
 resumen_bp = Blueprint("resumen", __name__)
+
+
+@resumen_bp.route("/mapa", methods=["GET"])
+@login_required
+def vista_mapa():
+    """Renderiza la vista del Mapa Muscular Bicolor y Gráficas de Progreso/PRs."""
+    ej_service = EjercicioService()
+    ejercicios = ej_service.buscar_ejercicios_usuario(usuario_id=current_user.id)
+    return render_template(
+        "resumen/mapa.html",
+        active_tab="mapa",
+        ejercicios=ejercicios,
+    )
+
+
+@resumen_bp.route("/resumen", methods=["GET"])
+@login_required
+def vista_resumen():
+    """Renderiza la vista del Resumen Mensual de 30 días."""
+    return render_template(
+        "resumen/index.html",
+        active_tab="resumen",
+    )
 
 
 @resumen_bp.route("/api/historial", methods=["GET"])
@@ -57,7 +81,6 @@ def obtener_mapa_muscular():
 
     if desde_param:
         try:
-            # Permite pasar un número de días o una fecha ISO YYYY-MM-DD
             if desde_param.isdigit():
                 dias = int(desde_param)
             else:

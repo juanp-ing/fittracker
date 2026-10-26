@@ -3,3 +3,4 @@
 from app.patterns.facade.resumen_facade import ResumenFacade, ResumenMensualFacade
 
 __all__ = ["ResumenFacade", "ResumenMensualFacade"]
+

@@ -167,3 +167,4 @@ class ResumenFacade:
 
 # Alias de conveniencia
 ResumenMensualFacade = ResumenFacade
+

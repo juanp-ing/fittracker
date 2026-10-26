@@ -1,11 +1,28 @@
-"""Controlador REST para la gestión de rutinas personalizadas."""
+"""Controlador de vistas HTML y endpoints REST para la gestión de rutinas personalizadas."""
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 
+from app.services.ejercicio_service import EjercicioService
 from app.services.rutina_service import RutinaNoEncontradaError, RutinaService
 
 rutina_bp = Blueprint("rutina", __name__)
+
+
+@rutina_bp.route("/rutinas", methods=["GET"])
+@login_required
+def vista_rutinas():
+    """Renderiza la vista de gestión de rutinas personalizadas."""
+    rutina_service = RutinaService()
+    ej_service = EjercicioService()
+    rutinas = rutina_service.listar_rutinas_usuario(usuario_id=current_user.id)
+    ejercicios = ej_service.buscar_ejercicios_usuario(usuario_id=current_user.id)
+    return render_template(
+        "rutinas/index.html",
+        active_tab="rutinas",
+        rutinas=rutinas,
+        ejercicios=ejercicios,
+    )
 
 
 @rutina_bp.route("/api/rutinas", methods=["GET"])
@@ -115,4 +132,3 @@ def alternar_favorita(rutina_id: int):
         return jsonify({"error": str(exc), "code": "NO_ENCONTRADO"}), 404
 
     return jsonify(actualizada), 200
-

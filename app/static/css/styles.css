@@ -1,0 +1,688 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@500;700&family=Nunito:wght@800;900&display=swap');
+
+:root {
+  /* Paleta Oficial Light Theme Gamificado de Duolingo (DESIGN.md) */
+  --color-eager-green: #58cc02;
+  --color-eager-green-shade: #46a302;
+  --color-storybook-green: #d7ffb8;
+  --color-spark-blue: #1cb0f6;
+  --color-spark-blue-shade: #1899d6;
+  --color-fresh-leaf: #a5ed6e;
+  --color-night-ink: #000437;
+  --color-paper-white: #ffffff;
+  --color-charcoal: #4b4b4b;
+  --color-pencil-gray: #777777;
+  --color-faded-gray: #afafaf;
+  --color-border-light: #e5e5e5;
+  --color-surface-muted: #f7f7f7;
+  --color-danger-red: #ff4b4b;
+  --color-danger-red-shade: #ea2b2b;
+  --color-warning-bg: #fff4cc;
+  --color-warning-border: #ffc800;
+
+  /* Tipografía */
+  --font-display: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'Nunito Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Geometría Táctil */
+  --radius-card: 12px;
+  --radius-btn: 12px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  color: var(--color-charcoal);
+  background-color: var(--color-surface-muted);
+  line-height: 1.45;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .display-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--color-night-ink);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+button,
+a,
+input,
+select,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  font-family: inherit;
+}
+
+button,
+.btn {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ==========================================================================
+   Contenedor Especial para Celular (Mobile Viewport Shell)
+   ========================================================================== */
+.mobile-shell {
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background-color: var(--color-paper-white);
+  border-left: 2px solid var(--color-border-light);
+  border-right: 2px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 430px) {
+  .mobile-shell {
+    border-left: none;
+    border-right: none;
+  }
+}
+
+/* Barra Superior */
+.top-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background-color: var(--color-paper-white);
+  border-bottom: 2px solid var(--color-border-light);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.35rem;
+  color: var(--color-eager-green);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+
+.brand-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--color-eager-green);
+  border: 2px solid var(--color-eager-green-shade);
+  display: inline-block;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sync-pill {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-btn);
+  border: 2px solid var(--color-warning-border);
+  background-color: var(--color-warning-bg);
+  color: var(--color-night-ink);
+}
+
+.main-content {
+  flex: 1;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   Tarjetas, Inputs y Botones Sticker/3D estilo Duolingo
+   ========================================================================== */
+.duo-card {
+  background-color: var(--color-paper-white);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 4px;
+  border-radius: var(--radius-card);
+  padding: 1rem;
+}
+
+.duo-card--highlight {
+  background-color: var(--color-storybook-green);
+  border-color: var(--color-eager-green);
+}
+
+.duo-card--blue {
+  background-color: var(--color-paper-white);
+  border-color: var(--color-spark-blue);
+}
+
+.duo-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.9rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-night-ink);
+  background-color: var(--color-paper-white);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 4px;
+  border-radius: var(--radius-btn);
+  outline: none;
+  transition: border-color 120ms ease-out;
+}
+
+.duo-input:focus {
+  border-color: var(--color-spark-blue);
+}
+
+.duo-input::placeholder {
+  color: var(--color-pencil-gray);
+  font-weight: 500;
+}
+
+.btn-duo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 50px;
+  padding: 0.7rem 1.1rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  border-radius: var(--radius-btn);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 4px;
+  background-color: var(--color-paper-white);
+  color: var(--color-charcoal);
+  cursor: pointer;
+  transition: transform 80ms ease-out, border-bottom-width 80ms ease-out;
+}
+
+.btn-duo:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.btn-duo--green {
+  background-color: var(--color-eager-green);
+  border-color: var(--color-eager-green-shade);
+  color: var(--color-paper-white);
+}
+
+.btn-duo--blue {
+  background-color: var(--color-spark-blue);
+  border-color: var(--color-spark-blue-shade);
+  color: var(--color-paper-white);
+}
+
+.btn-duo--danger {
+  background-color: var(--color-danger-red);
+  border-color: var(--color-danger-red-shade);
+  color: var(--color-paper-white);
+}
+
+.btn-duo--soft {
+  background-color: var(--color-storybook-green);
+  border-color: var(--color-eager-green);
+  color: var(--color-night-ink);
+}
+
+.btn-duo--block {
+  width: 100%;
+}
+
+.btn-duo--giant {
+  min-height: 62px;
+  font-size: 1.2rem;
+}
+
+.btn-duo--sm {
+  min-height: 40px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+/* ==========================================================================
+   Registro de Series en < 10 Segundos (Botones Gigantes +/- sin teclado)
+   ========================================================================== */
+.stepper-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stepper-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stepper-label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: var(--color-pencil-gray);
+}
+
+.step-chips {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.step-chip {
+  min-height: 36px;
+  min-width: 48px;
+  padding: 0.25rem 0.55rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.82rem;
+  border-radius: var(--radius-btn);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 3px;
+  background-color: var(--color-paper-white);
+  color: var(--color-charcoal);
+  cursor: pointer;
+}
+
+.step-chip.is-active {
+  background-color: var(--color-storybook-green);
+  border-color: var(--color-eager-green);
+  color: var(--color-night-ink);
+}
+
+.stepper-control {
+  display: grid;
+  grid-template-columns: 72px 1fr 72px;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.btn-stepper {
+  min-height: 58px;
+  min-width: 64px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.85rem;
+  line-height: 1;
+  border-radius: var(--radius-btn);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 4px;
+  background-color: var(--color-paper-white);
+  color: var(--color-night-ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-stepper:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+  background-color: var(--color-storybook-green);
+  border-color: var(--color-eager-green);
+}
+
+.stepper-display {
+  min-height: 58px;
+  border: 2px solid var(--color-faded-gray);
+  border-radius: var(--radius-btn);
+  background-color: var(--color-surface-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+}
+
+.stepper-value {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.9rem;
+  line-height: 1.05;
+  color: var(--color-night-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.stepper-unit {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-pencil-gray);
+}
+
+/* ==========================================================================
+   Buscador Instantáneo y Chips Musculares
+   ========================================================================== */
+.exercise-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.exercise-option {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-btn);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 4px;
+  background-color: var(--color-paper-white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.exercise-option.is-selected {
+  background-color: var(--color-storybook-green);
+  border-color: var(--color-eager-green);
+}
+
+.exercise-option__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--color-night-ink);
+}
+
+.exercise-option__meta {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-pencil-gray);
+}
+
+.muscle-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.muscle-chip {
+  min-height: 40px;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-btn);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 3px;
+  background-color: var(--color-paper-white);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--color-charcoal);
+  cursor: pointer;
+}
+
+.muscle-chip.is-primary {
+  background-color: var(--color-eager-green);
+  border-color: var(--color-eager-green-shade);
+  color: var(--color-paper-white);
+}
+
+.muscle-chip.is-secondary {
+  background-color: var(--color-fresh-leaf);
+  border-color: var(--color-eager-green);
+  color: var(--color-night-ink);
+}
+
+/* ==========================================================================
+   Banner de Cronómetro de Descanso y Celebración de PR
+   ========================================================================== */
+.rest-timer-banner {
+  border-radius: var(--radius-card);
+  border: 2px solid var(--color-spark-blue-shade);
+  border-bottom-width: 4px;
+  background-color: var(--color-spark-blue);
+  color: var(--color-paper-white);
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.rest-timer-banner.is-finished {
+  background-color: var(--color-eager-green);
+  border-color: var(--color-eager-green-shade);
+}
+
+.rest-timer-clock {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.85rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.pr-banner {
+  border-radius: var(--radius-card);
+  border: 2px solid var(--color-eager-green-shade);
+  border-bottom-width: 4px;
+  background-color: var(--color-storybook-green);
+  color: var(--color-night-ink);
+  padding: 0.85rem 1rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* ==========================================================================
+   Mapa Muscular Anatómico SVG Bicolor
+   ========================================================================== */
+.muscle-map-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.muscle-map-svg-container {
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+}
+
+.muscle-map-svg-container svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.muscle-zone {
+  fill: #e5e5e5;
+  stroke: var(--color-charcoal);
+  stroke-width: 2px;
+  transition: fill 150ms ease-out;
+}
+
+.muscle-zone.is-primario {
+  fill: var(--color-eager-green);
+}
+
+.muscle-zone.is-secundario {
+  fill: var(--color-fresh-leaf);
+}
+
+.muscle-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 2px solid var(--color-charcoal);
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.3rem;
+}
+
+/* ==========================================================================
+   Bottom Sheet Modal (Creación rápida de Ejercicio sin recargar)
+   ========================================================================== */
+.bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 4, 55, 0.45);
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bottom-sheet-backdrop[hidden] {
+  display: none !important;
+}
+
+.bottom-sheet {
+  width: 100%;
+  max-width: 430px;
+  background-color: var(--color-paper-white);
+  border-top: 3px solid var(--color-faded-gray);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-height: 88dvh;
+  overflow-y: auto;
+}
+
+/* ==========================================================================
+   Barra de Navegación Inferior Fija (Bottom Nav en zona del pulgar)
+   ========================================================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background-color: var(--color-paper-white);
+  border-top: 2px solid var(--color-faded-gray);
+  padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+  z-index: 40;
+}
+
+.bottom-nav__item {
+  min-height: 56px;
+  border-radius: var(--radius-btn);
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.75rem;
+  color: var(--color-pencil-gray);
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.bottom-nav__item.is-active {
+  background-color: var(--color-storybook-green);
+  border-color: var(--color-eager-green);
+  color: var(--color-night-ink);
+}
+
+.bottom-nav__icon {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  fill: none;
+}
+
+/* Badges de Estado (MEJORO / ESTANCADO / PR) */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  border: 2px solid var(--color-faded-gray);
+}
+
+.status-badge--mejoro {
+  background-color: var(--color-storybook-green);
+  border-color: var(--color-eager-green);
+  color: var(--color-night-ink);
+}
+
+.status-badge--estancado {
+  background-color: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+  color: var(--color-night-ink);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.kpi-value {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.65rem;
+  color: var(--color-night-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-pencil-gray);
+  text-transform: uppercase;
+}

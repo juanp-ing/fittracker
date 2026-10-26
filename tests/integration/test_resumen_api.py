@@ -139,3 +139,4 @@ def test_resumen_mensual_mapa_muscular_bicolor_progreso_e_historial(app, client)
     historial = hist_resp.get_json()["sesiones"]
     assert len(historial) == 3
     assert historial[0]["total_series"] == 2
+

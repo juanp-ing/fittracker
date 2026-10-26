@@ -1,0 +1,10 @@
+{
+  "name": "FitTracker — Entrenamiento en <10s",
+  "short_name": "FitTracker",
+  "description": "Registro de gimnasio mobile-first sin teclado en menos de 10 segundos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#58cc02",
+  "orientation": "portrait"
+}

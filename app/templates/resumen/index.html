@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Resumen Mensual 30d — FitTracker{% endblock %}
+
+{% block content %}
+<div id="resumen-mensual-contenedor" style="display: flex; flex-direction: column; gap: 1rem;">
+  <section class="duo-card duo-card--highlight">
+    <h1 style="font-size: 1.35rem; margin: 0 0 0.25rem 0;">Resumen de tus últimos 30 días</h1>
+    <p style="margin: 0; font-weight: 700; color: var(--color-charcoal);">
+      Comparativa automática contra los días 31–60.
+    </p>
+  </section>
+
+  <!-- KPIs Principales -->
+  <section class="kpi-grid">
+    <div class="duo-card">
+      <div id="kpi-total-sesiones" class="kpi-value">0</div>
+      <div class="kpi-label">Sesiones</div>
+    </div>
+    <div class="duo-card">
+      <div id="kpi-nuevos-prs" class="kpi-value" style="color: var(--color-eager-green);">0</div>
+      <div class="kpi-label">Nuevos PRs</div>
+    </div>
+    <div class="duo-card">
+      <div id="kpi-total-series" class="kpi-value">0</div>
+      <div class="kpi-label">Series</div>
+    </div>
+    <div class="duo-card">
+      <div id="kpi-volumen-total" class="kpi-value">0 kg</div>
+      <div class="kpi-label">Volumen Total</div>
+    </div>
+  </section>
+
+  <!-- Récords Personales del Mes -->
+  <section style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <h2 style="font-size: 1.15rem; margin: 0;">Récords Personales Logrados (PRs)</h2>
+    <div id="lista-prs-mes" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+  </section>
+
+  <!-- Ejercicios que Mejoraron (#58cc02) -->
+  <section style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <h2 style="font-size: 1.15rem; margin: 0;">Ejercicios que Mejoraron</h2>
+    <div id="lista-ejercicios-mejorados" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+  </section>
+
+  <!-- Ejercicios Estancados (>= 2 sesiones sin subir marca) -->
+  <section style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <h2 style="font-size: 1.15rem; margin: 0;">Ejercicios Estancados (Atención)</h2>
+    <div id="lista-ejercicios-estancados" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/graficas.js') }}"></script>
+{% endblock %}

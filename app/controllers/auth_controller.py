@@ -1,11 +1,28 @@
-"""Controlador REST para autenticación y gestión de sesión de usuarios."""
+"""Controlador de vistas HTML y endpoints REST para autenticación de usuarios."""
 
-from flask import Blueprint, jsonify, request
-from flask_login import login_required, login_user, logout_user
+from flask import Blueprint, jsonify, redirect, render_template, request, url_for
+from flask_login import current_user, login_required, login_user, logout_user
 
 from app.services.auth_service import AuthService, EmailDuplicadoError
 
 auth_bp = Blueprint("auth", __name__)
+
+
+@auth_bp.route("/login", methods=["GET"])
+def vista_login():
+    """Renderiza la vista mobile-first de inicio de sesión."""
+    if current_user.is_authenticated:
+        return redirect(url_for("sesion.vista_entrenar"))
+    return render_template("auth/login.html")
+
+
+@auth_bp.route("/register", methods=["GET"])
+@auth_bp.route("/registro", methods=["GET"])
+def vista_registro():
+    """Renderiza la vista mobile-first de registro de cuenta."""
+    if current_user.is_authenticated:
+        return redirect(url_for("sesion.vista_entrenar"))
+    return render_template("auth/register.html")
 
 
 @auth_bp.route("/api/auth/register", methods=["POST"])
@@ -106,4 +123,3 @@ def logout():
         ),
         200,
     )
-
