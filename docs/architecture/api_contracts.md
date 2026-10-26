@@ -419,3 +419,4 @@ Agrega las métricas de los últimos 30 días mediante `ResumenMensualFacade` y 
   ]
 }
 ```
+

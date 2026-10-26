@@ -137,3 +137,4 @@ class SesionRepository:
             .order_by(Serie.fecha_hora.asc(), Serie.id.asc())
             .all()
         )
+

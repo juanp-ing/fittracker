@@ -100,3 +100,4 @@ class EjercicioRepository:
             )
             .first()
         )
+
