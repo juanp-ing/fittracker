@@ -52,3 +52,4 @@ class SesionFinalizadaState(SesionState):
 
     def validar_finalizacion(self) -> None:
         raise SesionCerradaError("La sesión ya se encuentra en estado FINALIZADA.")
+

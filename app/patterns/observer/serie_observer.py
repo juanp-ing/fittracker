@@ -76,3 +76,4 @@ class PRDetectionObserver(SerieObserver):
             max_volumen_previo=max_volumen_previo,
             commit=False,
         )
+

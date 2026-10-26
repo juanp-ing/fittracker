@@ -49,3 +49,4 @@ class VolumenSerieStrategy(PRStrategy):
             return False
         volumen_actual = float(nuevo_peso) * int(repeticiones)
         return volumen_actual > float(valor_historico)
+

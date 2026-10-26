@@ -84,13 +84,20 @@ def create_app(config_name="default") -> Flask:
 
     # Importar modelos para que SQLAlchemy y Flask-Migrate los registren
     from app import models  # noqa: F401
-    from app.controllers import auth_bp, ejercicio_bp, rutina_bp, sesion_bp
+    from app.controllers import (
+        auth_bp,
+        ejercicio_bp,
+        resumen_bp,
+        rutina_bp,
+        sesion_bp,
+    )
     from app.seeds import seed_database
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(ejercicio_bp)
     app.register_blueprint(rutina_bp)
     app.register_blueprint(sesion_bp)
+    app.register_blueprint(resumen_bp)
 
     @app.cli.command("seed")
     def seed_command():

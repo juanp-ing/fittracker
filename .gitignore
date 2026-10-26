@@ -23,3 +23,9 @@ instance/
 .env
 .flaskenv
 
+# Agent & CLI tooling
+.agents/
+.codex/
+skills-lock.json
+
+
