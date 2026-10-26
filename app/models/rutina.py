@@ -4,7 +4,7 @@ from app import db
 
 
 class Rutina(db.Model):
-    """Plantilla de entrenamiento perteneciente a un usuario."""
+    """Plantilla de entrenamiento perteneciente a un usuario o al catálogo de Rutinas Famosas."""
 
     __tablename__ = "rutinas"
 
@@ -12,11 +12,17 @@ class Rutina(db.Model):
     usuario_id = db.Column(
         db.Integer,
         db.ForeignKey("usuarios.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     nombre = db.Column(db.String(100), nullable=False)
     es_favorita = db.Column(db.Boolean, default=False, nullable=False)
+    es_plantilla_famosa = db.Column(db.Boolean, default=False, nullable=False)
+    descripcion = db.Column(db.String(300), nullable=True)
+    meta_objetivo = db.Column(db.String(30), nullable=True)
+    somatotipo_ideal = db.Column(db.String(20), nullable=True)
+    nivel = db.Column(db.String(20), default="INTERMEDIO", nullable=True)
+    dias_semana = db.Column(db.String(50), default="LUN,MIE,VIE", nullable=True)
 
     usuario = db.relationship("Usuario", back_populates="rutinas")
     ejercicios = db.relationship(
@@ -64,4 +70,3 @@ class RutinaEjercicio(db.Model):
             f"<RutinaEjercicio id={self.id} rutina_id={self.rutina_id} "
             f"ejercicio_id={self.ejercicio_id} orden={self.orden}>"
         )
-

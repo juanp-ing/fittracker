@@ -30,3 +30,4 @@ class PerfilUsuario(db.Model):
             f"<PerfilUsuario usuario_id={self.usuario_id} "
             f"sexo={self.sexo!r} meta={self.meta!r} somatotipo={self.somatotipo!r}>"
         )
+

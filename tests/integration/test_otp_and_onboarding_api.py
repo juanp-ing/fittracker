@@ -145,3 +145,4 @@ def test_onboarding_rechaza_enums_y_rangos_invalidos(app, client, payload_invali
     resp = client.put("/api/perfil", json=payload_invalido)
     assert resp.status_code == 400
     assert resp.get_json()["code"] == "DATOS_INVALIDOS"
+

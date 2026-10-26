@@ -118,7 +118,9 @@ def create_app(config_name="default") -> Flask:
             f"Semillas completadas: {resultado['total_grupos']} grupos musculares "
             f"({resultado['grupos_creados']} nuevos), "
             f"{resultado['total_ejercicios']} ejercicios predeterminados "
-            f"({resultado['ejercicios_creados']} nuevos).{mensaje_demo}"
+            f"({resultado['ejercicios_creados']} nuevos), "
+            f"{resultado.get('total_rutinas_famosas', 0)} rutinas famosas "
+            f"({resultado.get('rutinas_famosas_creadas', 0)} nuevas).{mensaje_demo}"
         )
 
     @app.route("/api/health", methods=["GET"])
