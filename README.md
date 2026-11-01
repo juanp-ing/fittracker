@@ -140,6 +140,12 @@ Accede desde tu navegador móvil o de escritorio a:
 
 ### Opción B: Despliegue con Docker y Docker Compose
 
+Producción necesita una `SECRET_KEY` propia; sin ella el contenedor no arranca. Créala una sola vez en un archivo `.env` (está en `.gitignore`, no se sube al repositorio):
+
+```bash
+echo "SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')" > .env
+```
+
 ```bash
 # Construir y levantar el contenedor en segundo plano
 docker compose up --build -d

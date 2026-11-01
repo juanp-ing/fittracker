@@ -6,7 +6,7 @@ services:
       - "5000:5000"
     environment:
       - FLASK_CONFIG=production
-      - SECRET_KEY=${SECRET_KEY:-fittracker-prod-secret-key}
+      - SECRET_KEY=${SECRET_KEY:?Define SECRET_KEY en el archivo .env (ver README)}
       - DATABASE_URL=sqlite:////app/data/fittracker.db
     volumes:
       - sqlite_data:/app/data
