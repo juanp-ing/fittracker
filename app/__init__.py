@@ -10,6 +10,7 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 
 from app.config.settings import (
+    DEV_SECRET_KEY,
     DevelopmentConfig,
     ProductionConfig,
     TestingConfig,
@@ -72,11 +73,24 @@ def _resolve_config(config_name):
     return config_name
 
 
+def _check_secret_key(app: Flask, config_obj) -> None:
+    """En producción exige una SECRET_KEY propia: la de desarrollo es pública en el repo."""
+    es_produccion = isinstance(config_obj, type) and issubclass(config_obj, ProductionConfig)
+    clave = app.config.get("SECRET_KEY")
+    if es_produccion and (not clave or clave == DEV_SECRET_KEY):
+        raise RuntimeError(
+            "Falta SECRET_KEY para producción. Genera una con "
+            "python -c \"import secrets; print(secrets.token_hex(32))\" "
+            "y pásala como variable de entorno."
+        )
+
+
 def create_app(config_name="default") -> Flask:
     """Crea y configura una instancia de la aplicación Flask FitTracker."""
     app = Flask(__name__)
     config_obj = _resolve_config(config_name)
     app.config.from_object(config_obj)
+    _check_secret_key(app, config_obj)
 
     db.init_app(app)
     migrate.init_app(app, db)
