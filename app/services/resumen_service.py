@@ -6,6 +6,7 @@ from typing import Optional
 from app.repositories.ejercicio_repository import EjercicioRepository
 from app.repositories.pr_repository import PRRepository
 from app.repositories.sesion_repository import SesionRepository
+from app.services.zona_horaria import fecha_local, resolver_zona_horaria
 
 
 class ResumenService:
@@ -259,8 +260,13 @@ class ResumenService:
         self,
         usuario_id: int,
         ejercicio_id: int,
+        zona_horaria: Optional[str] = None,
     ) -> dict:
-        """Retorna la serie temporal de fechas, pesos máximos y volúmenes para un ejercicio."""
+        """Retorna la serie temporal de fechas, pesos máximos y volúmenes para un ejercicio.
+
+        Los puntos se agrupan por día local del usuario (no por día UTC).
+        """
+        zona = resolver_zona_horaria(zona_horaria)
         ejercicio = self.ejercicio_repo.obtener_visible_por_id(
             ejercicio_id=ejercicio_id,
             usuario_id=usuario_id,
@@ -277,7 +283,7 @@ class ResumenService:
         por_fecha: dict[str, dict] = {}
         for s in series:
             fecha_str = (
-                s.fecha_hora.strftime("%Y-%m-%d")
+                fecha_local(s.fecha_hora, zona).isoformat()
                 if s.fecha_hora
                 else "Sin fecha"
             )

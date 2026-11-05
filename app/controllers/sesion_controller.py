@@ -6,24 +6,34 @@ from flask_login import current_user, login_required
 from app.patterns.state import SesionCerradaError
 from app.services.rutina_service import RutinaService
 from app.services.sesion_service import SesionNoEncontradaError, SesionService
+from app.services.zona_horaria import COOKIE_ZONA_HORARIA
 
 sesion_bp = Blueprint("sesion", __name__)
 
 
-@sesion_bp.route("/", methods=["GET"])
+# La ruta canónica va última: Flask la registra primero y url_for() la usa.
 @sesion_bp.route("/entrenar", methods=["GET"])
+@sesion_bp.route("/", methods=["GET"])
 @login_required
 def vista_entrenar():
     """Renderiza la pantalla principal de entrenamiento rápido con Mini-Calendario Semanal y Checklist."""
     rutina_service = RutinaService()
     sesion_service = SesionService()
     rutinas = rutina_service.listar_rutinas_usuario(usuario_id=current_user.id)
-    agenda_hoy = sesion_service.obtener_agenda_diaria(usuario_id=current_user.id)
+    agenda_hoy = sesion_service.obtener_agenda_diaria(
+        usuario_id=current_user.id,
+        # «Entrenar esta rutina» (desde Rutinas) llega como ?rutina_id=; si no es del
+        # usuario, el servicio cae en su rutina principal.
+        rutina_id=request.args.get("rutina_id", type=int),
+        zona_horaria=request.cookies.get(COOKIE_ZONA_HORARIA),
+    )
+    sesion_activa = sesion_service.obtener_sesion_activa(usuario_id=current_user.id)
     return render_template(
         "index.html",
         active_tab="entrenar",
         rutinas=rutinas,
         agenda_hoy=agenda_hoy,
+        sesion_activa=sesion_activa,
     )
 
 
@@ -39,6 +49,7 @@ def obtener_agenda_diaria():
             usuario_id=current_user.id,
             fecha_str=fecha,
             rutina_id=rutina_id,
+            zona_horaria=request.cookies.get(COOKIE_ZONA_HORARIA),
         )
     except ValueError as exc:
         return jsonify({"error": str(exc), "code": "FECHA_INVALIDA"}), 400
@@ -95,6 +106,7 @@ def registrar_serie(sesion_id: int):
             ejercicio_id=ejercicio_id,
             peso=peso,
             repeticiones=repeticiones,
+            zona_horaria=request.cookies.get(COOKIE_ZONA_HORARIA),
         )
     except SesionNoEncontradaError as exc:
         return jsonify({"error": str(exc), "code": "NO_ENCONTRADO"}), 404
@@ -102,6 +114,25 @@ def registrar_serie(sesion_id: int):
         return jsonify({"error": str(exc), "code": "DATOS_INVALIDOS"}), 400
 
     return jsonify(resultado), 201
+
+
+@sesion_bp.route("/api/sesiones/<int:sesion_id>/series/<int:serie_id>", methods=["DELETE"])
+@login_required
+def eliminar_serie(sesion_id: int, serie_id: int):
+    """Deshace una serie registrada por error en una sesión activa."""
+    service = SesionService()
+    try:
+        resultado = service.eliminar_serie(
+            usuario_id=current_user.id,
+            sesion_id=sesion_id,
+            serie_id=serie_id,
+        )
+    except SesionNoEncontradaError as exc:
+        return jsonify({"error": str(exc), "code": "NO_ENCONTRADO"}), 404
+    except SesionCerradaError as exc:
+        return jsonify({"error": str(exc), "code": "SESION_CERRADA"}), 400
+
+    return jsonify(resultado), 200
 
 
 @sesion_bp.route("/api/sesiones/<int:sesion_id>/finalizar", methods=["PATCH", "POST"])

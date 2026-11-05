@@ -131,6 +131,19 @@ class ResumenFacade:
         sesiones_unicas_ids = {s.sesion_id for s in series_actuales}
         volumen_total_kg = sum(float(s.volumen) for s in series_actuales)
 
+        # Un récord compara contra algo: la primera serie de un ejercicio es solo una
+        # «primera marca» y no se celebra ni se cuenta como récord.
+        records, primeras_marcas = [], 0
+        for pr in self._mejor_pr_por_ejercicio_y_tipo(prs_mes):
+            if pr.serie is not None and self.sesion_repo.existe_serie_anterior(
+                usuario_id=usuario_id, ejercicio_id=pr.ejercicio_id, serie=pr.serie
+            ):
+                records.append(pr)
+            else:
+                primeras_marcas += 1
+
+        volumen_previo_kg = sum(float(s.volumen) for s in series_previas)
+
         prs_detalle = [
             {
                 "id": pr.id,
@@ -140,7 +153,7 @@ class ResumenFacade:
                 "tipo_pr": pr.tipo_pr,
                 "fecha": pr.fecha.isoformat() if pr.fecha else None,
             }
-            for pr in prs_mes
+            for pr in records
         ]
 
         mapa_muscular = self.resumen_service.obtener_mapa_muscular(
@@ -155,6 +168,17 @@ class ResumenFacade:
             "total_series": len(series_actuales),
             "volumen_total_kg": float(volumen_total_kg),
             "nuevos_prs": len(prs_detalle),
+            "primeras_marcas": primeras_marcas,
+            "comparativa": {
+                "sesiones": len({s.sesion_id for s in series_previas}),
+                "series": len(series_previas),
+                "volumen_kg": float(volumen_previo_kg),
+                "variacion_volumen_pct": (
+                    round((volumen_total_kg - volumen_previo_kg) / volumen_previo_kg * 100)
+                    if volumen_previo_kg
+                    else None
+                ),
+            },
             "prs_logrados": prs_detalle,
             "prs_detalle": prs_detalle,
             "ejercicios_mejorados": ejercicios_mejorados,
@@ -164,7 +188,21 @@ class ResumenFacade:
             "mapa_muscular": mapa_muscular,
         }
 
+    @staticmethod
+    def _mejor_pr_por_ejercicio_y_tipo(prs: list) -> list:
+        """Conserva un solo PR por (ejercicio, tipo): el de mayor peso, en el orden recibido.
+
+        Cada serie que supera la marca genera un registro de PR; en el resumen interesa
+        el récord vigente, no cada escalón intermedio (40 → 42.5 → 45 kg muestra solo 45).
+        """
+        mejores: dict[tuple, object] = {}
+        for pr in prs:
+            clave = (pr.ejercicio_id, pr.tipo_pr)
+            if clave not in mejores or pr.peso > mejores[clave].peso:
+                mejores[clave] = pr
+        elegidos = {id(pr) for pr in mejores.values()}
+        return [pr for pr in prs if id(pr) in elegidos]
+
 
 # Alias de conveniencia
 ResumenMensualFacade = ResumenFacade
-

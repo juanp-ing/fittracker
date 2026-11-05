@@ -4,6 +4,8 @@
 (function () {
   const TIMER_STORAGE_KEY = 'fittracker_rest_timer_end';
   let intervalId = null;
+  let ocultarFinTimeoutId = null;
+  const MS_AVISO_FIN = 5000;
 
   const bannerEl = document.getElementById('cronometro-banner');
   const relojEl = document.getElementById('cronometro-reloj');
@@ -24,12 +26,13 @@
     const endTime = Date.now() + duracion * 1000;
     localStorage.setItem(TIMER_STORAGE_KEY, String(endTime));
 
+    if (ocultarFinTimeoutId) clearTimeout(ocultarFinTimeoutId);
     if (bannerEl) {
       bannerEl.hidden = false;
       bannerEl.classList.remove('is-finished');
     }
     if (estadoTextoEl) {
-      estadoTextoEl.textContent = 'Tiempo de descanso activo';
+      estadoTextoEl.textContent = 'Descanso';
     }
     ejecutarTick();
     if (intervalId) clearInterval(intervalId);
@@ -45,6 +48,7 @@
   }
 
   function detener() {
+    if (ocultarFinTimeoutId) clearTimeout(ocultarFinTimeoutId);
     localStorage.removeItem(TIMER_STORAGE_KEY);
     if (intervalId) {
       clearInterval(intervalId);
@@ -78,8 +82,13 @@
         bannerEl.classList.add('is-finished');
       }
       if (estadoTextoEl) {
-        estadoTextoEl.textContent = '¡Descanso terminado! A por la siguiente serie';
+        estadoTextoEl.textContent = '¡A por la siguiente serie!';
       }
+      // El aviso de fin se retira solo para dejar libre el panel del pulgar.
+      if (ocultarFinTimeoutId) clearTimeout(ocultarFinTimeoutId);
+      ocultarFinTimeoutId = setTimeout(() => {
+        if (bannerEl && !localStorage.getItem(TIMER_STORAGE_KEY)) bannerEl.hidden = true;
+      }, MS_AVISO_FIN);
       if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
         navigator.vibrate([200, 100, 200]);
       }

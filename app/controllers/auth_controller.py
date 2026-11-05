@@ -7,6 +7,15 @@ from app.services.auth_service import AuthService, EmailDuplicadoError
 
 auth_bp = Blueprint("auth", __name__)
 
+# Destinos internos permitidos al terminar el onboarding (evita redirecciones abiertas).
+DESTINOS_ONBOARDING = {"/", "/perfil"}
+
+ETIQUETAS_PERFIL = {
+    "sexo": {"HOMBRE": "Hombre", "MUJER": "Mujer"},
+    "meta": {"BAJAR_PESO": "Bajar de peso", "DEFINIR": "Definir", "GANAR_MASA": "Ganar masa"},
+    "somatotipo": {"ECTOMORFO": "Ectomorfo", "MESOMORFO": "Mesomorfo", "ENDOMORFO": "Endomorfo"},
+}
+
 
 @auth_bp.route("/login", methods=["GET"])
 def vista_login():
@@ -42,7 +51,27 @@ def vista_onboarding():
     """Renderiza el wizard interactivo de 4 pasos de onboarding biométrico estilo Duolingo."""
     service = AuthService()
     perfil = service.obtener_perfil_usuario(current_user.id)
-    return render_template("auth/onboarding.html", perfil=perfil)
+    siguiente = request.args.get("siguiente", "/")
+    return render_template(
+        "auth/onboarding.html",
+        perfil=perfil,
+        destino=siguiente if siguiente in DESTINOS_ONBOARDING else "/",
+        ocultar_navegacion=True,
+    )
+
+
+@auth_bp.route("/perfil", methods=["GET"])
+@login_required
+def vista_perfil():
+    """Pestaña Perfil: datos de la cuenta, perfil biométrico editable y cerrar sesión."""
+    service = AuthService()
+    perfil = service.obtener_perfil_usuario(current_user.id)
+    return render_template(
+        "auth/perfil.html",
+        active_tab="perfil",
+        perfil=perfil,
+        etiquetas=ETIQUETAS_PERFIL,
+    )
 
 
 @auth_bp.route("/api/auth/register", methods=["POST"])

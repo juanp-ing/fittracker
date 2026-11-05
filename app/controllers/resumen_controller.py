@@ -8,6 +8,7 @@ from app.patterns.facade import ResumenFacade
 from app.services.auth_service import AuthService
 from app.services.ejercicio_service import EjercicioService
 from app.services.resumen_service import ResumenService
+from app.services.zona_horaria import COOKIE_ZONA_HORARIA
 
 resumen_bp = Blueprint("resumen", __name__)
 
@@ -18,23 +19,27 @@ def vista_mapa():
     """Renderiza la vista del Mapa Muscular Bicolor y Gráficas de Progreso/PRs."""
     ej_service = EjercicioService()
     auth_service = AuthService()
-    ejercicios = ej_service.buscar_ejercicios_usuario(usuario_id=current_user.id)
+    ejercicios = ej_service.listar_ejercicios_por_uso(usuario_id=current_user.id)
     perfil = auth_service.obtener_perfil_usuario(usuario_id=current_user.id)
     return render_template(
         "resumen/mapa.html",
-        active_tab="mapa",
+        active_tab="progreso",
+        subtab="mapa",
         ejercicios=ejercicios,
         sexo_perfil=perfil.get("sexo", "HOMBRE"),
     )
 
 
+# La ruta canónica va última: Flask la registra primero y url_for() la usa.
 @resumen_bp.route("/resumen", methods=["GET"])
+@resumen_bp.route("/progreso", methods=["GET"])
 @login_required
-def vista_resumen():
-    """Renderiza la vista del Resumen Mensual de 30 días."""
+def vista_progreso():
+    """Pestaña Progreso: abre en el resumen de los últimos 30 días (sub-pestaña «Mes»)."""
     return render_template(
         "resumen/index.html",
-        active_tab="resumen",
+        active_tab="progreso",
+        subtab="resumen",
     )
 
 
@@ -66,6 +71,7 @@ def obtener_progreso_ejercicio(ejercicio_id: int):
         progreso = service.obtener_progreso_ejercicio(
             usuario_id=current_user.id,
             ejercicio_id=ejercicio_id,
+            zona_horaria=request.cookies.get(COOKIE_ZONA_HORARIA),
         )
     except LookupError as exc:
         return jsonify({"error": str(exc), "code": "NO_ENCONTRADO"}), 404

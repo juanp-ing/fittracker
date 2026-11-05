@@ -5,6 +5,8 @@
 {% endblock %}
 
 {% block content %}
+{% include "resumen/_subtabs.html" %}
+
 <section class="duo-card muscle-map-wrapper">
   <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
     <h1 style="font-size: 1.25rem; margin: 0;">Mapa Muscular Anatómico</h1>
@@ -26,7 +28,8 @@
       </button>
     </div>
     <button type="button" id="btn-toggle-nombres-anatomicos" class="step-chip" aria-pressed="false" title="Mostrar u ocultar etiquetas anatómicas">
-      🏷️ Nombres
+      <svg class="icon icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.5"/></svg>
+      Nombres
     </button>
   </div>
   <span style="font-size: 0.78rem; font-weight: 700; color: var(--color-charcoal); text-align: center;">
@@ -929,7 +932,7 @@
     </g>
   </g>
 
-  <!-- CAPA 4: Etiquetas Guía Anatómicas Opcionales (Toggle «🏷️ Nombres») -->
+  <!-- CAPA 4: Etiquetas Guía Anatómicas Opcionales (Toggle «Nombres») -->
   <g id="svg-etiquetas-anatomicas" class="anatomical-labels-layer" hidden pointer-events="none" font-family="Nunito, sans-serif" font-weight="800" font-size="7.8" fill="#000437">
 
     <!-- Etiquetas Vista Frontal (Hombre) -->
@@ -1011,8 +1014,8 @@
   </div>
 
   <div class="muscle-legend">
-    <span><i class="legend-dot" style="background-color: var(--color-eager-green);"></i>Primario (#58cc02)</span>
-    <span><i class="legend-dot" style="background-color: var(--color-fresh-leaf);"></i>Secundario (#a5ed6e)</span>
+    <span><i class="legend-dot" style="background-color: var(--color-eager-green);"></i>Trabajado (principal)</span>
+    <span><i class="legend-dot" style="background-color: var(--color-fresh-leaf);"></i>Trabajado (apoyo)</span>
     <span><i class="legend-dot" style="background-color: var(--color-border-light);"></i>Descansado</span>
   </div>
 
@@ -1080,7 +1083,7 @@
 
     <!-- Recomendador Inteligente de Ejercicios -->
     <div style="display: flex; flex-direction: column; gap: 0.45rem;">
-      <span id="sheet-recomendados-titulo" class="stepper-label">💡 Recomendados para entrenar</span>
+      <span id="sheet-recomendados-titulo" class="stepper-label">Recomendados para entrenar</span>
       <div id="sheet-ejercicios-recomendados" style="display: flex; flex-direction: column; gap: 0.45rem;"></div>
     </div>
   </div>

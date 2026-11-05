@@ -1,0 +1,9 @@
+{# Sub-navegación de la pestaña Progreso. Son enlaces: la URL refleja la vista activa. #}
+<nav class="sub-tabs" aria-label="Secciones de progreso">
+  <a href="{{ url_for('resumen.vista_progreso') }}"
+     class="sub-tabs__item {% if subtab == 'resumen' %}is-active{% endif %}"
+     {% if subtab == 'resumen' %}aria-current="page"{% endif %}>Tu mes</a>
+  <a href="{{ url_for('resumen.vista_mapa') }}"
+     class="sub-tabs__item {% if subtab == 'mapa' %}is-active{% endif %}"
+     {% if subtab == 'mapa' %}aria-current="page"{% endif %}>Músculos y récords</a>
+</nav>
