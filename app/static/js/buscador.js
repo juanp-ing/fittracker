@@ -33,19 +33,17 @@
         catalogoGrupos = dataGr.grupos_musculares || [];
       }
       renderizarResultados(inputBusqueda ? inputBusqueda.value : '');
-      if (catalogoEjercicios.length > 0 && !ejercicioSeleccionadoId) {
-        const params = new URLSearchParams(window.location.search);
-        const preId = Number(
-          params.get('ejercicio_id') ||
-            localStorage.getItem('fittracker_preselect_ejercicio_id') ||
-            0
-        );
-        localStorage.removeItem('fittracker_preselect_ejercicio_id');
-        const preseleccionado = preId
-          ? catalogoEjercicios.find((e) => e.id === preId)
-          : null;
-        seleccionarEjercicio(preseleccionado || catalogoEjercicios[0]);
-      }
+      // Solo se preselecciona un ejercicio si se pidió explícitamente (p. ej. desde el Mapa).
+      // El plan del día decide el ejercicio por defecto; nunca el primero del catálogo.
+      const params = new URLSearchParams(window.location.search);
+      const preId = Number(
+        params.get('ejercicio_id') ||
+          localStorage.getItem('fittracker_preselect_ejercicio_id') ||
+          0
+      );
+      localStorage.removeItem('fittracker_preselect_ejercicio_id');
+      const preseleccionado = preId ? catalogoEjercicios.find((e) => e.id === preId) : null;
+      if (preseleccionado) seleccionarEjercicio(preseleccionado);
     } catch (err) {
       console.warn('Modo sin conexión al cargar catálogo:', err);
     }
@@ -67,9 +65,14 @@
   function renderizarResultados(texto) {
     if (!listaResultados) return;
     const termino = (texto || '').trim().toLowerCase();
+    // Sin texto: primero los ejercicios ya trabajados (los que más se repiten en el gimnasio).
+    const yaTrabajados = (e) => (e.ultimo_peso !== null && e.ultimo_peso !== undefined ? 0 : 1);
     const filtrados = termino
       ? catalogoEjercicios.filter((e) => e.nombre.toLowerCase().includes(termino))
-      : catalogoEjercicios.slice(0, 8);
+      : catalogoEjercicios
+          .slice()
+          .sort((a, b) => yaTrabajados(a) - yaTrabajados(b))
+          .slice(0, 8);
 
     listaResultados.innerHTML = '';
 
@@ -82,14 +85,14 @@
       const ultimoTexto =
         ej.ultimo_peso !== null && ej.ultimo_peso !== undefined
           ? `${ej.ultimo_peso} kg × ${ej.ultimas_repeticiones}`
-          : 'Nuevo';
+          : '';
 
       btn.innerHTML = `
         <div>
           <div class="exercise-option__title">${escapeHtml(ej.nombre)}</div>
           <div class="exercise-option__meta">${escapeHtml(primarios || 'General')}</div>
         </div>
-        <span class="status-badge status-badge--mejoro">${escapeHtml(ultimoTexto)}</span>
+        ${ultimoTexto ? `<span class="exercise-option__last">${escapeHtml(ultimoTexto)}</span>` : ''}
       `;
       btn.addEventListener('click', () => seleccionarEjercicio(ej));
       listaResultados.appendChild(btn);

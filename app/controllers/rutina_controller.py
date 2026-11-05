@@ -24,6 +24,8 @@ def vista_rutinas():
         rutinas=rutinas,
         rutinas_famosas=rutinas_famosas,
         ejercicios=ejercicios,
+        # Rutina recién creada o clonada a resaltar (redirección tras guardar)
+        nueva_id=request.args.get("nueva", type=int),
     )
 
 

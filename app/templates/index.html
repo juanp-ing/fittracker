@@ -1,273 +1,406 @@
 {% extends "base.html" %}
 {% block title %}Entrenar Hoy — FitTracker{% endblock %}
 
+{% macro icono(nombre, clase="icon") -%}
+  {%- if nombre == 'check' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+  {%- elif nombre == 'chevron' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+  {%- elif nombre == 'chevron-left' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+  {%- elif nombre == 'swap' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>
+  {%- elif nombre == 'drop' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s6 6.6 6 11a6 6 0 01-12 0c0-4.4 6-11 6-11z"/></svg>
+  {%- elif nombre == 'trophy' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 01-8 0V4zM8 6H4v1a3 3 0 003 3M16 6h4v1a3 3 0 01-3 3M12 13v4M8 20h8"/></svg>
+  {%- elif nombre == 'bolt' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6L13 3z"/></svg>
+  {%- elif nombre == 'clock' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+  {%- endif -%}
+{%- endmacro %}
+
 {% block content %}
-<!-- Banner de Cronómetro de Descanso Automático (#1cb0f6) -->
-<section id="cronometro-banner" class="rest-timer-banner" hidden>
-  <div>
-    <div id="cronometro-estado-texto" style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase;">
-      Tiempo de descanso activo
-    </div>
-    <div id="cronometro-reloj" class="rest-timer-clock">01:30</div>
-  </div>
-  <div style="display: flex; gap: 0.35rem;">
-    <button type="button" id="btn-timer-menos15" class="btn-duo btn-duo--sm">−15s</button>
-    <button type="button" id="btn-timer-mas15" class="btn-duo btn-duo--sm">＋15s</button>
-    <button type="button" id="btn-timer-saltar" class="btn-duo btn-duo--sm">Saltar</button>
-  </div>
-</section>
+{# Estado que el servidor entrega al JS: la sesión activa (o null) y la agenda del día. #}
+<script type="application/json" id="datos-sesion-activa">{{ sesion_activa | tojson }}</script>
+<script type="application/json" id="datos-agenda">{{ agenda_hoy | tojson }}</script>
 
-<!-- Banner de Celebración Gamificada de Nuevo PR (#58cc02 / #d7ffb8, curva spring) -->
-<section id="pr-celebration-banner" class="pr-banner" role="status" aria-live="polite" hidden>
-  <span id="pr-celebration-texto">¡NUEVO RÉCORD PERSONAL!</span>
-  <span class="status-badge status-badge--mejoro">PR</span>
-</section>
+{% set dia_sel = (agenda_hoy.dias_semana | selectattr('seleccionado') | first) if agenda_hoy else None %}
+{% set rutina_hoy = agenda_hoy.rutina if agenda_hoy else None %}
+{% set racha = agenda_hoy.racha if agenda_hoy else None %}
 
-<!-- Mini-Calendario Semanal y Checklist de Tareas Diarias / Tu Rutina de Hoy -->
-<section
-  id="agenda-diaria-card"
-  class="duo-card"
-  data-fecha-actual="{{ agenda_hoy.fecha if agenda_hoy else '' }}"
-  style="display: flex; flex-direction: column; gap: 0.85rem;"
->
-  <!-- Fila Superior: Mes actual + Switch táctil "Mostrar completados" -->
-  <div class="calendar-header-row">
-    <div>
-      <h1 id="calendario-mes-nombre" class="calendar-month-title">
-        {{ agenda_hoy.mes_nombre if agenda_hoy else 'octubre' }}
-      </h1>
-      <span id="calendario-rutina-subtitulo" style="font-size: 0.78rem; font-weight: 800; color: var(--color-eager-green-shade);">
-        {% if agenda_hoy and agenda_hoy.rutina %}
-          Tareas diarias · {{ agenda_hoy.rutina.nombre }}
-        {% else %}
-          Tareas diarias · Tu Rutina de Hoy
-        {% endif %}
-      </span>
-    </div>
+<div id="vista-hoy" class="vista-hoy" data-modo="{{ 'foco' if sesion_activa else 'previo' }}">
 
-    <div class="completed-toggle-wrap">
-      <span class="completed-toggle-label">Mostrar completados</span>
-      <button
-        type="button"
-        id="switch-mostrar-completados"
-        class="duo-switch"
-        role="switch"
-        aria-checked="false"
-        aria-label="Mostrar completados"
-      >
-        <span class="duo-switch__track">
-          <span id="switch-completados-icon" class="duo-switch__thumb">✕</span>
+  {# ================================================================== #}
+  {# ESTADO 1 · ANTES DE ENTRENAR                                        #}
+  {# ================================================================== #}
+  <div id="hoy-previo" class="hoy-previo" {% if sesion_activa %}hidden{% endif %}>
+
+    <section class="today-hero" aria-labelledby="hero-titulo">
+      <div class="today-hero__top">
+        <span id="hero-eyebrow" class="today-hero__eyebrow">
+          {% if dia_sel and not dia_sel.toca_entrenar and rutina_hoy %}Hoy es día de descanso{% else %}Hoy toca{% endif %}
         </span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Tira Semanal de 7 Días (dom, lun, mar, mié, jue, vie, sáb) con Puntos Indicadores -->
-  <div class="weekly-strip-wrap">
-    <button type="button" id="btn-semana-anterior" class="btn-week-nav" aria-label="Semana anterior">&lt;</button>
-    <div id="calendario-tira-dias" class="weekly-days-grid" role="group" aria-label="Días de la semana">
-      {% if agenda_hoy and agenda_hoy.dias_semana %}
-        {% for d in agenda_hoy.dias_semana %}
-        <button
-          type="button"
-          class="weekly-day-btn {% if d.seleccionado %}is-selected{% endif %} {% if d.es_hoy %}is-today{% endif %}"
-          data-agenda-fecha="{{ d.fecha }}"
-        >
-          <span class="calendar-day-abbr">{{ d.abreviatura }}</span>
-          <span class="calendar-day-num">{{ d.dia_numero }}</span>
-          <span class="calendar-dots-row">
-            {% for _ in range(d.puntos) %}
-            <span class="calendar-dot"></span>
-            {% endfor %}
+        <span id="hero-racha" class="streak-chip" {% if not racha or not racha.semanas_seguidas %}hidden{% endif %}>
+          {{ icono('bolt', 'icon icon--sm') }}
+          <span id="hero-racha-texto">
+            {%- if racha -%}{{ racha.semanas_seguidas }} {{ 'semana' if racha.semanas_seguidas == 1 else 'semanas' }} seguidas{%- endif -%}
           </span>
-        </button>
-        {% endfor %}
-      {% endif %}
-    </div>
-    <button type="button" id="btn-semana-siguiente" class="btn-week-nav" aria-label="Semana siguiente">&gt;</button>
-  </div>
+        </span>
+      </div>
+      <h1 id="hero-titulo" class="today-hero__title">
+        {{ rutina_hoy.nombre if rutina_hoy else 'Entrenamiento libre' }}
+      </h1>
+      <p id="hero-meta" class="today-hero__meta">
+        {% if agenda_hoy and agenda_hoy.total_ejercicios %}
+          {{ agenda_hoy.total_ejercicios }} ejercicios · {{ agenda_hoy.series_totales }} series · ~{{ agenda_hoy.minutos_estimados }} min
+        {% else %}
+          Elige ejercicios sobre la marcha o activa una rutina en la pestaña Rutinas.
+        {% endif %}
+      </p>
 
-  <!-- Lista de Ejercicios del Día (Checklist Interactivo con Auto-Ocultado y Explosión POP) -->
-  <div id="lista-checklist-diario" class="daily-checklist">
-    {% if agenda_hoy and agenda_hoy.ejercicios %}
-      {% for ej in agenda_hoy.ejercicios %}
-      <button
-        type="button"
-        class="daily-task-item {% if ej.completado %}is-completed{% endif %}"
-        data-task-ejercicio-id="{{ ej.ejercicio_id }}"
-        data-task-nombre="{{ ej.ejercicio_nombre }}"
-        data-task-orden="{{ ej.orden }}"
-        data-task-series-objetivo="{{ ej.series_objetivo }}"
-        data-task-series-completadas="{{ ej.series_completadas_hoy }}"
-        data-task-descanso="{{ ej.descanso_segundos }}"
-        data-task-peso="{{ ej.ultimo_peso }}"
-        data-task-reps="{{ ej.ultimas_repeticiones }}"
-        data-task-completado="{{ 'true' if ej.completado else 'false' }}"
-        {% if ej.completado %}hidden{% endif %}
-      >
-        <div class="daily-task-item__info">
-          <span class="daily-task-item__title">{{ ej.orden }}. {{ ej.ejercicio_nombre }}</span>
-          <span class="daily-task-item__meta" data-task-meta-text>
-            {{ ej.series_completadas_hoy }}/{{ ej.series_objetivo }} series · {{ ej.descanso_segundos }}s descanso
+      <div id="hero-progreso" class="today-hero__progress"
+           {% if not agenda_hoy or not agenda_hoy.series_hechas %}hidden{% endif %}>
+        <div class="progress-track" role="progressbar"
+             aria-valuemin="0"
+             aria-valuemax="{{ agenda_hoy.series_totales if agenda_hoy else 0 }}"
+             aria-valuenow="{{ agenda_hoy.series_hechas if agenda_hoy else 0 }}"
+             aria-label="Series hechas hoy">
+          <span id="hero-progreso-barra" class="progress-track__fill"
+                style="width: {{ ((agenda_hoy.series_hechas / agenda_hoy.series_totales) * 100) | round | int if agenda_hoy and agenda_hoy.series_totales else 0 }}%"></span>
+        </div>
+        <span id="hero-progreso-texto" class="today-hero__progress-text">
+          {{ agenda_hoy.series_hechas if agenda_hoy else 0 }} de {{ agenda_hoy.series_totales if agenda_hoy else 0 }} series hechas
+        </span>
+      </div>
+
+      {% if racha %}
+      <div id="hero-semana" class="week-goal {% if racha.semana_cumplida %}is-done{% endif %}">
+        <div id="hero-semana-segmentos" class="week-goal__segments" aria-hidden="true">
+          {% for i in range(racha.meta_dias_semana) %}<span class="week-goal__seg {% if i < racha.dias_semana_actual %}is-done{% endif %}"></span>{% endfor %}
+        </div>
+        <span id="hero-semana-texto" class="week-goal__text">
+          {% if racha.semana_cumplida %}Meta semanal cumplida · {{ racha.dias_semana_actual }} días
+          {% else %}Esta semana: {{ racha.dias_semana_actual }} de {{ racha.meta_dias_semana }} días{% endif %}
+        </span>
+      </div>
+      {% endif %}
+
+      <button type="button" id="btn-empezar-entrenamiento" class="btn-duo btn-duo--green btn-duo--block btn-duo--giant">
+        {% if agenda_hoy and agenda_hoy.series_hechas %}Continuar entrenamiento{% else %}Empezar entrenamiento{% endif %}
+      </button>
+
+      {% if rutinas %}
+      <details class="today-hero__switch">
+        <summary>Cambiar rutina</summary>
+        <label for="selector-rutina-inicio" class="visually-hidden">Rutina para hoy</label>
+        <select id="selector-rutina-inicio" class="duo-input">
+          <option value="">Entrenamiento libre</option>
+          {% for r in rutinas %}
+          <option value="{{ r.id }}" {% if rutina_hoy and rutina_hoy.id == r.id %}selected{% endif %}>
+            {% if r.es_favorita %}★ {% endif %}{{ r.nombre }}
+          </option>
+          {% endfor %}
+        </select>
+      </details>
+      {% endif %}
+    </section>
+
+    <section
+      id="agenda-diaria-card"
+      class="plan-section"
+      data-fecha-actual="{{ agenda_hoy.fecha if agenda_hoy else '' }}"
+      aria-labelledby="calendario-mes-nombre"
+    >
+      <div class="calendar-header-row">
+        <div>
+          <h2 id="calendario-mes-nombre" class="calendar-month-title">
+            {{ agenda_hoy.mes_nombre | capitalize if agenda_hoy else 'Esta semana' }}
+          </h2>
+          <span id="calendario-rutina-subtitulo" class="plan-section__subtitle">
+            Toca un día para ver su plan
           </span>
         </div>
-        <span class="task-checkbox {% if ej.completado %}is-checked{% endif %}" aria-hidden="true">✓</span>
-      </button>
-      {% endfor %}
-    {% else %}
-      <div id="checklist-sin-rutina" style="font-size: 0.86rem; font-weight: 700; color: var(--color-charcoal); text-align: center; padding: 0.35rem 0;">
-        Activa o clona una rutina en la pestaña <strong>Rutinas</strong> para ver tu checklist diario aquí.
       </div>
-    {% endif %}
+
+      <div class="weekly-strip-wrap">
+        <button type="button" id="btn-semana-anterior" class="btn-week-nav" aria-label="Semana anterior">{{ icono('chevron-left', 'icon icon--sm') }}</button>
+        <div id="calendario-tira-dias" class="weekly-days-grid" role="group" aria-label="Días de la semana">
+          {% if agenda_hoy and agenda_hoy.dias_semana %}
+            {% for d in agenda_hoy.dias_semana %}
+            <button
+              type="button"
+              class="weekly-day-btn {% if d.seleccionado %}is-selected{% endif %} {% if d.es_hoy %}is-today{% endif %}"
+              data-agenda-fecha="{{ d.fecha }}"
+              aria-pressed="{{ 'true' if d.seleccionado else 'false' }}"
+            >
+              <span class="calendar-day-abbr">{{ d.abreviatura }}</span>
+              <span class="calendar-day-num">{{ d.dia_numero }}</span>
+              <span class="calendar-dots-row">
+                {% for _ in range(d.puntos) %}<span class="calendar-dot"></span>{% endfor %}
+              </span>
+            </button>
+            {% endfor %}
+          {% endif %}
+        </div>
+        <button type="button" id="btn-semana-siguiente" class="btn-week-nav" aria-label="Semana siguiente">{{ icono('chevron', 'icon icon--sm') }}</button>
+      </div>
+
+      <div class="plan-section__list-head">
+        <h2 class="plan-section__title">Plan del día</h2>
+        <div class="completed-toggle-wrap">
+          <span class="completed-toggle-label" id="label-mostrar-completados">Mostrar completados</span>
+          <button
+            type="button"
+            id="switch-mostrar-completados"
+            class="duo-switch"
+            role="switch"
+            aria-checked="false"
+            aria-labelledby="label-mostrar-completados"
+          >
+            <span class="duo-switch__track">
+              <span id="switch-completados-icon" class="duo-switch__thumb">✕</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div id="lista-checklist-diario" class="daily-checklist">
+        {% if agenda_hoy and agenda_hoy.ejercicios %}
+          {% for ej in agenda_hoy.ejercicios %}
+          <button
+            type="button"
+            class="daily-task-item {% if ej.completado %}is-completed{% endif %}"
+            data-task-ejercicio-id="{{ ej.ejercicio_id }}"
+            {% if ej.completado %}hidden{% endif %}
+          >
+            <span class="daily-task-item__info">
+              <span class="daily-task-item__title">{{ ej.ejercicio_nombre }}</span>
+              <span class="daily-task-item__meta">
+                {{ ej.series_objetivo }} series · {{ ej.descanso_segundos }}s descanso
+              </span>
+            </span>
+            <span class="task-progress {% if ej.completado %}is-done{% endif %}" aria-label="{{ ej.series_completadas_hoy }} de {{ ej.series_objetivo }} series">
+              {% if ej.completado %}{{ icono('check', 'icon icon--sm') }}{% else %}{{ ej.series_completadas_hoy }}/{{ ej.series_objetivo }}{% endif %}
+            </span>
+          </button>
+          {% endfor %}
+        {% else %}
+          <p id="checklist-sin-rutina" class="empty-note">
+            No hay ejercicios planificados para este día. Activa o clona una rutina en la pestaña <strong>Rutinas</strong>.
+          </p>
+        {% endif %}
+      </div>
+
+      <p id="checklist-todo-completado" class="empty-note empty-note--success" hidden>
+        Completaste todos los ejercicios de este día. Activa «Mostrar completados» para verlos.
+      </p>
+    </section>
   </div>
 
-  <div
-    id="checklist-todo-completado"
-    style="font-size: 0.88rem; font-weight: 800; color: var(--color-eager-green-shade); text-align: center; padding: 0.35rem 0;"
-    hidden
-  >
-    🎉 ¡Completaste todos los ejercicios programados para hoy! Activa «Mostrar completados» para verlos.
-  </div>
-</section>
+  {# ================================================================== #}
+  {# ESTADO 2 · MODO FOCO (sesión activa)                                #}
+  {# ================================================================== #}
+  <div id="hoy-foco" class="hoy-foco" {% if not sesion_activa %}hidden{% endif %}>
 
-<!-- Selector de Rutina y Cierre de Sesión -->
-<section class="duo-card" style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;">
-  <div style="flex: 1;">
-    <label for="selector-rutina-inicio" class="stepper-label">Modo o Rutina</label>
-    <select id="selector-rutina-inicio" class="duo-input" style="padding: 0.55rem 0.75rem;">
-      <option value="">Entrenamiento Libre</option>
-      {% for r in rutinas %}
-      <option value="{{ r.id }}" {% if r.es_favorita %}selected{% endif %}>
-        {% if r.es_favorita %}★ {% endif %}{{ r.nombre }}
-      </option>
-      {% endfor %}
-    </select>
-  </div>
-  <button type="button" id="btn-finalizar-sesion" class="btn-duo btn-duo--danger btn-duo--sm" style="margin-top: 1.3rem;" hidden>
-    Finalizar
-  </button>
-</section>
+    <header class="focus-bar">
+      <div class="focus-bar__info">
+        <span id="foco-rutina-nombre" class="focus-bar__label">
+          {{ sesion_activa.rutina_nombre if sesion_activa and sesion_activa.rutina_nombre else 'Entrenamiento libre' }}
+        </span>
+        <span class="focus-bar__clock">
+          {{ icono('clock', 'icon icon--xs') }}
+          <span id="foco-reloj-sesion" aria-label="Tiempo de entrenamiento">00:00</span>
+        </span>
+      </div>
+      <button type="button" id="btn-finalizar-sesion" class="btn-duo btn-duo--sm">Terminar</button>
+    </header>
 
-<!-- Buscador Instantáneo (0ms) de Ejercicios -->
-<section class="duo-card" style="display: flex; flex-direction: column; gap: 0.75rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center;">
-    <h2 style="font-size: 1.15rem; margin: 0;">1. Elige el ejercicio</h2>
-    <button type="button" onclick="window.FitTrackerBuscador && window.FitTrackerBuscador.abrirModalCreacion('')" class="btn-duo btn-duo--blue btn-duo--sm">
-      ＋ Nuevo
+    <section id="panel-registro-tactil" class="focus-exercise" aria-labelledby="ejercicio-activo-nombre">
+      <div class="focus-exercise__head">
+        <span id="foco-posicion" class="focus-exercise__eyebrow">Elige un ejercicio</span>
+        <button type="button" id="btn-cambiar-ejercicio" class="btn-duo btn-duo--sm btn-duo--quiet">
+          {{ icono('swap', 'icon icon--sm') }}<span>Cambiar</span>
+        </button>
+      </div>
+      <h1 id="ejercicio-activo-nombre" class="focus-exercise__name">Selecciona un ejercicio</h1>
+
+      <div class="focus-exercise__sets">
+        <div id="foco-puntos-series" class="set-dots" aria-hidden="true"></div>
+        <span id="foco-series-texto" class="focus-exercise__sets-text"></span>
+      </div>
+      <p id="foco-ultima-vez" class="focus-exercise__last" hidden></p>
+    </section>
+
+    <section class="focus-controls" aria-label="Peso y repeticiones">
+      <div class="stepper-group">
+        <div class="stepper-header">
+          <span class="stepper-label" id="label-peso">Peso</span>
+          <div class="step-chips" role="group" aria-label="Incremento de peso">
+            <button type="button" class="step-chip" data-weight-step="1">1 kg</button>
+            <button type="button" class="step-chip is-active" data-weight-step="2.5">2.5 kg</button>
+            <button type="button" class="step-chip" data-weight-step="5">5 kg</button>
+          </div>
+        </div>
+        <div class="stepper-control">
+          <button type="button" id="btn-peso-menos" class="btn-stepper" aria-label="Disminuir peso">−</button>
+          <div class="stepper-display" aria-labelledby="label-peso">
+            <span id="stepper-peso-valor" class="stepper-value" aria-live="polite">20</span>
+            <span class="stepper-unit">kg</span>
+          </div>
+          <button type="button" id="btn-peso-mas" class="btn-stepper" aria-label="Aumentar peso">＋</button>
+        </div>
+      </div>
+
+      <div class="stepper-group">
+        <div class="stepper-header">
+          <span class="stepper-label" id="label-reps">Repeticiones</span>
+        </div>
+        <div class="stepper-control">
+          <button type="button" id="btn-reps-menos" class="btn-stepper" aria-label="Disminuir repeticiones">−</button>
+          <div class="stepper-display" aria-labelledby="label-reps">
+            <span id="stepper-reps-valor" class="stepper-value" aria-live="polite">10</span>
+            <span class="stepper-unit">reps</span>
+          </div>
+          <button type="button" id="btn-reps-mas" class="btn-stepper" aria-label="Aumentar repeticiones">＋</button>
+        </div>
+      </div>
+    </section>
+
+    <button type="button" id="foco-siguiente" class="next-up" hidden>
+      <span class="next-up__label">Siguiente</span>
+      <span id="foco-siguiente-nombre" class="next-up__name"></span>
+      {{ icono('chevron', 'icon icon--sm') }}
     </button>
-  </div>
-  <input id="buscador-ejercicio-input" type="search" class="duo-input" placeholder="Buscar ejercicio (ej. Press banca, Sentadilla)..." autocomplete="off">
-  <div id="buscador-resultados" class="exercise-results"></div>
-</section>
 
-<!-- Panel Táctil de Registro en < 10 segundos (Sin Teclado) -->
-<section id="panel-registro-tactil" class="duo-card" style="display: flex; flex-direction: column; gap: 1rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center;">
-    <div>
-      <span class="stepper-label">2. Ajusta con el pulgar</span>
-      <h2 id="ejercicio-activo-nombre" style="font-size: 1.3rem; margin: 0.15rem 0 0 0;">
-        Selecciona un ejercicio
-      </h2>
-    </div>
-    <span id="ejercicio-activo-progreso-pill" class="routine-day-pill" hidden>0/3 series</span>
+    <section class="session-log" aria-labelledby="titulo-series-sesion">
+      <h2 id="titulo-series-sesion" class="session-log__title">Series de esta sesión</h2>
+      <ol id="lista-series-sesion" class="session-log__list"></ol>
+      <p id="series-sesion-vacio" class="empty-note">
+        Ajusta peso y repeticiones y toca «¡Serie terminada!» al acabar cada serie.
+      </p>
+    </section>
   </div>
+</div>
 
-  <!-- Control de Peso (+/-) -->
-  <div class="stepper-group">
-    <div class="stepper-header">
-      <span class="stepper-label">Peso (KG)</span>
-      <div class="step-chips" role="group" aria-label="Incremento de peso">
-        <button type="button" class="step-chip" data-weight-step="1">1 kg</button>
-        <button type="button" class="step-chip is-active" data-weight-step="2.5">2.5 kg</button>
-        <button type="button" class="step-chip" data-weight-step="5">5 kg</button>
-      </div>
+{# Panel fijo en la zona del pulgar (solo en modo foco): descanso, deshacer y CTA. #}
+<div id="focus-dock" class="focus-dock" {% if not sesion_activa %}hidden{% endif %}>
+  <section id="cronometro-banner" class="rest-timer-banner" aria-live="polite" hidden>
+    <div class="rest-timer-banner__info">
+      <span id="cronometro-estado-texto" class="rest-timer-banner__label">Descanso</span>
+      <span id="cronometro-reloj" class="rest-timer-clock">01:30</span>
     </div>
-    <div class="stepper-control">
-      <button type="button" id="btn-peso-menos" class="btn-stepper" aria-label="Disminuir peso">−</button>
-      <div class="stepper-display">
-        <span id="stepper-peso-valor" class="stepper-value">20</span>
-        <span class="stepper-unit">kilogramos</span>
-      </div>
-      <button type="button" id="btn-peso-mas" class="btn-stepper" aria-label="Aumentar peso">＋</button>
+    <div class="rest-timer-banner__actions">
+      <button type="button" id="btn-timer-menos15" class="btn-timer" aria-label="Restar 15 segundos">−15</button>
+      <button type="button" id="btn-timer-mas15" class="btn-timer" aria-label="Sumar 15 segundos">+15</button>
+      <button type="button" id="btn-timer-saltar" class="btn-timer btn-timer--wide">Saltar</button>
     </div>
+  </section>
+
+  <div id="toast-deshacer" class="undo-toast" role="status" aria-live="polite" hidden>
+    <span id="toast-deshacer-texto" class="undo-toast__text">Serie guardada</span>
+    <button type="button" id="btn-toast-deshacer" class="undo-toast__action">Deshacer</button>
   </div>
 
-  <!-- Control de Repeticiones (+/-) -->
-  <div class="stepper-group">
-    <div class="stepper-header">
-      <span class="stepper-label">Repeticiones</span>
-      <span style="font-size: 0.8rem; font-weight: 700; color: var(--color-charcoal);">Paso: ±1 rep</span>
-    </div>
-    <div class="stepper-control">
-      <button type="button" id="btn-reps-menos" class="btn-stepper" aria-label="Disminuir repeticiones">−</button>
-      <div class="stepper-display">
-        <span id="stepper-reps-valor" class="stepper-value">10</span>
-        <span class="stepper-unit">repeticiones</span>
-      </div>
-      <button type="button" id="btn-reps-mas" class="btn-stepper" aria-label="Aumentar repeticiones">＋</button>
-    </div>
-  </div>
-
-  <!-- CTA Gigante Verde Duolingo -->
   <button type="button" id="btn-guardar-serie" class="btn-duo btn-duo--green btn-duo--block btn-duo--giant">
     ¡SERIE TERMINADA!
   </button>
-</section>
+</div>
 
-<!-- Series Registradas en la Sesión Actual -->
-<section style="display: flex; flex-direction: column; gap: 0.6rem;">
-  <h3 style="font-size: 1.05rem; margin: 0;">Series de hoy</h3>
-  <div id="lista-series-sesion" style="display: flex; flex-direction: column; gap: 0.5rem;">
-    <div data-empty-series class="duo-card" style="text-align: center; color: var(--color-charcoal); font-weight: 700;">
-      Toca «¡SERIE TERMINADA!» para registrar tu primera serie en menos de 10 segundos.
+{# Celebración de récord personal (momento expresivo único de la app; se cierra sola). #}
+<div id="pr-celebration-banner" class="record-celebration" role="status" aria-live="polite" hidden>
+  <div class="record-celebration__confetti" aria-hidden="true">
+    {% for i in range(16) %}<i style="--i: {{ i }}"></i>{% endfor %}
+  </div>
+  <div class="record-celebration__card">
+    <span class="record-celebration__badge">{{ icono('trophy', 'icon') }}</span>
+    <p class="record-celebration__eyebrow">¡Nuevo récord personal!</p>
+    <p id="pr-celebration-texto" class="record-celebration__exercise">Ejercicio</p>
+    <p class="record-celebration__numbers">
+      <span id="pr-celebration-antes" class="record-celebration__before">0 kg</span>
+      <span aria-hidden="true">→</span>
+      <strong id="pr-celebration-ahora" class="record-celebration__now">0 kg</strong>
+    </p>
+    <button type="button" id="btn-cerrar-celebracion" class="btn-duo btn-duo--green btn-duo--block">¡Vamos!</button>
+  </div>
+</div>
+
+{# Hoja: cambiar de ejercicio (rutina del día + buscador + crear) #}
+<div id="sheet-cambiar-ejercicio" class="bottom-sheet-backdrop" hidden>
+  <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-cambiar-titulo">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-header">
+      <h2 id="sheet-cambiar-titulo" class="sheet-title">Elige ejercicio</h2>
+      <button type="button" id="btn-cerrar-sheet-cambiar" class="btn-duo btn-duo--sm">Cerrar</button>
+    </div>
+
+    <div id="sheet-bloque-rutina" class="sheet-block">
+      <span class="stepper-label">De tu plan de hoy</span>
+      <div id="sheet-lista-rutina" class="daily-checklist"></div>
+    </div>
+
+    <div class="sheet-block">
+      <label for="buscador-ejercicio-input" class="stepper-label">Buscar en el catálogo</label>
+      <input id="buscador-ejercicio-input" type="search" class="duo-input" placeholder="Press banca, sentadilla…" autocomplete="off" enterkeyhint="search">
+      <div id="buscador-resultados" class="exercise-results"></div>
+      <button type="button" id="btn-nuevo-ejercicio" class="btn-duo btn-duo--sm btn-duo--quiet">＋ Crear ejercicio propio</button>
     </div>
   </div>
-</section>
+</div>
 
-<!-- Modal / Overlay Gamificado de ¡EJERCICIO TERMINADO! + Recordatorio de Hidratación -->
+{# Modal: ejercicio terminado + recordatorio de hidratación #}
 <div id="modal-ejercicio-terminado" class="bottom-sheet-backdrop" hidden>
   <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-terminado-titulo">
-    <div class="sheet-handle"></div>
-    <span class="celebration-trophy-badge">💥 ¡EJERCICIO TERMINADO!</span>
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <span class="celebration-trophy-badge">{{ icono('check', 'icon icon--sm') }} Ejercicio terminado</span>
 
-    <div style="text-align: center;">
-      <h3 id="modal-terminado-titulo" style="font-size: 1.35rem; margin: 0 0 0.25rem 0; color: var(--color-night-ink);">
-        ¡Completaste todas las series!
-      </h3>
-      <p id="modal-terminado-subtitulo" style="margin: 0; font-weight: 800; font-size: 0.92rem; color: var(--color-charcoal);">
-        Has cumplido tu objetivo en este ejercicio.
-      </p>
+    <div class="sheet-center">
+      <h2 id="modal-terminado-titulo" class="sheet-title">¡Completaste todas las series!</h2>
+      <p id="modal-terminado-subtitulo" class="sheet-subtitle">Has cumplido tu objetivo en este ejercicio.</p>
     </div>
 
     <div class="hydration-callout">
-      <span style="font-size: 1.45rem; line-height: 1;" aria-hidden="true">💧</span>
+      {{ icono('drop', 'icon') }}
       <span>Recuerda tomar agua: hidrátate bien antes de tu siguiente bloque</span>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
-      <button
-        type="button"
-        id="btn-modal-seguir-siguiente"
-        class="btn-duo btn-duo--green btn-duo--block btn-duo--giant"
-      >
-        ▶ SEGUIR CON EL SIGUIENTE EJERCICIO
+    <div class="sheet-actions">
+      <button type="button" id="btn-modal-seguir-siguiente" class="btn-duo btn-duo--green btn-duo--block btn-duo--giant">
+        Seguir con el siguiente
       </button>
-      <button
-        type="button"
-        id="btn-modal-descanso-agua"
-        class="btn-duo btn-duo--blue btn-duo--block btn-duo--giant"
-      >
-        ⏱️ HACER DESCANSO Y TOMAR AGUA
+      <button type="button" id="btn-modal-descanso-agua" class="btn-duo btn-duo--block">
+        Descansar un momento
       </button>
     </div>
   </div>
 </div>
 
-<!-- Bottom Sheet Modal para Crear Ejercicio al Vuelo (RF-07) -->
+{# Modal: resumen al terminar el entrenamiento #}
+<div id="modal-sesion-terminada" class="bottom-sheet-backdrop" hidden>
+  <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-sesion-titulo">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-center">
+      <span class="celebration-trophy-badge">{{ icono('trophy', 'icon icon--sm') }} Entrenamiento terminado</span>
+      <h2 id="modal-sesion-titulo" class="sheet-title">¡Buen trabajo!</h2>
+    </div>
+    <dl class="session-summary">
+      <div><dt>Duración</dt><dd id="resumen-sesion-duracion">0 min</dd></div>
+      <div><dt>Series</dt><dd id="resumen-sesion-series">0</dd></div>
+      <div><dt>Volumen</dt><dd id="resumen-sesion-volumen">0 kg</dd></div>
+      <div><dt>Récords</dt><dd id="resumen-sesion-prs">0</dd></div>
+    </dl>
+    <button type="button" id="btn-cerrar-resumen-sesion" class="btn-duo btn-duo--green btn-duo--block btn-duo--giant">
+      Listo
+    </button>
+  </div>
+</div>
+
+{# Modal: crear ejercicio personalizado al vuelo (RF-07) #}
 <div id="modal-crear-ejercicio" class="bottom-sheet-backdrop" hidden>
   <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-ejercicio-titulo">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h3 id="modal-ejercicio-titulo" style="font-size: 1.2rem; margin: 0;">Nuevo Ejercicio Personalizado</h3>
+    <div class="sheet-header">
+      <h2 id="modal-ejercicio-titulo" class="sheet-title">Nuevo ejercicio</h2>
       <button type="button" id="btn-cerrar-modal-ejercicio" class="btn-duo btn-duo--sm">Cerrar</button>
     </div>
 
@@ -275,21 +408,21 @@
 
     <div>
       <label for="nuevo-ejercicio-nombre" class="stepper-label">Nombre del ejercicio</label>
-      <input id="nuevo-ejercicio-nombre" type="text" class="duo-input" placeholder="Ej. Press Vikingo">
+      <input id="nuevo-ejercicio-nombre" type="text" class="duo-input" placeholder="Ej. Press vikingo">
     </div>
 
     <div>
-      <span class="stepper-label">Músculo primario (#58cc02)</span>
-      <div id="chips-grupos-primarios" class="muscle-chips" style="margin-top: 0.35rem;"></div>
+      <span class="stepper-label">Músculo principal</span>
+      <div id="chips-grupos-primarios" class="muscle-chips"></div>
     </div>
 
     <div>
-      <span class="stepper-label">Músculos secundarios (#a5ed6e, opcional)</span>
-      <div id="chips-grupos-secundarios" class="muscle-chips" style="margin-top: 0.35rem;"></div>
+      <span class="stepper-label">Músculos que también trabaja (opcional)</span>
+      <div id="chips-grupos-secundarios" class="muscle-chips"></div>
     </div>
 
     <button type="button" id="btn-confirmar-nuevo-ejercicio" class="btn-duo btn-duo--green btn-duo--block">
-      GUARDAR Y USAR EJERCICIO
+      Guardar y usar
     </button>
   </div>
 </div>

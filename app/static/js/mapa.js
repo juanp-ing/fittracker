@@ -191,7 +191,7 @@
       sheetAnatomiaEl.textContent = anatomiaTexto || `Grupo muscular: ${nombreGrupo}`;
     }
     if (sheetRecomendadosTituloEl) {
-      sheetRecomendadosTituloEl.textContent = `💡 Recomendados para entrenar ${nombreGrupo}`;
+      sheetRecomendadosTituloEl.textContent = `Recomendados para entrenar ${nombreGrupo}`;
     }
     if (modalMusculo) {
       modalMusculo.hidden = false;

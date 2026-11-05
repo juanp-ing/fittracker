@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Perfil — FitTracker{% endblock %}
+
+{% block content %}
+<section class="profile-head" aria-labelledby="perfil-nombre">
+  <span class="profile-head__avatar" aria-hidden="true">{{ (current_user.nombre or '?')[:1] | upper }}</span>
+  <div class="profile-head__text">
+    <h1 id="perfil-nombre" class="profile-head__name">{{ current_user.nombre }}</h1>
+    <span class="profile-head__email">{{ current_user.email }}</span>
+  </div>
+</section>
+
+<section class="profile-section" aria-labelledby="titulo-perfil-entreno">
+  <div class="profile-section__head">
+    <h2 id="titulo-perfil-entreno" class="profile-section__title">Tu perfil de entrenamiento</h2>
+    <p class="profile-section__hint">Con estos datos ordenamos las rutinas recomendadas y ajustamos el mapa muscular.</p>
+  </div>
+
+  <dl class="profile-list">
+    <div class="profile-list__row">
+      <dt>Silueta</dt>
+      <dd>{{ etiquetas.sexo.get(perfil.sexo, '—') }}</dd>
+    </div>
+    <div class="profile-list__row">
+      <dt>Peso corporal</dt>
+      <dd>{{ '%g' % perfil.peso_kg }} kg</dd>
+    </div>
+    <div class="profile-list__row">
+      <dt>Grasa corporal</dt>
+      <dd>{% if perfil.porcentaje_grasa is not none %}{{ '%g' % perfil.porcentaje_grasa }} %{% else %}—{% endif %}</dd>
+    </div>
+    <div class="profile-list__row">
+      <dt>Meta</dt>
+      <dd>{{ etiquetas.meta.get(perfil.meta, '—') }}</dd>
+    </div>
+    <div class="profile-list__row">
+      <dt>Tipo de cuerpo</dt>
+      <dd>{{ etiquetas.somatotipo.get(perfil.somatotipo, '—') }}</dd>
+    </div>
+  </dl>
+
+  <a href="/onboarding?siguiente=/perfil" class="btn-duo btn-duo--block btn-duo--quiet">Editar perfil</a>
+</section>
+
+<section class="profile-section" aria-labelledby="titulo-cuenta">
+  <h2 id="titulo-cuenta" class="profile-section__title">Cuenta</h2>
+  <button type="button" id="btn-cerrar-sesion" class="btn-duo btn-duo--block btn-duo--signout">Cerrar sesión</button>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const btn = document.getElementById('btn-cerrar-sesion');
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } finally {
+        window.location.href = '/login';
+      }
+    });
+  })();
+</script>
+{% endblock %}
