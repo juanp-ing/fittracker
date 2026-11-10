@@ -15,6 +15,9 @@ class RutinaNoEncontradaError(LookupError):
     """Excepción lanzada cuando una rutina no existe o no pertenece al usuario."""
 
 
+DIAS_SEMANA_VALIDOS = ("LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM")
+
+
 class RutinaService:
     """Lógica de negocio para crear, listar, actualizar, recomendar y clonar rutinas."""
 
@@ -31,6 +34,18 @@ class RutinaService:
         self.recomendacion_strategy = (
             recomendacion_strategy or RutinaRecomendacionStrategy()
         )
+
+    @staticmethod
+    def _normalizar_dias_semana(dias_semana) -> str:
+        """Devuelve los días como «LUN,MIE,VIE» (en orden de semana) o lanza ValueError."""
+        if not isinstance(dias_semana, str):
+            raise ValueError("Los días de la rutina deben ser un texto como «LUN,MIE,VIE».")
+        codigos = {c.strip().upper() for c in dias_semana.split(",") if c.strip()}
+        if not codigos:
+            raise ValueError("Elige al menos un día para la rutina.")
+        if not codigos <= set(DIAS_SEMANA_VALIDOS):
+            raise ValueError("Días no válidos: usa LUN, MAR, MIE, JUE, VIE, SAB o DOM.")
+        return ",".join(d for d in DIAS_SEMANA_VALIDOS if d in codigos)
 
     def _validar_items_ejercicios(
         self,
@@ -194,8 +209,9 @@ class RutinaService:
         rutina_id: int,
         nombre: Optional[str] = None,
         ejercicios_items: Optional[list[dict]] = None,
+        dias_semana: Optional[str] = None,
     ) -> dict:
-        """Actualiza el nombre y/o los ejercicios de una rutina del usuario."""
+        """Actualiza el nombre, los días y/o los ejercicios de una rutina del usuario."""
         rutina = self.rutina_repo.obtener_por_id_y_usuario(
             rutina_id=rutina_id,
             usuario_id=usuario_id,
@@ -210,10 +226,15 @@ class RutinaService:
         if ejercicios_items is not None:
             items_validados = self._validar_items_ejercicios(usuario_id, ejercicios_items)
 
+        dias_validados = None
+        if dias_semana is not None:
+            dias_validados = self._normalizar_dias_semana(dias_semana)
+
         actualizada = self.rutina_repo.actualizar(
             rutina=rutina,
             nombre=nombre.strip() if nombre is not None else None,
             ejercicios_items=items_validados,
+            dias_semana=dias_validados,
         )
         return self._serializar_rutina(actualizada)
 

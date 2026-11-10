@@ -133,7 +133,11 @@
       if (comparativa.variacion_volumen_pct === null || comparativa.variacion_volumen_pct === undefined) {
         deltaVolumen.textContent = 'Primer mes con datos';
       } else if (comparativa.variacion_volumen_pct === 0) {
-        deltaVolumen.textContent = 'Igual que el mes anterior';
+        // El porcentaje llega redondeado: 0 % no siempre significa volumen idéntico.
+        deltaVolumen.textContent =
+          Number(data.volumen_total_kg) === Number(comparativa.volumen_kg)
+            ? 'Igual que el mes anterior'
+            : 'Casi igual que el mes anterior (menos de 1 %)';
       } else {
         const sube = comparativa.variacion_volumen_pct > 0;
         deltaVolumen.classList.add(sube ? 'is-up' : 'is-down');

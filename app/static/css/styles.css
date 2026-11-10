@@ -242,6 +242,34 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   color: var(--color-night-ink);
 }
 
+/* Fila solo informativa: sin caja, separada por una línea (no parece pulsable). */
+.duo-list-row--static {
+  padding: 0.55rem 0.1rem;
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid var(--color-border-light);
+  border-radius: 0;
+}
+
+.duo-list-row--static:last-child {
+  border-bottom: none;
+}
+
+/* Fila pulsable: borde inferior presionable como el resto de botones. */
+.duo-list-row--action {
+  font: inherit;
+  background-color: var(--color-paper-white);
+  border-color: var(--color-faded-gray);
+  border-bottom-width: 4px;
+  cursor: pointer;
+  transition: transform 70ms var(--ease-out);
+}
+
+.duo-list-row--action:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
 /* Alerta semántica plana sin anidar tarjetas 3D */
 .duo-alert {
   padding: 0.75rem 0.9rem;
@@ -617,11 +645,9 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   border-color: var(--color-eager-green);
 }
 
+/* Solo lectura: sin caja ni fondo para que no parezca un campo donde escribir. */
 .stepper-display {
   min-height: 58px;
-  border: 2px solid var(--color-faded-gray);
-  border-radius: var(--radius-btn);
-  background-color: var(--color-surface-muted);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1004,12 +1030,38 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   animation: sheet-slide-up 200ms var(--ease-out) forwards;
 }
 
+/* Asa para arrastrar la hoja hacia abajo y cerrarla (gesto en hojas.js).
+   La zona táctil ocupa todo el ancho; la pastilla visible es el ::after. */
 .sheet-handle {
+  position: relative;
+  flex-shrink: 0;
+  height: 32px;
+  margin: -1.1rem -1rem -0.6rem;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sheet-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 44px;
   height: 5px;
   border-radius: 999px;
   background-color: var(--color-border-light);
-  margin: 0 auto 0.25rem auto;
+  transform: translate(-50%, -50%);
+  transition: width 120ms var(--ease-out), background-color 120ms var(--ease-out);
+}
+
+.sheet-handle.is-dragging {
+  cursor: grabbing;
+}
+
+.sheet-handle.is-dragging::after {
+  width: 56px;
+  background-color: var(--color-faded-gray);
 }
 
 /* ==========================================================================
@@ -1070,17 +1122,22 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 }
 
 /* Badges de Estado (MEJORO / ESTANCADO / PR) */
+/* Etiqueta informativa: píldora plana y sin borde para no confundirse con un botón. */
 .status-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.65rem;
-  border-radius: 8px;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  border: 2px solid var(--color-faded-gray);
+  white-space: nowrap;
+  border: none;
+  background-color: var(--color-surface-muted);
   color: var(--color-night-ink);
+  cursor: default;
 }
 
 .status-badge--mejoro {
@@ -2634,8 +2691,9 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 
 .routine-card__secondary {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.25rem 0.5rem;
 }
 
 .btn-duo--quiet-danger { color: var(--color-danger-red-shade); }

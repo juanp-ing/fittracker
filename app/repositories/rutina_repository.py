@@ -134,10 +134,14 @@ class RutinaRepository:
         rutina: Rutina,
         nombre: Optional[str] = None,
         ejercicios_items: Optional[list[dict]] = None,
+        dias_semana: Optional[str] = None,
     ) -> Rutina:
-        """Actualiza el nombre y/o la configuración de ejercicios de una rutina."""
+        """Actualiza el nombre, los días y/o la configuración de ejercicios de una rutina."""
         if nombre is not None:
             rutina.nombre = nombre.strip()
+
+        if dias_semana is not None:
+            rutina.dias_semana = dias_semana
 
         if ejercicios_items is not None:
             rutina.ejercicios.clear()
