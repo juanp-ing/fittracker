@@ -87,6 +87,15 @@ class EjercicioService:
         )
         return [self._serializar_ejercicio(ej, usuario_id=usuario_id) for ej in ejercicios]
 
+    def listar_ejercicios_por_uso(self, usuario_id: int) -> list[dict]:
+        """Ejercicios visibles ordenados de más a menos series registradas (estable por nombre).
+
+        Sirve para que selectores como el de progreso abran con un ejercicio que tenga datos.
+        """
+        ejercicios = self.buscar_ejercicios_usuario(usuario_id=usuario_id)
+        conteo = self.sesion_repo.contar_series_por_ejercicio(usuario_id=usuario_id)
+        return sorted(ejercicios, key=lambda ej: -conteo.get(ej["id"], 0))
+
     def crear_ejercicio_personalizado(
         self,
         usuario_id: int,

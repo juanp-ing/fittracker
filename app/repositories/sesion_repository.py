@@ -40,6 +40,32 @@ class SesionRepository:
             .first()
         )
 
+    def obtener_activa_desde(self, usuario_id: int, desde: datetime) -> Optional[Sesion]:
+        """Sesión ACTIVA más reciente del usuario iniciada a partir de ``desde`` (UTC naive)."""
+        return (
+            db.session.query(Sesion)
+            .filter(
+                Sesion.usuario_id == usuario_id,
+                Sesion.estado == "ACTIVA",
+                Sesion.fecha_inicio >= desde,
+            )
+            .order_by(Sesion.fecha_inicio.desc(), Sesion.id.desc())
+            .first()
+        )
+
+    def obtener_serie_de_sesion(self, serie_id: int, sesion_id: int) -> Optional[Serie]:
+        """Obtiene una serie solo si pertenece a la sesión indicada."""
+        return (
+            db.session.query(Serie)
+            .filter(Serie.id == serie_id, Serie.sesion_id == sesion_id)
+            .first()
+        )
+
+    def eliminar_serie(self, serie: Serie) -> None:
+        """Elimina una serie; sus PRs se borran en cascada."""
+        db.session.delete(serie)
+        db.session.commit()
+
     def agregar_serie(
         self,
         sesion_id: int,
@@ -89,6 +115,32 @@ class SesionRepository:
         db.session.commit()
         return sesion
 
+    def listar_activas_anteriores_a(self, usuario_id: int, limite: datetime) -> list[Sesion]:
+        """Sesiones ACTIVA del usuario iniciadas antes de ``limite`` (UTC naive)."""
+        return (
+            db.session.query(Sesion)
+            .filter(
+                Sesion.usuario_id == usuario_id,
+                Sesion.estado == "ACTIVA",
+                Sesion.fecha_inicio < limite,
+            )
+            .all()
+        )
+
+    def cerrar_abandonadas(self, sesiones: list[Sesion]) -> None:
+        """Cierra sesiones olvidadas: finaliza las que tienen series y elimina las vacías.
+
+        La fecha de cierre es la de la última serie registrada, no el momento del cierre.
+        """
+        for sesion in sesiones:
+            fechas = [s.fecha_hora for s in sesion.series if s.fecha_hora]
+            if not fechas:
+                db.session.delete(sesion)
+                continue
+            sesion.estado = "FINALIZADA"
+            sesion.fecha_fin = max(fechas)
+        db.session.commit()
+
     def listar_historial_usuario(
         self,
         usuario_id: int,
@@ -104,6 +156,35 @@ class SesionRepository:
             .limit(limit)
             .all()
         )
+
+    def existe_serie_anterior(self, usuario_id: int, ejercicio_id: int, serie: Serie) -> bool:
+        """¿El usuario ya había registrado ese ejercicio antes de la serie indicada?"""
+        return (
+            db.session.query(Serie.id)
+            .join(Sesion, Serie.sesion_id == Sesion.id)
+            .filter(
+                Sesion.usuario_id == usuario_id,
+                Serie.ejercicio_id == ejercicio_id,
+                Serie.id != serie.id,
+                db.or_(
+                    Serie.fecha_hora < serie.fecha_hora,
+                    db.and_(Serie.fecha_hora == serie.fecha_hora, Serie.id < serie.id),
+                ),
+            )
+            .first()
+            is not None
+        )
+
+    def contar_series_por_ejercicio(self, usuario_id: int) -> dict[int, int]:
+        """Devuelve {ejercicio_id: total de series registradas} para un usuario."""
+        filas = (
+            db.session.query(Serie.ejercicio_id, db.func.count(Serie.id))
+            .join(Sesion, Serie.sesion_id == Sesion.id)
+            .filter(Sesion.usuario_id == usuario_id)
+            .group_by(Serie.ejercicio_id)
+            .all()
+        )
+        return {ejercicio_id: total for ejercicio_id, total in filas}
 
     def listar_series_por_rango_fechas(
         self,

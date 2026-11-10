@@ -41,6 +41,8 @@
   const sheetSeriesSubEl = document.getElementById('sheet-musculo-series-sub');
   const sheetPrEl = document.getElementById('sheet-musculo-pr');
   const sheetPrEjEl = document.getElementById('sheet-musculo-pr-ej');
+  const sheetSeriesLabelEl = document.getElementById('sheet-musculo-series-label');
+  const sheetRecientesTituloEl = document.getElementById('sheet-recientes-titulo');
   const sheetRecientesEl = document.getElementById('sheet-ejercicios-recientes');
   const sheetRecomendadosTituloEl = document.getElementById('sheet-recomendados-titulo');
   const sheetRecomendadosEl = document.getElementById('sheet-ejercicios-recomendados');
@@ -98,7 +100,8 @@
     if (!svgRoot) return;
     const capaEtiquetas = svgRoot.querySelector('#svg-etiquetas-anatomicas');
     if (capaEtiquetas) {
-      capaEtiquetas.hidden = !mostrarNombresAnatomicos;
+      // Un <g> de SVG no tiene la propiedad `hidden` de HTML: hay que tocar el atributo.
+      capaEtiquetas.toggleAttribute('hidden', !mostrarNombresAnatomicos);
     }
   }
 
@@ -121,8 +124,30 @@
         aplicarColoresSVG(svgActual, ultimosPrimarios, ultimosSecundarios);
       }
       renderizarDetalleGrupos(resumenListaEl, data.grupos || []);
+      return (data.grupos || []).length > 0;
     } catch (err) {
       console.warn('No se pudo cargar el mapa muscular:', err);
+    }
+    return false;
+  }
+
+  function marcarVentanaActiva(dias) {
+    document.querySelectorAll('[data-mapa-dias]').forEach((b) => {
+      b.classList.toggle('is-active', Number(b.getAttribute('data-mapa-dias')) === Number(dias));
+    });
+  }
+
+  // Al entrar se muestra la ventana más corta que tenga entrenamientos: quien lleva más de
+  // una semana sin entrenar no debe encontrarse el mapa en gris si tiene historial reciente.
+  async function cargarVentanaInicial() {
+    const ventanas = Array.from(document.querySelectorAll('[data-mapa-dias]'))
+      .map((b) => Number(b.getAttribute('data-mapa-dias')))
+      .filter(Boolean)
+      .sort((a, b) => a - b);
+    for (const dias of ventanas.length ? ventanas : [7]) {
+      const hayDatos = await cargarMapaMuscular(dias);
+      marcarVentanaActiva(dias);
+      if (hayDatos) return;
     }
   }
 
@@ -191,10 +216,16 @@
       sheetAnatomiaEl.textContent = anatomiaTexto || `Grupo muscular: ${nombreGrupo}`;
     }
     if (sheetRecomendadosTituloEl) {
-      sheetRecomendadosTituloEl.textContent = `💡 Recomendados para entrenar ${nombreGrupo}`;
+      sheetRecomendadosTituloEl.textContent = `Recomendados para entrenar ${nombreGrupo}`;
+    }
+    // Los rótulos reflejan la ventana elegida (7, 14 o 30 días), no siempre «esta semana».
+    if (sheetSeriesLabelEl) sheetSeriesLabelEl.textContent = `Series · últimos ${diasVentanaActual} días`;
+    if (sheetRecientesTituloEl) {
+      sheetRecientesTituloEl.textContent = `Ejercicios hechos en los últimos ${diasVentanaActual} días`;
     }
     if (modalMusculo) {
       modalMusculo.hidden = false;
+      document.body.classList.add('has-open-sheet');
     }
 
     try {
@@ -257,7 +288,7 @@
       const recientes = detalle.ejercicios_recientes || [];
       if (recientes.length === 0) {
         sheetRecientesEl.innerHTML = `
-          <div class="duo-list-row">
+          <div class="duo-list-row duo-list-row--static">
             <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-charcoal);">
               Músculo descansado en los últimos ${detalle.dias_ventana || 7} días.
             </span>
@@ -267,7 +298,7 @@
         sheetRecientesEl.innerHTML = recientes
           .map(
             (ej) => `
-            <div class="duo-list-row">
+            <div class="duo-list-row duo-list-row--static">
               <div>
                 <strong style="font-family: var(--font-display); color: var(--color-night-ink);">
                   ${escapeHtml(ej.nombre)}
@@ -305,7 +336,7 @@
             ej.ultimo_peso !== null && ej.ultimo_peso !== undefined
               ? `Última vez: ${ej.ultimo_peso} kg × ${ej.ultimas_repeticiones}`
               : ej.entrenado_esta_semana
-              ? 'Ya entrenado esta semana'
+              ? 'Ya entrenado en este periodo'
               : 'Fresco para entrenar hoy';
 
           fila.innerHTML = `
@@ -337,6 +368,7 @@
   function cerrarDetalleMusculo() {
     if (modalMusculo) {
       modalMusculo.hidden = true;
+      document.body.classList.remove('has-open-sheet');
     }
     grupoSeleccionadoActual = null;
     const svgRoot = document.getElementById('mapa-muscular-svg');
@@ -348,18 +380,18 @@
   function renderizarDetalleGrupos(contenedor, grupos) {
     if (!contenedor) return;
     if (!grupos || grupos.length === 0) {
-      contenedor.innerHTML =
-        '<p style="color: var(--color-charcoal); font-weight: 700; margin: 0;">Registra tus primeras series o toca cualquier músculo de la silueta para ver recomendaciones.</p>';
+      contenedor.innerHTML = `<p style="color: var(--color-charcoal); font-weight: 700; margin: 0;">No hay series en los últimos ${diasVentanaActual} días. ${
+        diasVentanaActual < 30 ? 'Prueba con una ventana más amplia o toca' : 'Toca'
+      } cualquier músculo de la silueta para ver recomendaciones.</p>`;
       return;
     }
     contenedor.innerHTML = '';
     grupos.forEach((g) => {
       const fila = document.createElement('button');
       fila.type = 'button';
-      fila.className = 'duo-list-row';
+      fila.className = 'duo-list-row duo-list-row--action';
       fila.style.width = '100%';
       fila.style.textAlign = 'left';
-      fila.style.cursor = 'pointer';
       fila.innerHTML = `
         <div>
           <strong style="font-family:var(--font-display); color:var(--color-night-ink);">${escapeHtml(g.nombre)}</strong>
@@ -380,8 +412,7 @@
   document.querySelectorAll('[data-mapa-dias]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const dias = Number(btn.getAttribute('data-mapa-dias')) || 7;
-      document.querySelectorAll('[data-mapa-dias]').forEach((b) => b.classList.remove('is-active'));
-      btn.classList.add('is-active');
+      marcarVentanaActiva(dias);
       cargarMapaMuscular(dias);
     });
   });
@@ -413,6 +444,9 @@
         cerrarDetalleMusculo();
       }
     });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modalMusculo.hidden) cerrarDetalleMusculo();
+    });
   }
 
   window.FitTrackerMapa = {
@@ -429,7 +463,7 @@
       if (generoActual === 'mujer') {
         cambiarGeneroSilueta('mujer');
       }
-      cargarMapaMuscular(7);
+      cargarVentanaInicial();
     }
   });
 })();

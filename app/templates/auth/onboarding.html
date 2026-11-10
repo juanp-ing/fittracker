@@ -2,14 +2,14 @@
 {% block title %}Configura tu Perfil Biométrico — FitTracker{% endblock %}
 
 {% block content %}
-<section id="onboarding-wizard-card" class="duo-card" style="display: flex; flex-direction: column; gap: 1rem; scroll-margin-top: 80px;">
+<section id="onboarding-wizard-card" class="duo-card" data-destino="{{ destino | default('/') }}" style="display: flex; flex-direction: column; gap: 1rem; scroll-margin-top: 80px;">
   <!-- Barra de Progreso Superior estilo Duolingo (#58cc02) + 4 Pestañas de Paso -->
   <div style="display: flex; flex-direction: column; gap: 0.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
       <span id="wizard-paso-etiqueta" class="stepper-label" aria-live="polite">Paso 1 de 4</span>
-      <span style="font-family: var(--font-display); font-weight: 800; font-size: 0.82rem; color: var(--color-eager-green-shade);">
-        Perfil Biométrico
-      </span>
+      {% if destino and destino != '/' %}
+      <a id="btn-cancelar-onboarding" href="{{ destino }}" class="btn-duo btn-duo--sm btn-duo--quiet">Cancelar</a>
+      {% endif %}
     </div>
     <div id="wizard-progress-track" class="wizard-progress-track" role="progressbar" aria-label="Progreso del perfil" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1">
       <div id="wizard-progress-bar" class="wizard-progress-fill" style="width: 25%;"></div>
@@ -29,7 +29,7 @@
     <div>
       <h1 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">1. Elige tu silueta anatómica</h1>
       <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
-        Personaliza las proporciones de tu Mapa Muscular Bicolor y tu guía de grasa corporal.
+        Así ajustamos tu mapa muscular y la guía de grasa corporal.
       </p>
     </div>
 
@@ -477,7 +477,8 @@
         'fittracker_body_gender',
         sexo === 'MUJER' ? 'mujer' : 'hombre'
       );
-      window.location.href = '/';
+      window.location.href =
+        document.getElementById('onboarding-wizard-card').getAttribute('data-destino') || '/';
     });
 
     actualizarGuiaVisualGrasa(false);

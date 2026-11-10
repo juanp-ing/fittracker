@@ -74,6 +74,37 @@
     }
   }
 
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function formatearKg(valor) {
+    return `${Math.round(Number(valor) || 0).toLocaleString('es')} kg`;
+  }
+
+  function formatearPeso(valor) {
+    const n = Number(valor) || 0;
+    return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+  }
+
+  /** Texto y tono de la comparación con el mes anterior. */
+  function pintarDelta(el, actual, previo, unidad) {
+    if (!el) return;
+    el.classList.remove('is-up', 'is-down');
+    if (!previo) {
+      el.textContent = 'Primer mes';
+      return;
+    }
+    const diferencia = actual - previo;
+    if (diferencia === 0) {
+      el.textContent = 'Igual';
+      return;
+    }
+    el.classList.add(diferencia > 0 ? 'is-up' : 'is-down');
+    el.textContent = `${diferencia > 0 ? '▲' : '▼'} ${Math.abs(diferencia).toLocaleString('es')}${unidad} ${diferencia > 0 ? 'más' : 'menos'}`;
+  }
+
   async function cargarResumenMensual() {
     const contenedorResumen = document.getElementById('resumen-mensual-contenedor');
     if (!contenedorResumen) return;
@@ -84,17 +115,48 @@
       });
       if (!resp.ok) return;
       const data = await resp.json();
+      const comparativa = data.comparativa || {};
+      const hayDatos = Number(data.total_series) > 0;
 
-      const kpiSesiones = document.getElementById('kpi-total-sesiones');
-      const kpiSeries = document.getElementById('kpi-total-series');
-      const kpiVolumen = document.getElementById('kpi-volumen-total');
-      const kpiPrs = document.getElementById('kpi-nuevos-prs');
+      document.getElementById('resumen-vacio').hidden = hayDatos;
+      document.getElementById('resumen-datos').hidden = !hayDatos;
+      contenedorResumen.setAttribute('aria-busy', 'false');
+      if (!hayDatos) return;
 
-      if (kpiSesiones) kpiSesiones.textContent = String(data.total_sesiones || 0);
-      if (kpiSeries) kpiSeries.textContent = String(data.total_series || 0);
-      if (kpiVolumen) kpiVolumen.textContent = `${Math.round(data.volumen_total_kg || 0)} kg`;
-      if (kpiPrs) kpiPrs.textContent = String(data.nuevos_prs || 0);
+      document.getElementById('kpi-volumen-total').textContent = formatearKg(data.volumen_total_kg);
+      document.getElementById('kpi-total-sesiones').textContent = String(data.total_sesiones || 0);
+      document.getElementById('kpi-total-series').textContent = String(data.total_series || 0);
+      document.getElementById('kpi-nuevos-prs').textContent = String(data.nuevos_prs || 0);
 
+      const deltaVolumen = document.getElementById('kpi-volumen-delta');
+      deltaVolumen.classList.remove('is-up', 'is-down');
+      if (comparativa.variacion_volumen_pct === null || comparativa.variacion_volumen_pct === undefined) {
+        deltaVolumen.textContent = 'Primer mes con datos';
+      } else if (comparativa.variacion_volumen_pct === 0) {
+        // El porcentaje llega redondeado: 0 % no siempre significa volumen idéntico.
+        deltaVolumen.textContent =
+          Number(data.volumen_total_kg) === Number(comparativa.volumen_kg)
+            ? 'Igual que el mes anterior'
+            : 'Casi igual que el mes anterior (menos de 1 %)';
+      } else {
+        const sube = comparativa.variacion_volumen_pct > 0;
+        deltaVolumen.classList.add(sube ? 'is-up' : 'is-down');
+        deltaVolumen.textContent = `${sube ? '▲' : '▼'} ${Math.abs(comparativa.variacion_volumen_pct)} % vs mes anterior`;
+      }
+      pintarDelta(document.getElementById('kpi-sesiones-delta'), data.total_sesiones || 0, comparativa.sesiones || 0, '');
+      pintarDelta(document.getElementById('kpi-series-delta'), data.total_series || 0, comparativa.series || 0, '');
+
+      const primeras = Number(data.primeras_marcas) || 0;
+      document.getElementById('kpi-prs-nota').textContent =
+        primeras > 0 ? `+${primeras} ${primeras === 1 ? 'estreno' : 'estrenos'}` : '';
+      const notaPrimeras = document.getElementById('nota-primeras-marcas');
+      notaPrimeras.hidden = primeras === 0;
+      notaPrimeras.textContent =
+        primeras === 1
+          ? 'Además estrenaste 1 ejercicio: su primera marca será tu referencia para batir.'
+          : `Además estrenaste ${primeras} ejercicios: sus primeras marcas serán tu referencia para batir.`;
+
+      renderizarListaPRs(document.getElementById('lista-prs-mes'), data.prs_detalle || []);
       renderizarListaClasificacion(
         document.getElementById('lista-ejercicios-mejorados'),
         data.ejercicios_mejorados || [],
@@ -105,10 +167,6 @@
         data.ejercicios_estancados || [],
         'ESTANCADO'
       );
-      renderizarListaPRs(
-        document.getElementById('lista-prs-mes'),
-        data.prs_detalle || []
-      );
     } catch (err) {
       console.warn('Error cargando resumen mensual:', err);
     }
@@ -117,49 +175,50 @@
   function renderizarListaClasificacion(el, items, tipo) {
     if (!el) return;
     if (!items.length) {
-      el.innerHTML = `<p style="color:var(--color-charcoal); font-weight:700; margin:0;">Sin ejercicios en esta categoría este mes.</p>`;
+      el.innerHTML = `<li class="plain-list__empty">${
+        tipo === 'MEJORO'
+          ? 'Cuando superes el peso del mes anterior en un ejercicio, aparecerá aquí.'
+          : 'Ninguno: todo lo que entrenas sigue avanzando.'
+      }</li>`;
       return;
     }
-    const badgeClass =
-      tipo === 'MEJORO' ? 'status-badge--mejoro' : 'status-badge--estancado';
-    const badgeTexto = tipo === 'MEJORO' ? '¡MEJORÓ!' : 'ESTANCADO';
-
     el.innerHTML = items
-      .map(
-        (item) => `
-        <div class="duo-card" style="display:flex; justify-content:space-between; align-items:center; padding:0.7rem 0.9rem;">
-          <div>
-            <strong style="font-family:var(--font-display); color:var(--color-night-ink);">${item.nombre}</strong>
-            <div style="font-size:0.82rem; font-weight:700; color:var(--color-charcoal);">
-              Actual: ${item.max_peso_actual} kg · Previo: ${item.max_peso_previo} kg (${item.sesiones_actual} sesiones)
-            </div>
-          </div>
-          <span class="status-badge ${badgeClass}">${badgeTexto}</span>
-        </div>
-      `
-      )
+      .map((item) => {
+        const detalle = item.max_peso_previo
+          ? `${formatearPeso(item.max_peso_previo)} → ${formatearPeso(item.max_peso_actual)} kg`
+          : `${formatearPeso(item.max_peso_actual)} kg`;
+        return `
+        <li class="plain-list__row">
+          <span class="plain-list__main">
+            <strong>${escapeHtml(item.nombre)}</strong>
+            <span>${item.sesiones_actual} sesiones este mes</span>
+          </span>
+          <span class="plain-list__value ${tipo === 'MEJORO' ? 'is-up' : ''}">${detalle}</span>
+        </li>`;
+      })
       .join('');
   }
 
   function renderizarListaPRs(el, prs) {
     if (!el) return;
     if (!prs.length) {
-      el.innerHTML = `<p style="color:var(--color-charcoal); font-weight:700; margin:0;">Aún no hay récords registrados en los últimos 30 días.</p>`;
+      el.innerHTML =
+        '<li class="plain-list__empty">Sin récords todavía. Sube un poco el peso en tu próxima sesión.</li>';
       return;
     }
     el.innerHTML = prs
       .map(
         (pr) => `
-        <div class="duo-card duo-card--highlight" style="display:flex; justify-content:space-between; align-items:center; padding:0.7rem 0.9rem;">
-          <div>
-            <strong style="font-family:var(--font-display); color:var(--color-night-ink);">${pr.ejercicio_nombre}</strong>
-            <div style="font-size:0.82rem; font-weight:700; color:var(--color-charcoal);">
-              Récord de Peso Máximo
-            </div>
-          </div>
-          <span class="status-badge status-badge--mejoro">${pr.peso} KG</span>
-        </div>
-      `
+        <li class="plain-list__row">
+          <span class="plain-list__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 01-8 0V4zM8 6H4v1a3 3 0 003 3M16 6h4v1a3 3 0 01-3 3M12 13v4M8 20h8"/></svg>
+          </span>
+          <span class="plain-list__main">
+            <strong>${escapeHtml(pr.ejercicio_nombre)}</strong>
+            <span>Peso máximo</span>
+          </span>
+          <span class="plain-list__value is-up">${formatearPeso(pr.peso)} kg</span>
+        </li>`
       )
       .join('');
   }

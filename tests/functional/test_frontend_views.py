@@ -18,7 +18,6 @@ def test_vistas_html_mobile_first_y_archivos_estaticos(app, client):
     assert resp_login.status_code == 200
     html_login = resp_login.get_data(as_text=True)
     assert "mobile-shell" in html_login
-    assert "user-scalable=no" in html_login
     assert 'class="duo-alert"' in html_login
 
     resp_reg = client.get("/register")
@@ -102,3 +101,50 @@ def test_vistas_html_mobile_first_y_archivos_estaticos(app, client):
     assert 'class="muscle-fibers"' in svg_m_text
     assert 'id="svg-etiquetas-anatomicas"' in svg_h_text
     assert 'id="svg-etiquetas-anatomicas"' in svg_m_text
+
+
+def _texto_visible(html):
+    """Elimina comentarios, scripts, estilos y atributos para quedarse con el texto visible."""
+    import re
+
+    html = re.sub(r"<!--.*?-->", "", html, flags=re.S)
+    html = re.sub(r"<(script|style|svg)\b.*?</\1>", "", html, flags=re.S)
+    return re.sub(r"<[^>]+>", " ", html)
+
+
+def test_arreglos_rapidos_de_auditoria_ux(app, client):
+    """Zoom permitido, cookie de zona horaria, [hidden] efectivo y sin códigos hex visibles."""
+    import re
+
+    with app.app_context():
+        seed_database()
+
+    # Accesibilidad: no bloquear el zoom (WCAG 1.4.4)
+    html_login = client.get("/login").get_data(as_text=True)
+    assert "user-scalable=no" not in html_login
+    assert "maximum-scale=1" not in html_login
+
+    # El navegador informa su zona horaria al servidor para calcular el "hoy" local
+    assert "ft_tz=" in html_login
+    assert "Intl.DateTimeFormat().resolvedOptions().timeZone" in html_login
+
+    # [hidden] debe ganar a cualquier display de componente
+    texto_css = client.get("/static/css/styles.css").get_data(as_text=True)
+    assert re.search(r"\[hidden\]\s*\{\s*display:\s*none\s*!important;?\s*\}", texto_css)
+
+    # Los resultados del buscador no deben encogerse y cortar su texto
+    regla_opcion = re.search(r"\.exercise-option\s*\{([^}]*)\}", texto_css).group(1)
+    assert "flex-shrink: 0" in regla_opcion
+
+    # Ningún código de color hexadecimal llega al texto visible
+    client.post(
+        "/api/auth/register",
+        json={"nombre": "Atleta Hex", "email": "hex@fittracker.local", "password": "Password123"},
+    )
+    for ruta in ("/", "/mapa", "/rutinas", "/resumen"):
+        visible = _texto_visible(client.get(ruta).get_data(as_text=True))
+        assert not re.search(r"#[0-9a-fA-F]{6}", visible), f"Código hex visible en {ruta}"
+
+    # Borrar una rutina pide confirmación
+    html_rutinas = client.get("/rutinas").get_data(as_text=True)
+    assert "confirm(" in html_rutinas

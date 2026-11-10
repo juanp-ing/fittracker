@@ -1,56 +1,75 @@
 {% extends "base.html" %}
-{% block title %}Resumen Mensual 30d — FitTracker{% endblock %}
+{% block title %}Progreso · Tu mes — FitTracker{% endblock %}
 
 {% block content %}
-<div id="resumen-mensual-contenedor" style="display: flex; flex-direction: column; gap: 1rem;">
-  <section class="duo-card duo-card--highlight">
-    <h1 style="font-size: 1.35rem; margin: 0 0 0.25rem 0;">Resumen de tus últimos 30 días</h1>
-    <p style="margin: 0; font-weight: 700; color: var(--color-charcoal);">
-      Comparativa automática contra los días 31–60.
-    </p>
+{% include "resumen/_subtabs.html" %}
+
+<div id="resumen-mensual-contenedor" class="month-view" aria-busy="true">
+  <header class="page-head">
+    <h1 class="page-title">Tus últimos 30 días</h1>
+    <p class="page-subtitle">Comparado con los 30 días anteriores</p>
+  </header>
+
+  {# Estado vacío: sin series en la ventana de 30 días #}
+  <section id="resumen-vacio" class="empty-state" hidden>
+    <svg class="empty-state__art" viewBox="0 0 160 120" aria-hidden="true">
+      <circle cx="80" cy="62" r="50" fill="var(--color-storybook-green)"/>
+      <rect x="38" y="56" width="84" height="12" rx="6" fill="var(--color-eager-green-shade)"/>
+      <rect x="44" y="40" width="16" height="44" rx="6" fill="var(--color-eager-green)"/>
+      <rect x="100" y="40" width="16" height="44" rx="6" fill="var(--color-eager-green)"/>
+      <rect x="30" y="48" width="12" height="28" rx="5" fill="var(--color-fresh-leaf)"/>
+      <rect x="118" y="48" width="12" height="28" rx="5" fill="var(--color-fresh-leaf)"/>
+      <path d="M128 18v12M122 24h12M30 12v8M26 16h8" stroke="var(--color-spark-blue)" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    <h2 class="empty-state__title">Aún no hay entrenos este mes</h2>
+    <p class="empty-state__text">Registra tu primera serie y aquí verás tu volumen, tus récords y qué ejercicios avanzan.</p>
+    <a href="/" class="btn-duo btn-duo--green btn-duo--block">Ir a entrenar</a>
   </section>
 
-  <!-- KPIs Principales -->
-  <section class="kpi-grid">
-    <div class="duo-card">
-      <div id="kpi-total-sesiones" class="kpi-value">0</div>
-      <div class="kpi-label">Sesiones</div>
-    </div>
-    <div class="duo-card">
-      <div id="kpi-nuevos-prs" class="kpi-value" style="color: var(--color-eager-green);">0</div>
-      <div class="kpi-label">Nuevos PRs</div>
-    </div>
-    <div class="duo-card">
-      <div id="kpi-total-series" class="kpi-value">0</div>
-      <div class="kpi-label">Series</div>
-    </div>
-    <div class="duo-card">
-      <div id="kpi-volumen-total" class="kpi-value">0 kg</div>
-      <div class="kpi-label">Volumen Total</div>
-    </div>
-  </section>
+  <div id="resumen-datos" class="month-view__data" hidden>
+    <section class="stat-grid" aria-label="Cifras del mes">
+      <div class="stat stat--wide">
+        <span class="stat__label">Volumen levantado</span>
+        <span id="kpi-volumen-total" class="stat__value">0 kg</span>
+        <span id="kpi-volumen-delta" class="stat__delta"></span>
+      </div>
+      <div class="stat">
+        <span class="stat__label">Sesiones</span>
+        <span id="kpi-total-sesiones" class="stat__value">0</span>
+        <span id="kpi-sesiones-delta" class="stat__delta"></span>
+      </div>
+      <div class="stat">
+        <span class="stat__label">Series</span>
+        <span id="kpi-total-series" class="stat__value">0</span>
+        <span id="kpi-series-delta" class="stat__delta"></span>
+      </div>
+      <div class="stat stat--accent">
+        <span class="stat__label">Récords</span>
+        <span id="kpi-nuevos-prs" class="stat__value">0</span>
+        <span id="kpi-prs-nota" class="stat__delta"></span>
+      </div>
+    </section>
 
-  <!-- Récords Personales del Mes -->
-  <section style="display: flex; flex-direction: column; gap: 0.5rem;">
-    <h2 style="font-size: 1.15rem; margin: 0;">Récords Personales Logrados (PRs)</h2>
-    <div id="lista-prs-mes" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
-  </section>
+    <section class="list-section" aria-labelledby="titulo-records">
+      <h2 id="titulo-records" class="list-section__title">Récords del mes</h2>
+      <ul id="lista-prs-mes" class="plain-list"></ul>
+      <p id="nota-primeras-marcas" class="list-section__note" hidden></p>
+    </section>
 
-  <!-- Ejercicios que Mejoraron (#58cc02) -->
-  <section style="display: flex; flex-direction: column; gap: 0.5rem;">
-    <h2 style="font-size: 1.15rem; margin: 0;">Ejercicios que Mejoraron</h2>
-    <div id="lista-ejercicios-mejorados" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
-  </section>
+    <section class="list-section" aria-labelledby="titulo-mejoraron">
+      <h2 id="titulo-mejoraron" class="list-section__title">Ejercicios que avanzan</h2>
+      <ul id="lista-ejercicios-mejorados" class="plain-list"></ul>
+    </section>
 
-  <!-- Ejercicios Estancados (>= 2 sesiones sin subir marca) -->
-  <section style="display: flex; flex-direction: column; gap: 0.5rem;">
-    <h2 style="font-size: 1.15rem; margin: 0;">Ejercicios Estancados (Atención)</h2>
-    <div id="lista-ejercicios-estancados" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
-  </section>
+    <section class="list-section" aria-labelledby="titulo-estancados">
+      <h2 id="titulo-estancados" class="list-section__title">Necesitan un empujón</h2>
+      <p class="list-section__note">2 o más sesiones este mes sin superar el peso del mes anterior.</p>
+      <ul id="lista-ejercicios-estancados" class="plain-list"></ul>
+    </section>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/graficas.js') }}"></script>
 {% endblock %}
-

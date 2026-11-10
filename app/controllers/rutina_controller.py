@@ -24,6 +24,8 @@ def vista_rutinas():
         rutinas=rutinas,
         rutinas_famosas=rutinas_famosas,
         ejercicios=ejercicios,
+        # Rutina recién creada o clonada a resaltar (redirección tras guardar)
+        nueva_id=request.args.get("nueva", type=int),
     )
 
 
@@ -118,7 +120,7 @@ def obtener_rutina(rutina_id: int):
 @rutina_bp.route("/api/rutinas/<int:rutina_id>", methods=["PUT"])
 @login_required
 def actualizar_rutina(rutina_id: int):
-    """Actualiza el nombre y/o los ejercicios de una rutina del usuario."""
+    """Actualiza el nombre, los días y/o los ejercicios de una rutina del usuario."""
     payload = request.get_json(silent=True) or {}
     nombre = payload.get("nombre")
     ejercicios_items = payload.get("ejercicios")
@@ -130,6 +132,7 @@ def actualizar_rutina(rutina_id: int):
             rutina_id=rutina_id,
             nombre=nombre,
             ejercicios_items=ejercicios_items,
+            dias_semana=payload.get("dias_semana"),
         )
     except RutinaNoEncontradaError as exc:
         return jsonify({"error": str(exc), "code": "NO_ENCONTRADO"}), 404

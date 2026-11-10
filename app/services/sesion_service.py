@@ -1,6 +1,6 @@
 """Servicio de dominio para el ciclo de vida de Sesiones, Agenda Diaria y registro atómico de Series."""
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from app.models.rutina import Rutina
@@ -12,6 +12,11 @@ from app.repositories.pr_repository import PRRepository
 from app.repositories.rutina_repository import RutinaRepository
 from app.repositories.sesion_repository import SesionRepository
 from app.services.pr_service import PRService
+from app.services.zona_horaria import (
+    fecha_local,
+    limites_utc_de_dias_locales,
+    resolver_zona_horaria,
+)
 
 MESES_ES = {
     1: "enero",
@@ -38,6 +43,19 @@ DIAS_SEMANA_CONFIG = [
     ("vie", "VIE"),
     ("sáb", "SAB"),
 ]
+
+
+# Una sesión ACTIVA más antigua que esto se considera abandonada al volver a "Hoy".
+HORAS_VIGENCIA_SESION_ACTIVA = 12
+
+# Estimación de duración: segundos de trabajo por serie (además del descanso configurado).
+SEGUNDOS_TRABAJO_POR_SERIE = 45
+
+# Racha semanal: una semana (domingo a sábado, como la tira de Hoy) cuenta si se entrenó al
+# menos la meta de días distintos. La meta sale de la rutina principal, con tope razonable.
+META_DIAS_SEMANA_POR_DEFECTO = 3
+META_DIAS_SEMANA_MAXIMA = 5
+SEMANAS_HISTORIAL_RACHA = 52
 
 
 class SesionNoEncontradaError(LookupError):
@@ -125,16 +143,23 @@ class SesionService:
         usuario_id: int,
         fecha_str: Optional[str] = None,
         rutina_id: Optional[int] = None,
+        zona_horaria: Optional[str] = None,
+        ahora: Optional[datetime] = None,
     ) -> dict:
-        """Devuelve la tira semanal de 7 días con puntos y el checklist de ejercicios del día."""
-        hoy_utc = datetime.now(timezone.utc).date()
+        """Devuelve la tira semanal de 7 días con puntos y el checklist de ejercicios del día.
+
+        Los días se calculan en la zona horaria local del usuario (IANA, p. ej.
+        ``America/Bogota``); si no se indica o no es válida se usa UTC.
+        """
+        zona = resolver_zona_horaria(zona_horaria)
+        hoy_local = (ahora or datetime.now(timezone.utc)).astimezone(zona).date()
         if fecha_str and fecha_str.strip():
             try:
                 fecha_obj = date.fromisoformat(fecha_str.strip())
             except ValueError as exc:
                 raise ValueError("Formato de fecha inválido. Usa YYYY-MM-DD.") from exc
         else:
-            fecha_obj = hoy_utc
+            fecha_obj = hoy_local
 
         # Domingo como primer día de la tira semanal (0 = dom ... 6 = sáb)
         offset_domingo = (fecha_obj.weekday() + 1) % 7
@@ -155,8 +180,9 @@ class SesionService:
         )
 
         # Consultar todas las series registradas por el usuario en la semana de 7 días
-        dt_inicio_semana = datetime.combine(inicio_semana, time.min)
-        dt_fin_semana = datetime.combine(fin_semana, time.max)
+        dt_inicio_semana, dt_fin_semana = limites_utc_de_dias_locales(
+            inicio_semana, fin_semana, zona
+        )
         series_semana = self.sesion_repo.listar_series_por_rango_fechas(
             usuario_id=usuario_id,
             fecha_desde=dt_inicio_semana,
@@ -166,7 +192,7 @@ class SesionService:
         series_por_fecha: dict[date, list] = {}
         for s in series_semana:
             if s.fecha_hora:
-                f_serie = s.fecha_hora.date()
+                f_serie = fecha_local(s.fecha_hora, zona)
                 series_por_fecha.setdefault(f_serie, []).append(s)
 
         dias_semana_lista: list[dict] = []
@@ -194,7 +220,7 @@ class SesionService:
                     "codigo_dia": cod,
                     "seleccionado": dia_actual == fecha_obj,
                     "es_seleccionado": dia_actual == fecha_obj,
-                    "es_hoy": dia_actual == hoy_utc,
+                    "es_hoy": dia_actual == hoy_local,
                     "toca_entrenar": toca_entrenar,
                     "series_registradas": len(series_del_dia),
                     "puntos": puntos,
@@ -252,7 +278,21 @@ class SesionService:
             "dias_semana": dias_semana_lista,
             "dias": dias_semana_lista,
             "ejercicios": ejercicios_agenda,
+            "racha": self._calcular_racha_semanal(usuario_id, zona, hoy_local),
             "total_ejercicios": len(ejercicios_agenda),
+            "series_totales": sum(ej["series_objetivo"] for ej in ejercicios_agenda),
+            "series_hechas": sum(
+                min(ej["series_completadas_hoy"], ej["series_objetivo"])
+                for ej in ejercicios_agenda
+            ),
+            "minutos_estimados": round(
+                sum(
+                    ej["series_objetivo"]
+                    * (SEGUNDOS_TRABAJO_POR_SERIE + ej["descanso_segundos"])
+                    for ej in ejercicios_agenda
+                )
+                / 60
+            ),
             "ejercicios_completados": sum(
                 1 for ej in ejercicios_agenda if ej["completado"]
             ),
@@ -272,6 +312,7 @@ class SesionService:
             if rutina is None:
                 raise LookupError("La rutina indicada no existe o no pertenece al usuario.")
 
+        self.cerrar_sesiones_abandonadas(usuario_id)
         sesion = self.sesion_repo.iniciar_sesion(
             usuario_id=usuario_id,
             rutina_id=rutina_id,
@@ -304,6 +345,7 @@ class SesionService:
         sesion: Sesion,
         rutina_ref: Optional[Rutina],
         ejercicio_id: int,
+        zona_horaria: Optional[str] = None,
     ) -> dict:
         """Calcula series completadas, meta, si se completó ahora y cuál es el siguiente ejercicio."""
         series_sesion_ej = sum(
@@ -324,11 +366,13 @@ class SesionService:
         siguiente_ejercicio = None
         if rutina_ref is not None:
             # Contar series hechas hoy + en la sesión actual por ejercicio
-            hoy_utc = datetime.now(timezone.utc).date()
+            zona = resolver_zona_horaria(zona_horaria)
+            hoy_local = datetime.now(timezone.utc).astimezone(zona).date()
+            desde_utc, hasta_utc = limites_utc_de_dias_locales(hoy_local, hoy_local, zona)
             series_hoy = self.sesion_repo.listar_series_por_rango_fechas(
                 usuario_id=usuario_id,
-                fecha_desde=datetime.combine(hoy_utc, time.min),
-                fecha_hasta=datetime.combine(hoy_utc, time.max),
+                fecha_desde=desde_utc,
+                fecha_hasta=hasta_utc,
             )
             conteo_total_por_ej: dict[int, int] = {}
             for s in series_hoy:
@@ -384,6 +428,7 @@ class SesionService:
         ejercicio_id: int,
         peso: float,
         repeticiones: int,
+        zona_horaria: Optional[str] = None,
     ) -> dict:
         """Registra una serie en la sesión activa, evalúa PRs y calcula avance del checklist diario."""
         sesion = self.sesion_repo.obtener_por_id_y_usuario(
@@ -443,6 +488,7 @@ class SesionService:
             sesion=sesion,
             rutina_ref=rutina_ref,
             ejercicio_id=ejercicio_id,
+            zona_horaria=zona_horaria,
         )
 
         serie_dict = {
@@ -462,6 +508,131 @@ class SesionService:
             "descanso_segundos": descanso_segundos,
             "descanso_sugerido_segundos": descanso_segundos,
             **progreso_rutina,
+        }
+
+    def _calcular_racha_semanal(self, usuario_id: int, zona, hoy_local: date) -> dict:
+        """Semanas seguidas cumpliendo la meta de días y progreso de la semana en curso."""
+        # Con varias rutinas principales (p. ej. empuje y tirón en días distintos) la meta
+        # cuenta los días de todas; sin ninguna principal, los de la rutina más reciente.
+        rutinas = self.rutina_repo.listar_por_usuario(usuario_id=usuario_id)
+        principales = [r for r in rutinas if r.es_favorita] or rutinas[:1]
+        if principales:
+            dias_plan: set[str] = set()
+            for rutina in principales:
+                dias_plan |= self._extraer_codigos_dias(rutina.dias_semana)
+            meta = max(1, min(len(dias_plan), META_DIAS_SEMANA_MAXIMA))
+        else:
+            meta = META_DIAS_SEMANA_POR_DEFECTO
+
+        inicio_semana = hoy_local - timedelta(days=(hoy_local.weekday() + 1) % 7)
+        desde = inicio_semana - timedelta(weeks=SEMANAS_HISTORIAL_RACHA)
+        desde_utc, hasta_utc = limites_utc_de_dias_locales(
+            desde, inicio_semana + timedelta(days=6), zona
+        )
+        series = self.sesion_repo.listar_series_por_rango_fechas(
+            usuario_id=usuario_id,
+            fecha_desde=desde_utc,
+            fecha_hasta=hasta_utc,
+        )
+        dias_entrenados = {fecha_local(s.fecha_hora, zona) for s in series if s.fecha_hora}
+
+        def dias_en_semana(inicio: date) -> int:
+            fin = inicio + timedelta(days=6)
+            return sum(1 for d in dias_entrenados if inicio <= d <= fin)
+
+        dias_actual = dias_en_semana(inicio_semana)
+        cumplida = dias_actual >= meta
+        # La semana en curso solo suma si ya cumplió; si no, la racha sigue viva hasta el sábado.
+        semanas = 1 if cumplida else 0
+        semana = inicio_semana - timedelta(weeks=1)
+        while semana >= desde and dias_en_semana(semana) >= meta:
+            semanas += 1
+            semana -= timedelta(weeks=1)
+
+        return {
+            "semanas_seguidas": semanas,
+            "dias_semana_actual": dias_actual,
+            "meta_dias_semana": meta,
+            "semana_cumplida": cumplida,
+        }
+
+    def cerrar_sesiones_abandonadas(
+        self,
+        usuario_id: int,
+        horas_vigencia: int = HORAS_VIGENCIA_SESION_ACTIVA,
+    ) -> int:
+        """Cierra las sesiones ACTIVA que superaron la vigencia; devuelve cuántas eran."""
+        limite = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=horas_vigencia)
+        abandonadas = self.sesion_repo.listar_activas_anteriores_a(
+            usuario_id=usuario_id, limite=limite
+        )
+        if abandonadas:
+            self.sesion_repo.cerrar_abandonadas(abandonadas)
+        return len(abandonadas)
+
+    def obtener_sesion_activa(
+        self,
+        usuario_id: int,
+        horas_vigencia: int = HORAS_VIGENCIA_SESION_ACTIVA,
+    ) -> Optional[dict]:
+        """Sesión ACTIVA que la pantalla Hoy debe retomar, con sus series, o None.
+
+        Una sesión activa iniciada hace más de ``horas_vigencia`` horas se considera
+        abandonada (el usuario olvidó finalizarla): no se retoma y se cierra sola.
+        """
+        self.cerrar_sesiones_abandonadas(usuario_id, horas_vigencia)
+        desde = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=horas_vigencia)
+        sesion = self.sesion_repo.obtener_activa_desde(usuario_id=usuario_id, desde=desde)
+        if sesion is None:
+            return None
+
+        datos = self._serializar_sesion(sesion)
+        datos["rutina_nombre"] = sesion.rutina.nombre if sesion.rutina else None
+        datos["series"] = [
+            {
+                "id": s.id,
+                "ejercicio_id": s.ejercicio_id,
+                "ejercicio_nombre": s.ejercicio.nombre if s.ejercicio else "",
+                "peso": s.peso,
+                "repeticiones": s.repeticiones,
+                "volumen": s.volumen,
+                # La primera serie de un ejercicio genera un PR técnico, pero no es un récord.
+                "es_pr": bool(s.prs)
+                and self.sesion_repo.existe_serie_anterior(
+                    usuario_id=usuario_id, ejercicio_id=s.ejercicio_id, serie=s
+                ),
+                "fecha_hora": s.fecha_hora.isoformat() if s.fecha_hora else None,
+            }
+            for s in sesion.series
+        ]
+        return datos
+
+    def eliminar_serie(self, usuario_id: int, sesion_id: int, serie_id: int) -> dict:
+        """Deshace una serie de una sesión activa del usuario (y los PRs que generó)."""
+        sesion = self.sesion_repo.obtener_por_id_y_usuario(
+            sesion_id=sesion_id,
+            usuario_id=usuario_id,
+        )
+        if sesion is None:
+            raise SesionNoEncontradaError("Sesión no encontrada o acceso denegado.")
+
+        # Solo una sesión ACTIVA admite cambios en sus series
+        SesionState.obtener_estado(sesion.estado).validar_registro_serie()
+
+        serie = self.sesion_repo.obtener_serie_de_sesion(serie_id=serie_id, sesion_id=sesion.id)
+        if serie is None:
+            raise SesionNoEncontradaError("La serie no existe en esta sesión.")
+
+        ejercicio_id = serie.ejercicio_id
+        self.sesion_repo.eliminar_serie(serie)
+
+        return {
+            "serie_id": serie_id,
+            "sesion_id": sesion.id,
+            "ejercicio_id": ejercicio_id,
+            "series_completadas_ejercicio": sum(
+                1 for s in sesion.series if s.ejercicio_id == ejercicio_id
+            ),
         }
 
     def finalizar_sesion(self, usuario_id: int, sesion_id: int) -> dict:

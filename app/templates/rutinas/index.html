@@ -1,196 +1,169 @@
 {% extends "base.html" %}
-{% block title %}Mis Rutinas y Rutinas Famosas — FitTracker{% endblock %}
+{% block title %}Rutinas — FitTracker{% endblock %}
+
+{% set NOMBRES_DIAS = {'LUN': 'Lun', 'MAR': 'Mar', 'MIE': 'Mié', 'JUE': 'Jue', 'VIE': 'Vie', 'SAB': 'Sáb', 'DOM': 'Dom'} %}
+{% set abrir_catalogo = not rutinas %}
+
+{% macro dias_legibles(codigos) -%}
+  {%- for c in (codigos or '').split(',') if c.strip() -%}
+    {{ NOMBRES_DIAS.get(c.strip().upper(), c) }}{% if not loop.last %} · {% endif %}
+  {%- endfor -%}
+{%- endmacro %}
 
 {% block content %}
-<!-- Pestañas Píldora Estilo Duolingo -->
+<div id="rutinas-aviso" class="duo-alert" role="alert" hidden></div>
 <div class="duo-tabs-pill" role="tablist" aria-label="Secciones de Rutinas">
-  <button
-    type="button"
-    id="tab-btn-mis-rutinas"
-    class="duo-tab-btn is-active"
-    role="tab"
-    aria-selected="true"
-    data-rutina-tab="mis-rutinas"
-  >
-    Mis Rutinas ({{ rutinas | length }})
+  <button type="button" id="tab-btn-mis-rutinas" class="duo-tab-btn {% if not abrir_catalogo %}is-active{% endif %}"
+          role="tab" aria-selected="{{ 'false' if abrir_catalogo else 'true' }}" aria-controls="panel-mis-rutinas"
+          data-rutina-tab="mis-rutinas">
+    Mis rutinas ({{ rutinas | length }})
   </button>
-  <button
-    type="button"
-    id="tab-btn-famosas"
-    class="duo-tab-btn"
-    role="tab"
-    aria-selected="false"
-    data-rutina-tab="rutinas-famosas"
-  >
-    🔥 Rutinas Famosas ({{ rutinas_famosas | default([]) | length or 12 }})
+  <button type="button" id="tab-btn-famosas" class="duo-tab-btn {% if abrir_catalogo %}is-active{% endif %}"
+          role="tab" aria-selected="{{ 'true' if abrir_catalogo else 'false' }}" aria-controls="panel-rutinas-famosas"
+          data-rutina-tab="rutinas-famosas">
+    Rutinas Famosas ({{ rutinas_famosas | default([]) | length }})
   </button>
 </div>
 
-<div id="rutina-feedback-banner" class="pr-banner" hidden>
-  <span id="rutina-feedback-text">¡Rutina agregada a tus favoritas!</span>
-  <span class="status-badge status-badge--mejoro">LISTA</span>
+{# ================================================================== #}
+{# MIS RUTINAS                                                         #}
+{# ================================================================== #}
+<div id="panel-mis-rutinas" class="routine-panel" role="tabpanel" aria-labelledby="tab-btn-mis-rutinas"
+     {% if abrir_catalogo %}hidden{% endif %}>
+  {% for r in rutinas %}
+  {% set total_series = r.ejercicios | sum(attribute='series_objetivo') %}
+  <article class="routine-card {% if r.es_favorita %}is-main{% endif %} {% if nueva_id == r.id %}is-new{% endif %}"
+           id="rutina-{{ r.id }}" aria-labelledby="rutina-{{ r.id }}-nombre">
+    <div class="routine-card__head">
+      <h2 id="rutina-{{ r.id }}-nombre" class="routine-card__name">{{ r.nombre }}</h2>
+      {% if nueva_id == r.id %}<span class="status-badge status-badge--mejoro">Recién añadida</span>
+      {% elif r.es_favorita %}<span class="status-badge status-badge--mejoro">Principal</span>{% endif %}
+    </div>
+    <p class="routine-card__meta">
+      {{ r.ejercicios | length }} ejercicios · {{ total_series }} series
+      {% if r.dias_semana %}<br><span class="routine-card__days">{{ dias_legibles(r.dias_semana) }}</span>{% endif %}
+    </p>
+    <ol class="routine-card__list">
+      {% for item in r.ejercicios %}
+      <li><span>{{ item.nombre }}</span><span class="routine-card__sets">{{ item.series_objetivo }} × {{ item.descanso_segundos }}s</span></li>
+      {% endfor %}
+    </ol>
+    <div class="routine-card__actions">
+      <a href="/?rutina_id={{ r.id }}" class="btn-duo btn-duo--green btn-duo--block">Entrenar</a>
+      <div class="routine-card__secondary">
+        <button type="button" class="btn-duo btn-duo--sm btn-duo--quiet" data-editar-rutina="{{ r.id }}"
+                data-rutina='{{ {"id": r.id, "nombre": r.nombre, "dias_semana": r.dias_semana, "ejercicios": r.ejercicios} | tojson }}'>Editar</button>
+        <button type="button" class="btn-duo btn-duo--sm btn-duo--quiet" data-fav-rutina="{{ r.id }}"
+                aria-pressed="{{ 'true' if r.es_favorita else 'false' }}">
+          {% if r.es_favorita %}Quitar de principal{% else %}Hacer principal{% endif %}
+        </button>
+        <button type="button" class="btn-duo btn-duo--sm btn-duo--quiet btn-duo--quiet-danger"
+                data-del-rutina="{{ r.id }}" data-del-rutina-nombre="{{ r.nombre }}">Borrar</button>
+      </div>
+    </div>
+  </article>
+  {% else %}
+  <p class="empty-note">Aún no tienes rutinas propias.</p>
+  {% endfor %}
+
+  <button type="button" id="btn-abrir-crear-rutina" class="btn-duo btn-duo--blue btn-duo--block">＋ Crear rutina</button>
+  <p class="routine-panel__hint">Las rutinas marcadas como <strong>principal</strong> son las que aparecen en «Hoy» los días que tocan.</p>
 </div>
 
-<!-- PANEL 1: MIS RUTINAS PERSONALIZADAS -->
-<div id="panel-mis-rutinas" style="display: flex; flex-direction: column; gap: 1rem;">
-  <section class="duo-card" style="display: flex; flex-direction: column; gap: 0.85rem;">
-    <h1 style="font-size: 1.35rem; margin: 0;">Crear Nueva Rutina</h1>
-    <div id="rutina-error-msg" class="duo-alert" role="alert" hidden></div>
+{# ================================================================== #}
+{# CATÁLOGO DE RUTINAS FAMOSAS                                         #}
+{# ================================================================== #}
+<div id="panel-rutinas-famosas" class="routine-panel" role="tabpanel" aria-labelledby="tab-btn-famosas"
+     {% if not abrir_catalogo %}hidden{% endif %}>
+  <div>
+    <h2 class="routine-panel__title">Rutinas probadas para empezar</h2>
+    <p class="routine-panel__hint">Ordenadas según tu meta y tipo de cuerpo. Úsala tal cual o como punto de partida.</p>
+  </div>
 
-    <div>
-      <label for="rutina-nombre" class="stepper-label">Nombre de la rutina</label>
-      <input id="rutina-nombre" type="text" class="duo-input" placeholder="Ej. Día de Empuje (Push)">
+  <div class="muscle-chips" role="group" aria-label="Filtrar el catálogo">
+    <button type="button" class="muscle-chip is-active" data-famous-filter="TODOS" aria-pressed="true">Todas</button>
+    <button type="button" class="muscle-chip" data-famous-filter="ECTO_VOLUMEN" aria-pressed="false">Ganar masa</button>
+    <button type="button" class="muscle-chip" data-famous-filter="ENDO_QUEMA" aria-pressed="false">Quemar grasa</button>
+    <button type="button" class="muscle-chip" data-famous-filter="DEFINICION" aria-pressed="false">Definición</button>
+    <button type="button" class="muscle-chip" data-famous-filter="GLUTEO_PIERNA" aria-pressed="false">Glúteo y pierna</button>
+  </div>
+
+  {% for rf in rutinas_famosas | default([]) %}
+  <article class="routine-card {% if rf.recomendada_para_ti %}is-recommended{% endif %}"
+           data-famous-card data-meta="{{ rf.meta_objetivo }}" data-somatotipo="{{ rf.somatotipo_ideal }}"
+           data-nombre="{{ rf.nombre | lower }}">
+    <div class="routine-card__head">
+      <h3 class="routine-card__name">{{ rf.nombre }}</h3>
+      {% if rf.recomendada_para_ti %}<span class="famous-badge-ideal">IDEAL PARA TU PERFIL</span>{% endif %}
+    </div>
+    <p class="routine-card__meta">
+      {{ rf.ejercicios | length }} ejercicios · Nivel {{ (rf.nivel or '') | lower }}
+      <br><span class="routine-card__days">{{ dias_legibles(rf.dias_semana) }}</span>
+    </p>
+    {% if rf.descripcion %}<p class="routine-card__desc">{{ rf.descripcion }}</p>{% endif %}
+    <details class="routine-card__details">
+      <summary>Ver ejercicios</summary>
+      <ol class="routine-card__list">
+        {% for item in rf.ejercicios %}
+        <li><span>{{ item.nombre }}</span><span class="routine-card__sets">{{ item.series_objetivo }} × {{ item.descanso_segundos }}s</span></li>
+        {% endfor %}
+      </ol>
+    </details>
+    <button type="button" class="btn-duo btn-duo--green btn-duo--block" data-clonar-famosa="{{ rf.id }}">
+      Usar esta rutina
+    </button>
+  </article>
+  {% endfor %}
+</div>
+
+{# ================================================================== #}
+{# HOJA: CREAR O EDITAR RUTINA                                                  #}
+{# ================================================================== #}
+<div id="sheet-crear-rutina" class="bottom-sheet-backdrop" hidden>
+  <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="titulo-crear-rutina">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-header">
+      <h2 id="titulo-crear-rutina" class="sheet-title">Nueva rutina</h2>
+      <button type="button" id="btn-cerrar-crear-rutina" class="btn-duo btn-duo--sm">Cerrar</button>
     </div>
 
-    <div>
-      <label for="rutina-ejercicio-select" class="stepper-label">Agregar ejercicio y descanso</label>
-      <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
-        <select id="rutina-ejercicio-select" class="duo-input" style="flex: 1;">
+    <div id="rutina-error-msg" class="duo-alert" role="alert" hidden></div>
+
+    <div class="sheet-block">
+      <label for="rutina-nombre" class="stepper-label">Nombre</label>
+      <input id="rutina-nombre" type="text" class="duo-input" placeholder="Ej. Empuje (pecho, hombro, tríceps)" autocomplete="off">
+    </div>
+
+    <div class="sheet-block">
+      <span class="stepper-label" id="label-dias-rutina">Días que la entrenas</span>
+      <div class="day-chips" role="group" aria-labelledby="label-dias-rutina">
+        {% for codigo in ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'] %}
+        <button type="button" class="day-chip {% if codigo in ['LUN', 'MIE', 'VIE'] %}is-active{% endif %}"
+                data-dia-rutina="{{ codigo }}" aria-pressed="{{ 'true' if codigo in ['LUN', 'MIE', 'VIE'] else 'false' }}">
+          {{ NOMBRES_DIAS[codigo] }}
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="sheet-block">
+      <span class="stepper-label">Ejercicios</span>
+      <ol id="lista-ejercicios-borrador" class="draft-list"></ol>
+      <p id="borrador-vacio" class="empty-note">Añade al menos un ejercicio.</p>
+      <div class="draft-add">
+        <label for="rutina-ejercicio-select" class="visually-hidden">Ejercicio a añadir</label>
+        <select id="rutina-ejercicio-select" class="duo-input">
           {% for ej in ejercicios %}
           <option value="{{ ej.id }}" data-nombre="{{ ej.nombre }}">{{ ej.nombre }}</option>
           {% endfor %}
         </select>
-        <select id="rutina-descanso-select" class="duo-input" style="width: 105px;">
-          <option value="60">60s</option>
-          <option value="90" selected>90s</option>
-          <option value="120">120s</option>
-          <option value="150">150s</option>
-          <option value="180">180s</option>
-        </select>
+        <button type="button" id="btn-agregar-ej-rutina" class="btn-duo btn-duo--blue">Añadir</button>
       </div>
     </div>
 
-    <button type="button" id="btn-agregar-ej-rutina" class="btn-duo btn-duo--blue btn-duo--block">
-      ＋ AÑADIR EJERCICIO A LA LISTA
+    <button type="button" id="btn-guardar-rutina" class="btn-duo btn-duo--green btn-duo--block btn-duo--giant">
+      Guardar rutina
     </button>
-
-    <div id="lista-ejercicios-borrador" style="display: flex; flex-direction: column; gap: 0.45rem;"></div>
-
-    <button type="button" id="btn-guardar-rutina" class="btn-duo btn-duo--green btn-duo--block">
-      GUARDAR RUTINA
-    </button>
-  </section>
-
-  <section style="display: flex; flex-direction: column; gap: 0.75rem;">
-    <h2 style="font-size: 1.2rem; margin: 0;">Mis Rutinas Guardadas</h2>
-    <div id="contenedor-rutinas-usuario" style="display: flex; flex-direction: column; gap: 0.65rem;">
-      {% for r in rutinas %}
-      <div class="duo-card {% if r.es_favorita %}duo-card--highlight{% endif %}" style="display: flex; flex-direction: column; gap: 0.6rem;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
-          <div>
-            <strong style="font-family: var(--font-display); font-size: 1.1rem; color: var(--color-night-ink); display: block;">
-              {% if r.es_favorita %}★ {% endif %}{{ r.nombre }}
-            </strong>
-            {% if r.dias_semana %}
-            <span style="font-size: 0.76rem; font-weight: 800; color: var(--color-eager-green-shade);">
-              Días: {{ r.dias_semana | replace(',', ' · ') }}
-            </span>
-            {% endif %}
-          </div>
-          <div style="display: flex; gap: 0.35rem;">
-            <button type="button" class="btn-duo btn-duo--sm" data-fav-rutina="{{ r.id }}">
-              {% if r.es_favorita %}Quitar ★{% else %}Favorita ★{% endif %}
-            </button>
-            <button type="button" class="btn-duo btn-duo--danger btn-duo--sm" data-del-rutina="{{ r.id }}">
-              Borrar
-            </button>
-          </div>
-        </div>
-        <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-charcoal);">
-          {% for item in r.ejercicios %}
-            {{ item.orden }}. {{ item.nombre }} ({{ item.series_objetivo }}x · {{ item.descanso_segundos }}s){% if not loop.last %} · {% endif %}
-          {% endfor %}
-        </div>
-        <a href="{{ url_for('sesion.vista_entrenar') }}" class="btn-duo btn-duo--green btn-duo--sm">
-          ENTRENAR ESTA RUTINA
-        </a>
-      </div>
-      {% else %}
-      <div class="duo-card" style="text-align: center; color: var(--color-charcoal); font-weight: 700;">
-        Aún no has creado rutinas personalizadas. Explora la pestaña <strong>🔥 Rutinas Famosas (12)</strong> para clonar una en un toque.
-      </div>
-      {% endfor %}
-    </div>
-  </section>
-</div>
-
-<!-- PANEL 2: CATÁLOGO DE 12 RUTINAS FAMOSAS INTELIGENTES -->
-<div id="panel-rutinas-famosas" style="display: flex; flex-direction: column; gap: 0.85rem;" hidden>
-  <div>
-    <h2 style="font-size: 1.25rem; margin: 0 0 0.2rem 0;">Catálogo de 12 Rutinas Famosas</h2>
-    <p style="margin: 0; font-size: 0.86rem; font-weight: 700; color: var(--color-charcoal);">
-      Ordenadas automáticamente según tu perfil biométrico (meta y somatotipo).
-    </p>
-  </div>
-
-  <!-- Chips de Filtro Rápido con una sola mano -->
-  <div class="muscle-chips" role="group" aria-label="Filtrar rutinas famosas">
-    <button type="button" class="muscle-chip is-active" data-famous-filter="TODOS">Todos</button>
-    <button type="button" class="muscle-chip" data-famous-filter="ECTO_VOLUMEN">Ectomorfo / Volumen</button>
-    <button type="button" class="muscle-chip" data-famous-filter="ENDO_QUEMA">Endomorfo / Quema Grasa</button>
-    <button type="button" class="muscle-chip" data-famous-filter="DEFINICION">Definición</button>
-    <button type="button" class="muscle-chip" data-famous-filter="GLUTEO_PIERNA">Glúteo / Pierna</button>
-  </div>
-
-  <!-- Lista de Tarjetas de Rutinas Famosas -->
-  <div id="contenedor-rutinas-famosas" style="display: flex; flex-direction: column; gap: 0.75rem;">
-    {% for rf in rutinas_famosas | default([]) %}
-    <article
-      class="duo-card {% if rf.recomendada_para_ti %}duo-card--highlight{% endif %}"
-      data-famous-card
-      data-meta="{{ rf.meta_objetivo }}"
-      data-somatotipo="{{ rf.somatotipo_ideal }}"
-      data-nombre="{{ rf.nombre | lower }}"
-      style="display: flex; flex-direction: column; gap: 0.65rem;"
-    >
-      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.4rem;">
-        {% if rf.recomendada_para_ti %}
-        <span class="famous-badge-ideal">★ IDEAL PARA TU PERFIL ({{ rf.match_score }}%)</span>
-        {% else %}
-        <span class="status-badge">Afinidad {{ rf.match_score }}%</span>
-        {% endif %}
-        <span class="routine-day-pill">{{ rf.dias_semana | replace(',', ' · ') }}</span>
-      </div>
-
-      <div>
-        <h3 style="font-size: 1.12rem; margin: 0 0 0.25rem 0; color: var(--color-night-ink);">
-          {{ rf.nombre }}
-        </h3>
-        {% if rf.descripcion %}
-        <p style="margin: 0; font-size: 0.84rem; font-weight: 700; color: var(--color-charcoal);">
-          {{ rf.descripcion }}
-        </p>
-        {% endif %}
-      </div>
-
-      <div class="routine-days-row">
-        <span class="routine-day-pill">Meta: {{ rf.meta_objetivo | replace('_', ' ') }}</span>
-        <span class="routine-day-pill">Somatotipo: {{ rf.somatotipo_ideal }}</span>
-        <span class="routine-day-pill">Nivel: {{ rf.nivel }}</span>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-        {% for item in rf.ejercicios %}
-        <div class="duo-list-row" style="padding: 0.45rem 0.65rem;">
-          <span style="font-weight: 800; font-size: 0.85rem; color: var(--color-night-ink);">
-            {{ item.orden }}. {{ item.nombre }}
-          </span>
-          <span style="font-family: var(--font-display); font-weight: 800; font-size: 0.78rem; color: var(--color-charcoal);">
-            {{ item.series_objetivo }} series · {{ item.descanso_segundos }}s
-          </span>
-        </div>
-        {% endfor %}
-      </div>
-
-      <button
-        type="button"
-        class="btn-duo btn-duo--green btn-duo--block"
-        data-clonar-famosa="{{ rf.id }}"
-      >
-        ＋ USAR ESTA RUTINA
-      </button>
-    </article>
-    {% endfor %}
   </div>
 </div>
 {% endblock %}
@@ -198,154 +171,326 @@
 {% block scripts %}
 <script>
   (function () {
+    const DESCANSOS = [60, 90, 120, 150, 180];
     const borrador = [];
-    const selectEj = document.getElementById('rutina-ejercicio-select');
-    const selectDesc = document.getElementById('rutina-descanso-select');
-    const listaBorradorEl = document.getElementById('lista-ejercicios-borrador');
-    const errorEl = document.getElementById('rutina-error-msg');
-    const panelMisRutinas = document.getElementById('panel-mis-rutinas');
-    const panelFamosas = document.getElementById('panel-rutinas-famosas');
-    const feedbackBanner = document.getElementById('rutina-feedback-banner');
-    const feedbackText = document.getElementById('rutina-feedback-text');
+    const $ = (id) => document.getElementById(id);
 
-    // Conmutación de pestañas píldora («Mis Rutinas» vs «🔥 Rutinas Famosas (12)»)
-    document.querySelectorAll('[data-rutina-tab]').forEach((tabBtn) => {
-      tabBtn.addEventListener('click', () => {
-        const target = tabBtn.getAttribute('data-rutina-tab');
+    const panelMis = $('panel-mis-rutinas');
+    const panelFamosas = $('panel-rutinas-famosas');
+    const sheet = $('sheet-crear-rutina');
+    const errorEl = $('rutina-error-msg');
+    const listaBorradorEl = $('lista-ejercicios-borrador');
+    const borradorVacioEl = $('borrador-vacio');
+    const selectEj = $('rutina-ejercicio-select');
+
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Aviso visible cuando una acción falla (antes fallaban en silencio).
+    const avisoEl = $('rutinas-aviso');
+    function avisar(texto) {
+      avisoEl.textContent = texto;
+      avisoEl.hidden = false;
+      avisoEl.scrollIntoView({ block: 'center' });
+    }
+
+    // ---------------------------------------------------------------- pestañas
+    document.querySelectorAll('[data-rutina-tab]').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const famosas = tab.getAttribute('data-rutina-tab') === 'rutinas-famosas';
         document.querySelectorAll('[data-rutina-tab]').forEach((b) => {
-          const activo = b === tabBtn;
+          const activo = b === tab;
           b.classList.toggle('is-active', activo);
           b.setAttribute('aria-selected', activo ? 'true' : 'false');
         });
-        if (target === 'rutinas-famosas') {
-          panelMisRutinas.hidden = true;
-          panelFamosas.hidden = false;
-        } else {
-          panelMisRutinas.hidden = false;
-          panelFamosas.hidden = true;
-        }
+        panelMis.hidden = famosas;
+        panelFamosas.hidden = !famosas;
       });
     });
 
-    // Filtro rápido en cliente sobre las 12 Rutinas Famosas
+    // Resaltar y llevar a la vista la rutina recién creada o clonada (?nueva=ID)
+    const nueva = document.querySelector('.routine-card.is-new');
+    if (nueva) nueva.scrollIntoView({ block: 'center' });
+
+    // ---------------------------------------------------------------- catálogo
     document.querySelectorAll('[data-famous-filter]').forEach((chip) => {
       chip.addEventListener('click', () => {
         const filtro = chip.getAttribute('data-famous-filter');
-        document.querySelectorAll('[data-famous-filter]').forEach((c) => c.classList.remove('is-active'));
-        chip.classList.add('is-active');
-
+        document.querySelectorAll('[data-famous-filter]').forEach((c) => {
+          c.classList.toggle('is-active', c === chip);
+          c.setAttribute('aria-pressed', c === chip ? 'true' : 'false');
+        });
         document.querySelectorAll('[data-famous-card]').forEach((card) => {
           const meta = card.getAttribute('data-meta') || '';
           const soma = card.getAttribute('data-somatotipo') || '';
           const nombre = card.getAttribute('data-nombre') || '';
-
           let visible = true;
-          if (filtro === 'ECTO_VOLUMEN') {
-            visible = soma === 'ECTOMORFO' || meta === 'GANAR_MASA';
-          } else if (filtro === 'ENDO_QUEMA') {
-            visible = soma === 'ENDOMORFO' || meta === 'BAJAR_PESO';
-          } else if (filtro === 'DEFINICION') {
-            visible = meta === 'DEFINIR';
-          } else if (filtro === 'GLUTEO_PIERNA') {
-            visible =
-              nombre.includes('glúteo') ||
-              nombre.includes('pierna') ||
-              nombre.includes('strong curves') ||
-              nombre.includes('upper / lower');
+          if (filtro === 'ECTO_VOLUMEN') visible = soma === 'ECTOMORFO' || meta === 'GANAR_MASA';
+          else if (filtro === 'ENDO_QUEMA') visible = soma === 'ENDOMORFO' || meta === 'BAJAR_PESO';
+          else if (filtro === 'DEFINICION') visible = meta === 'DEFINIR';
+          else if (filtro === 'GLUTEO_PIERNA') {
+            visible = ['glúteo', 'pierna', 'strong curves', 'upper / lower'].some((t) => nombre.includes(t));
           }
           card.hidden = !visible;
         });
       });
     });
 
-    // Clonar Rutina Famosa con un toque (POST /api/rutinas/famosas/<id>/clonar)
     document.querySelectorAll('[data-clonar-famosa]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const plantillaId = btn.getAttribute('data-clonar-famosa');
-        const textoOriginal = btn.textContent;
+        const texto = btn.textContent;
         btn.disabled = true;
-        btn.textContent = 'CLONANDO RUTINA...';
-
-        const resp = await fetch(`/api/rutinas/famosas/${plantillaId}/clonar`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (resp.ok) {
+        btn.textContent = 'Añadiendo…';
+        try {
+          const resp = await fetch(`/api/rutinas/famosas/${btn.getAttribute('data-clonar-famosa')}/clonar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (!resp.ok) throw new Error('clonar');
           const data = await resp.json();
-          if (feedbackBanner && feedbackText) {
-            feedbackText.textContent = `¡"${data.nombre}" añadida a Mis Rutinas!`;
-            feedbackBanner.hidden = false;
-          }
-          window.location.reload();
-        } else {
+          window.location.href = `/rutinas?nueva=${data.id}`;
+        } catch (_) {
           btn.disabled = false;
-          btn.textContent = textoOriginal;
+          btn.textContent = texto;
+          avisar('No se pudo añadir la rutina. Revisa tu conexión e inténtalo de nuevo.');
         }
       });
     });
 
-    function renderizarBorrador() {
-      listaBorradorEl.innerHTML = borrador
-        .map(
-          (item, i) => `
-          <div class="duo-list-row">
-            <span style="font-weight: 700;">${i + 1}. ${item.nombre} (${item.descanso_segundos}s)</span>
-          </div>
-        `
-        )
-        .join('');
-    }
-
-    document.getElementById('btn-agregar-ej-rutina').addEventListener('click', () => {
-      if (!selectEj.value) return;
-      const opt = selectEj.options[selectEj.selectedIndex];
-      borrador.push({
-        ejercicio_id: Number(selectEj.value),
-        nombre: opt.getAttribute('data-nombre') || opt.textContent,
-        orden: borrador.length + 1,
-        descanso_segundos: Number(selectDesc.value) || 90,
-        series_objetivo: 3,
-      });
-      renderizarBorrador();
-    });
-
-    document.getElementById('btn-guardar-rutina').addEventListener('click', async () => {
-      errorEl.hidden = true;
-      const nombre = document.getElementById('rutina-nombre').value.trim();
-      if (!nombre || borrador.length === 0) {
-        errorEl.textContent = 'Escribe un nombre y añade al menos un ejercicio.';
-        errorEl.hidden = false;
-        return;
-      }
-      const resp = await fetch('/api/rutinas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, es_favorita: true, ejercicios: borrador }),
-      });
-      if (resp.ok) {
-        window.location.reload();
-      } else {
-        const data = await resp.json();
-        errorEl.textContent = data.error || 'Error al guardar rutina.';
-        errorEl.hidden = false;
-      }
-    });
-
+    // ---------------------------------------------------------------- mis rutinas
     document.querySelectorAll('[data-fav-rutina]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-fav-rutina');
-        await fetch(`/api/rutinas/${id}/favorita`, { method: 'POST' });
-        window.location.reload();
+        btn.disabled = true;
+        try {
+          const resp = await fetch(`/api/rutinas/${btn.getAttribute('data-fav-rutina')}/favorita`, { method: 'POST' });
+          if (!resp.ok) throw new Error('favorita');
+          window.location.reload();
+        } catch (_) {
+          btn.disabled = false;
+          avisar('No se pudo cambiar la rutina principal. Revisa tu conexión e inténtalo de nuevo.');
+        }
       });
     });
 
     document.querySelectorAll('[data-del-rutina]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-del-rutina');
-        await fetch(`/api/rutinas/${id}`, { method: 'DELETE' });
-        window.location.reload();
+        const nombre = btn.getAttribute('data-del-rutina-nombre') || 'esta rutina';
+        if (!window.confirm(`¿Borrar «${nombre}»? Esta acción no se puede deshacer.`)) return;
+        btn.disabled = true;
+        try {
+          const resp = await fetch(`/api/rutinas/${btn.getAttribute('data-del-rutina')}`, { method: 'DELETE' });
+          if (!resp.ok) throw new Error('borrar');
+          window.location.reload();
+        } catch (_) {
+          btn.disabled = false;
+          avisar(`No se pudo borrar «${nombre}». Revisa tu conexión e inténtalo de nuevo.`);
+        }
       });
     });
+
+    // ---------------------------------------------------------------- hoja «Nueva rutina» / «Editar rutina»
+    const DIAS_POR_DEFECTO = ['LUN', 'MIE', 'VIE'];
+    let editandoId = null; // id de la rutina en edición; null al crear una nueva
+    let formularioDe = null; // a qué corresponde lo que hay escrito en la hoja
+
+    function marcarDias(codigos) {
+      document.querySelectorAll('[data-dia-rutina]').forEach((chip) => {
+        const activo = codigos.includes(chip.getAttribute('data-dia-rutina'));
+        chip.classList.toggle('is-active', activo);
+        chip.setAttribute('aria-pressed', activo ? 'true' : 'false');
+      });
+    }
+
+    // Rellena la hoja con la rutina a editar, o la deja en blanco para crear una.
+    function cargarFormulario(rutina) {
+      editandoId = rutina ? rutina.id : null;
+      $('titulo-crear-rutina').textContent = rutina ? 'Editar rutina' : 'Nueva rutina';
+      $('btn-guardar-rutina').textContent = rutina ? 'Guardar cambios' : 'Guardar rutina';
+      $('rutina-nombre').value = rutina ? rutina.nombre : '';
+      marcarDias(
+        rutina
+          ? String(rutina.dias_semana || '').split(',').map((d) => d.trim().toUpperCase()).filter(Boolean)
+          : DIAS_POR_DEFECTO
+      );
+      borrador.length = 0;
+      ((rutina && rutina.ejercicios) || []).forEach((item) => {
+        borrador.push({
+          ejercicio_id: Number(item.ejercicio_id),
+          nombre: item.nombre,
+          series_objetivo: Number(item.series_objetivo) || 3,
+          descanso_segundos: Number(item.descanso_segundos) || 90,
+        });
+      });
+      renderizarBorrador();
+    }
+
+    function abrirSheet(rutina) {
+      // Reabrir «Crear rutina» conserva el borrador a medias; cambiar de rutina lo recarga.
+      const clave = rutina ? `editar-${rutina.id}` : 'crear';
+      if (clave !== formularioDe || rutina) cargarFormulario(rutina || null);
+      formularioDe = clave;
+      errorEl.hidden = true;
+      sheet.hidden = false;
+      document.body.classList.add('has-open-sheet');
+    }
+
+    document.querySelectorAll('[data-editar-rutina]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        try {
+          abrirSheet(JSON.parse(btn.getAttribute('data-rutina')));
+        } catch (_) {
+          avisar('No se pudo abrir la rutina para editarla. Recarga la página e inténtalo de nuevo.');
+        }
+      });
+    });
+    function cerrarSheet() {
+      sheet.hidden = true;
+      document.body.classList.remove('has-open-sheet');
+    }
+    $('btn-abrir-crear-rutina').addEventListener('click', () => abrirSheet());
+    $('btn-cerrar-crear-rutina').addEventListener('click', cerrarSheet);
+    sheet.addEventListener('click', (e) => {
+      if (e.target === sheet) cerrarSheet();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !sheet.hidden) cerrarSheet();
+    });
+
+    document.querySelectorAll('[data-dia-rutina]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const activo = !chip.classList.contains('is-active');
+        chip.classList.toggle('is-active', activo);
+        chip.setAttribute('aria-pressed', activo ? 'true' : 'false');
+      });
+    });
+
+    function renderizarBorrador() {
+      borradorVacioEl.hidden = borrador.length > 0;
+      listaBorradorEl.innerHTML = borrador
+        .map(
+          (item, i) => `
+          <li class="draft-row">
+            <div class="draft-row__head">
+              <span class="draft-row__name">${i + 1}. ${escapeHtml(item.nombre)}</span>
+              <div class="draft-row__order">
+                <button type="button" class="icon-btn" data-accion="subir" data-i="${i}" ${i === 0 ? 'disabled' : ''}
+                  aria-label="Subir ${escapeHtml(item.nombre)}">↑</button>
+                <button type="button" class="icon-btn" data-accion="bajar" data-i="${i}" ${i === borrador.length - 1 ? 'disabled' : ''}
+                  aria-label="Bajar ${escapeHtml(item.nombre)}">↓</button>
+                <button type="button" class="icon-btn icon-btn--danger" data-accion="quitar" data-i="${i}"
+                  aria-label="Quitar ${escapeHtml(item.nombre)}">✕</button>
+              </div>
+            </div>
+            <div class="draft-row__controls">
+              <div class="mini-stepper" role="group" aria-label="Series de ${escapeHtml(item.nombre)}">
+                <button type="button" class="icon-btn" data-accion="menos" data-i="${i}" aria-label="Menos series">−</button>
+                <span class="mini-stepper__value">${item.series_objetivo} series</span>
+                <button type="button" class="icon-btn" data-accion="mas" data-i="${i}" aria-label="Más series">＋</button>
+              </div>
+              <label class="visually-hidden" for="descanso-${i}">Descanso</label>
+              <select id="descanso-${i}" class="duo-input draft-row__rest" data-accion="descanso" data-i="${i}">
+                ${DESCANSOS.map(
+                  (s) => `<option value="${s}" ${s === item.descanso_segundos ? 'selected' : ''}>${s}s descanso</option>`
+                ).join('')}
+              </select>
+            </div>
+          </li>`
+        )
+        .join('');
+    }
+
+    listaBorradorEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-accion]');
+      if (!btn) return;
+      const i = Number(btn.getAttribute('data-i'));
+      const accion = btn.getAttribute('data-accion');
+      if (accion === 'quitar') borrador.splice(i, 1);
+      else if (accion === 'subir' && i > 0) [borrador[i - 1], borrador[i]] = [borrador[i], borrador[i - 1]];
+      else if (accion === 'bajar' && i < borrador.length - 1) [borrador[i + 1], borrador[i]] = [borrador[i], borrador[i + 1]];
+      else if (accion === 'menos') borrador[i].series_objetivo = Math.max(1, borrador[i].series_objetivo - 1);
+      else if (accion === 'mas') borrador[i].series_objetivo = Math.min(10, borrador[i].series_objetivo + 1);
+      renderizarBorrador();
+    });
+    listaBorradorEl.addEventListener('change', (e) => {
+      const sel = e.target.closest('select[data-accion="descanso"]');
+      if (sel) borrador[Number(sel.getAttribute('data-i'))].descanso_segundos = Number(sel.value);
+    });
+
+    $('btn-agregar-ej-rutina').addEventListener('click', () => {
+      if (!selectEj.value) return;
+      const opt = selectEj.options[selectEj.selectedIndex];
+      if (borrador.some((item) => item.ejercicio_id === Number(selectEj.value))) {
+        errorEl.textContent = 'Ese ejercicio ya está en la rutina. Súbele las series si quieres hacer más.';
+        errorEl.hidden = false;
+        return;
+      }
+      errorEl.hidden = true;
+      borrador.push({
+        ejercicio_id: Number(selectEj.value),
+        nombre: opt.getAttribute('data-nombre') || opt.textContent.trim(),
+        series_objetivo: 3,
+        descanso_segundos: 90,
+      });
+      renderizarBorrador();
+    });
+
+    $('btn-guardar-rutina').addEventListener('click', async () => {
+      errorEl.hidden = true;
+      const nombre = $('rutina-nombre').value.trim();
+      const dias = Array.from(document.querySelectorAll('[data-dia-rutina].is-active')).map((c) =>
+        c.getAttribute('data-dia-rutina')
+      );
+      let error = '';
+      if (!nombre) error = 'Ponle un nombre a la rutina.';
+      else if (!dias.length) error = 'Elige al menos un día.';
+      else if (!borrador.length) error = 'Añade al menos un ejercicio.';
+      if (error) {
+        errorEl.textContent = error;
+        errorEl.hidden = false;
+        return;
+      }
+      const cuerpo = {
+        nombre,
+        dias_semana: dias.join(','),
+        ejercicios: borrador.map((item, i) => ({ ...item, orden: i + 1 })),
+      };
+      // Una rutina nueva nace como principal; al editar no se toca ese ajuste.
+      if (!editandoId) cuerpo.es_favorita = true;
+      const btnGuardar = $('btn-guardar-rutina');
+      let resp;
+      btnGuardar.disabled = true;
+      try {
+        resp = await fetch(editandoId ? `/api/rutinas/${editandoId}` : '/api/rutinas', {
+          method: editandoId ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cuerpo),
+        });
+      } catch (_) {
+        btnGuardar.disabled = false;
+        errorEl.textContent = 'Sin conexión: no se pudo guardar la rutina.';
+        errorEl.hidden = false;
+        return;
+      }
+      if (resp.ok) {
+        const data = await resp.json();
+        if (editandoId) {
+          // Recarga la lista y vuelve a la tarjeta editada.
+          window.location.hash = `rutina-${data.id}`;
+          window.location.reload();
+        } else {
+          window.location.href = `/rutinas?nueva=${data.id}`;
+        }
+      } else {
+        btnGuardar.disabled = false;
+        const data = await resp.json().catch(() => ({}));
+        errorEl.textContent = data.error || 'No se pudo guardar la rutina.';
+        errorEl.hidden = false;
+      }
+    });
+
+    renderizarBorrador();
   })();
 </script>
 {% endblock %}
