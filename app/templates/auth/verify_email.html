@@ -25,6 +25,7 @@
   </div>
 
   <div id="otp-error-msg" class="duo-alert" role="alert" hidden></div>
+  <p id="otp-info-msg" class="empty-note empty-note--success" role="status" hidden></p>
 
   <form id="form-verify-otp" style="display: flex; flex-direction: column; gap: 0.9rem;">
     <div>
@@ -88,13 +89,33 @@
 
     if (btnReenviar) {
       btnReenviar.addEventListener('click', async () => {
+        const infoEl = document.getElementById('otp-info-msg');
+        const textoBoton = btnReenviar.textContent;
         errorEl.hidden = true;
-        const resp = await fetch('/api/auth/resend-code', { method: 'POST' });
-        const data = await resp.json();
-        if (resp.ok && data.codigo_verificacion) {
-          if (demoCodigoEl) demoCodigoEl.textContent = data.codigo_verificacion;
-          if (demoBannerEl) demoBannerEl.hidden = false;
-          if (inputOtp) inputOtp.value = data.codigo_verificacion;
+        infoEl.hidden = true;
+        btnReenviar.disabled = true;
+        btnReenviar.textContent = 'ENVIANDO…';
+        try {
+          const resp = await fetch('/api/auth/resend-code', { method: 'POST' });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            errorEl.textContent = data.error || 'No se pudo reenviar el código. Inténtalo de nuevo.';
+            errorEl.hidden = false;
+            return;
+          }
+          if (data.codigo_verificacion) {
+            if (demoCodigoEl) demoCodigoEl.textContent = data.codigo_verificacion;
+            if (demoBannerEl) demoBannerEl.hidden = false;
+            if (inputOtp) inputOtp.value = data.codigo_verificacion;
+          }
+          infoEl.textContent = 'Listo: generamos un código nuevo. El anterior ya no sirve.';
+          infoEl.hidden = false;
+        } catch (_) {
+          errorEl.textContent = 'Sin conexión: no se pudo reenviar el código.';
+          errorEl.hidden = false;
+        } finally {
+          btnReenviar.disabled = false;
+          btnReenviar.textContent = textoBoton;
         }
       });
     }

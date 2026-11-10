@@ -41,6 +41,8 @@
   const sheetSeriesSubEl = document.getElementById('sheet-musculo-series-sub');
   const sheetPrEl = document.getElementById('sheet-musculo-pr');
   const sheetPrEjEl = document.getElementById('sheet-musculo-pr-ej');
+  const sheetSeriesLabelEl = document.getElementById('sheet-musculo-series-label');
+  const sheetRecientesTituloEl = document.getElementById('sheet-recientes-titulo');
   const sheetRecientesEl = document.getElementById('sheet-ejercicios-recientes');
   const sheetRecomendadosTituloEl = document.getElementById('sheet-recomendados-titulo');
   const sheetRecomendadosEl = document.getElementById('sheet-ejercicios-recomendados');
@@ -98,7 +100,8 @@
     if (!svgRoot) return;
     const capaEtiquetas = svgRoot.querySelector('#svg-etiquetas-anatomicas');
     if (capaEtiquetas) {
-      capaEtiquetas.hidden = !mostrarNombresAnatomicos;
+      // Un <g> de SVG no tiene la propiedad `hidden` de HTML: hay que tocar el atributo.
+      capaEtiquetas.toggleAttribute('hidden', !mostrarNombresAnatomicos);
     }
   }
 
@@ -193,8 +196,14 @@
     if (sheetRecomendadosTituloEl) {
       sheetRecomendadosTituloEl.textContent = `Recomendados para entrenar ${nombreGrupo}`;
     }
+    // Los rótulos reflejan la ventana elegida (7, 14 o 30 días), no siempre «esta semana».
+    if (sheetSeriesLabelEl) sheetSeriesLabelEl.textContent = `Series · últimos ${diasVentanaActual} días`;
+    if (sheetRecientesTituloEl) {
+      sheetRecientesTituloEl.textContent = `Ejercicios hechos en los últimos ${diasVentanaActual} días`;
+    }
     if (modalMusculo) {
       modalMusculo.hidden = false;
+      document.body.classList.add('has-open-sheet');
     }
 
     try {
@@ -305,7 +314,7 @@
             ej.ultimo_peso !== null && ej.ultimo_peso !== undefined
               ? `Última vez: ${ej.ultimo_peso} kg × ${ej.ultimas_repeticiones}`
               : ej.entrenado_esta_semana
-              ? 'Ya entrenado esta semana'
+              ? 'Ya entrenado en este periodo'
               : 'Fresco para entrenar hoy';
 
           fila.innerHTML = `
@@ -337,6 +346,7 @@
   function cerrarDetalleMusculo() {
     if (modalMusculo) {
       modalMusculo.hidden = true;
+      document.body.classList.remove('has-open-sheet');
     }
     grupoSeleccionadoActual = null;
     const svgRoot = document.getElementById('mapa-muscular-svg');
@@ -348,8 +358,9 @@
   function renderizarDetalleGrupos(contenedor, grupos) {
     if (!contenedor) return;
     if (!grupos || grupos.length === 0) {
-      contenedor.innerHTML =
-        '<p style="color: var(--color-charcoal); font-weight: 700; margin: 0;">Registra tus primeras series o toca cualquier músculo de la silueta para ver recomendaciones.</p>';
+      contenedor.innerHTML = `<p style="color: var(--color-charcoal); font-weight: 700; margin: 0;">No hay series en los últimos ${diasVentanaActual} días. ${
+        diasVentanaActual < 30 ? 'Prueba con una ventana más amplia o toca' : 'Toca'
+      } cualquier músculo de la silueta para ver recomendaciones.</p>`;
       return;
     }
     contenedor.innerHTML = '';
@@ -412,6 +423,9 @@
       if (e.target === modalMusculo) {
         cerrarDetalleMusculo();
       }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modalMusculo.hidden) cerrarDetalleMusculo();
     });
   }
 

@@ -11,6 +11,7 @@
 {%- endmacro %}
 
 {% block content %}
+<div id="rutinas-aviso" class="duo-alert" role="alert" hidden></div>
 <div class="duo-tabs-pill" role="tablist" aria-label="Secciones de Rutinas">
   <button type="button" id="tab-btn-mis-rutinas" class="duo-tab-btn {% if not abrir_catalogo %}is-active{% endif %}"
           role="tab" aria-selected="{{ 'false' if abrir_catalogo else 'true' }}" aria-controls="panel-mis-rutinas"
@@ -185,6 +186,14 @@
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    // Aviso visible cuando una acción falla (antes fallaban en silencio).
+    const avisoEl = $('rutinas-aviso');
+    function avisar(texto) {
+      avisoEl.textContent = texto;
+      avisoEl.hidden = false;
+      avisoEl.scrollIntoView({ block: 'center' });
+    }
+
     // ---------------------------------------------------------------- pestañas
     document.querySelectorAll('[data-rutina-tab]').forEach((tab) => {
       tab.addEventListener('click', () => {
@@ -243,6 +252,7 @@
         } catch (_) {
           btn.disabled = false;
           btn.textContent = texto;
+          avisar('No se pudo añadir la rutina. Revisa tu conexión e inténtalo de nuevo.');
         }
       });
     });
@@ -251,8 +261,14 @@
     document.querySelectorAll('[data-fav-rutina]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         btn.disabled = true;
-        await fetch(`/api/rutinas/${btn.getAttribute('data-fav-rutina')}/favorita`, { method: 'POST' });
-        window.location.reload();
+        try {
+          const resp = await fetch(`/api/rutinas/${btn.getAttribute('data-fav-rutina')}/favorita`, { method: 'POST' });
+          if (!resp.ok) throw new Error('favorita');
+          window.location.reload();
+        } catch (_) {
+          btn.disabled = false;
+          avisar('No se pudo cambiar la rutina principal. Revisa tu conexión e inténtalo de nuevo.');
+        }
       });
     });
 
@@ -260,8 +276,15 @@
       btn.addEventListener('click', async () => {
         const nombre = btn.getAttribute('data-del-rutina-nombre') || 'esta rutina';
         if (!window.confirm(`¿Borrar «${nombre}»? Esta acción no se puede deshacer.`)) return;
-        await fetch(`/api/rutinas/${btn.getAttribute('data-del-rutina')}`, { method: 'DELETE' });
-        window.location.reload();
+        btn.disabled = true;
+        try {
+          const resp = await fetch(`/api/rutinas/${btn.getAttribute('data-del-rutina')}`, { method: 'DELETE' });
+          if (!resp.ok) throw new Error('borrar');
+          window.location.reload();
+        } catch (_) {
+          btn.disabled = false;
+          avisar(`No se pudo borrar «${nombre}». Revisa tu conexión e inténtalo de nuevo.`);
+        }
       });
     });
 
@@ -347,6 +370,12 @@
     $('btn-agregar-ej-rutina').addEventListener('click', () => {
       if (!selectEj.value) return;
       const opt = selectEj.options[selectEj.selectedIndex];
+      if (borrador.some((item) => item.ejercicio_id === Number(selectEj.value))) {
+        errorEl.textContent = 'Ese ejercicio ya está en la rutina. Súbele las series si quieres hacer más.';
+        errorEl.hidden = false;
+        return;
+      }
+      errorEl.hidden = true;
       borrador.push({
         ejercicio_id: Number(selectEj.value),
         nombre: opt.getAttribute('data-nombre') || opt.textContent.trim(),
@@ -371,16 +400,23 @@
         errorEl.hidden = false;
         return;
       }
-      const resp = await fetch('/api/rutinas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre,
-          es_favorita: true,
-          dias_semana: dias.join(','),
-          ejercicios: borrador.map((item, i) => ({ ...item, orden: i + 1 })),
-        }),
-      });
+      let resp;
+      try {
+        resp = await fetch('/api/rutinas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre,
+            es_favorita: true,
+            dias_semana: dias.join(','),
+            ejercicios: borrador.map((item, i) => ({ ...item, orden: i + 1 })),
+          }),
+        });
+      } catch (_) {
+        errorEl.textContent = 'Sin conexión: no se pudo guardar la rutina.';
+        errorEl.hidden = false;
+        return;
+      }
       if (resp.ok) {
         const data = await resp.json();
         window.location.href = `/rutinas?nueva=${data.id}`;

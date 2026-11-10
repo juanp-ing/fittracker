@@ -1104,7 +1104,9 @@
       ocultarPR();
       return;
     }
-    const abierta = document.querySelector('.bottom-sheet-backdrop:not([hidden])');
+    // Con dos hojas apiladas (p. ej. «Cambiar» + «Nuevo ejercicio») se cierra la de encima.
+    const abiertas = document.querySelectorAll('.bottom-sheet-backdrop:not([hidden])');
+    const abierta = abiertas[abiertas.length - 1];
     if (abierta === modalResumenEl) btnCerrarResumen && btnCerrarResumen.click();
     else if (abierta) cerrarHoja(abierta);
   });
