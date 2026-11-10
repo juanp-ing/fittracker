@@ -312,6 +312,7 @@ class SesionService:
             if rutina is None:
                 raise LookupError("La rutina indicada no existe o no pertenece al usuario.")
 
+        self.cerrar_sesiones_abandonadas(usuario_id)
         sesion = self.sesion_repo.iniciar_sesion(
             usuario_id=usuario_id,
             rutina_id=rutina_id,
@@ -511,10 +512,15 @@ class SesionService:
 
     def _calcular_racha_semanal(self, usuario_id: int, zona, hoy_local: date) -> dict:
         """Semanas seguidas cumpliendo la meta de días y progreso de la semana en curso."""
-        rutina = self._resolver_rutina_para_usuario(usuario_id=usuario_id)
-        if rutina is not None:
-            dias_rutina = len(self._extraer_codigos_dias(rutina.dias_semana))
-            meta = max(1, min(dias_rutina, META_DIAS_SEMANA_MAXIMA))
+        # Con varias rutinas principales (p. ej. empuje y tirón en días distintos) la meta
+        # cuenta los días de todas; sin ninguna principal, los de la rutina más reciente.
+        rutinas = self.rutina_repo.listar_por_usuario(usuario_id=usuario_id)
+        principales = [r for r in rutinas if r.es_favorita] or rutinas[:1]
+        if principales:
+            dias_plan: set[str] = set()
+            for rutina in principales:
+                dias_plan |= self._extraer_codigos_dias(rutina.dias_semana)
+            meta = max(1, min(len(dias_plan), META_DIAS_SEMANA_MAXIMA))
         else:
             meta = META_DIAS_SEMANA_POR_DEFECTO
 
@@ -550,6 +556,20 @@ class SesionService:
             "semana_cumplida": cumplida,
         }
 
+    def cerrar_sesiones_abandonadas(
+        self,
+        usuario_id: int,
+        horas_vigencia: int = HORAS_VIGENCIA_SESION_ACTIVA,
+    ) -> int:
+        """Cierra las sesiones ACTIVA que superaron la vigencia; devuelve cuántas eran."""
+        limite = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=horas_vigencia)
+        abandonadas = self.sesion_repo.listar_activas_anteriores_a(
+            usuario_id=usuario_id, limite=limite
+        )
+        if abandonadas:
+            self.sesion_repo.cerrar_abandonadas(abandonadas)
+        return len(abandonadas)
+
     def obtener_sesion_activa(
         self,
         usuario_id: int,
@@ -558,8 +578,9 @@ class SesionService:
         """Sesión ACTIVA que la pantalla Hoy debe retomar, con sus series, o None.
 
         Una sesión activa iniciada hace más de ``horas_vigencia`` horas se considera
-        abandonada (el usuario olvidó finalizarla) y no se retoma.
+        abandonada (el usuario olvidó finalizarla): no se retoma y se cierra sola.
         """
+        self.cerrar_sesiones_abandonadas(usuario_id, horas_vigencia)
         desde = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=horas_vigencia)
         sesion = self.sesion_repo.obtener_activa_desde(usuario_id=usuario_id, desde=desde)
         if sesion is None:

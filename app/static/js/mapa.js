@@ -124,8 +124,30 @@
         aplicarColoresSVG(svgActual, ultimosPrimarios, ultimosSecundarios);
       }
       renderizarDetalleGrupos(resumenListaEl, data.grupos || []);
+      return (data.grupos || []).length > 0;
     } catch (err) {
       console.warn('No se pudo cargar el mapa muscular:', err);
+    }
+    return false;
+  }
+
+  function marcarVentanaActiva(dias) {
+    document.querySelectorAll('[data-mapa-dias]').forEach((b) => {
+      b.classList.toggle('is-active', Number(b.getAttribute('data-mapa-dias')) === Number(dias));
+    });
+  }
+
+  // Al entrar se muestra la ventana más corta que tenga entrenamientos: quien lleva más de
+  // una semana sin entrenar no debe encontrarse el mapa en gris si tiene historial reciente.
+  async function cargarVentanaInicial() {
+    const ventanas = Array.from(document.querySelectorAll('[data-mapa-dias]'))
+      .map((b) => Number(b.getAttribute('data-mapa-dias')))
+      .filter(Boolean)
+      .sort((a, b) => a - b);
+    for (const dias of ventanas.length ? ventanas : [7]) {
+      const hayDatos = await cargarMapaMuscular(dias);
+      marcarVentanaActiva(dias);
+      if (hayDatos) return;
     }
   }
 
@@ -390,8 +412,7 @@
   document.querySelectorAll('[data-mapa-dias]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const dias = Number(btn.getAttribute('data-mapa-dias')) || 7;
-      document.querySelectorAll('[data-mapa-dias]').forEach((b) => b.classList.remove('is-active'));
-      btn.classList.add('is-active');
+      marcarVentanaActiva(dias);
       cargarMapaMuscular(dias);
     });
   });
@@ -442,7 +463,7 @@
       if (generoActual === 'mujer') {
         cambiarGeneroSilueta('mujer');
       }
-      cargarMapaMuscular(7);
+      cargarVentanaInicial();
     }
   });
 })();

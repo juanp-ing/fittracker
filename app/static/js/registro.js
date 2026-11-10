@@ -47,6 +47,7 @@
     pasoPeso: 2.5,
     mostrarCompletados: false,
     guardando: false,
+    sincronizando: false,
     timerToast: null,
     timerPR: null,
     timerReloj: null,
@@ -82,6 +83,7 @@
   const switchCompletadosBtn = $('switch-mostrar-completados');
   const switchCompletadosIcon = $('switch-completados-icon');
   const listaChecklistEl = $('lista-checklist-diario');
+  const tituloPlanEl = $('plan-dia-titulo');
   const bannerTodoCompletadoEl = $('checklist-todo-completado');
 
   const rutinaFocoEl = $('foco-rutina-nombre');
@@ -317,21 +319,33 @@
     const rutina = estado.libre ? null : a.rutina;
     const items = itemsRutina();
 
+    // Día de descanso: la rutina no toca, así que no se presenta como el plan del día;
+    // entrenar sigue siendo posible, pero como opción secundaria.
+    const descanso = Boolean(rutina && dia && !dia.toca_entrenar);
+    const hechas = items.length ? Number(a.series_hechas) || 0 : 0;
+    const resumenPlan = `${items.length} ejercicios · ${a.series_totales} series · ~${a.minutos_estimados} min`;
+
     if (heroEyebrow) {
-      if (rutina && dia && !dia.toca_entrenar) {
-        heroEyebrow.textContent = esHoy ? 'Hoy es día de descanso' : `El ${nombreDia} ${dia.dia_numero} es de descanso`;
+      if (descanso) heroEyebrow.textContent = esHoy ? 'Hoy' : `El ${nombreDia} ${dia.dia_numero}`;
+      else heroEyebrow.textContent = esHoy ? 'Hoy toca' : `Plan del ${nombreDia} ${dia.dia_numero}`;
+    }
+    if (heroTitulo) {
+      heroTitulo.textContent = descanso ? 'Día de descanso' : rutina ? rutina.nombre : 'Entrenamiento libre';
+    }
+    if (heroMeta) {
+      if (descanso) {
+        heroMeta.textContent = items.length
+          ? `No toca «${rutina.nombre}». Si quieres entrenar igual: ${resumenPlan}`
+          : `No toca «${rutina.nombre}».`;
       } else {
-        heroEyebrow.textContent = esHoy ? 'Hoy toca' : `Plan del ${nombreDia} ${dia.dia_numero}`;
+        heroMeta.textContent = items.length
+          ? resumenPlan
+          : 'Elige ejercicios sobre la marcha o activa una rutina en la pestaña Rutinas.';
       }
     }
-    if (heroTitulo) heroTitulo.textContent = rutina ? rutina.nombre : 'Entrenamiento libre';
-    if (heroMeta) {
-      heroMeta.textContent = items.length
-        ? `${items.length} ejercicios · ${a.series_totales} series · ~${a.minutos_estimados} min`
-        : 'Elige ejercicios sobre la marcha o activa una rutina en la pestaña Rutinas.';
-    }
-    const hechas = items.length ? Number(a.series_hechas) || 0 : 0;
+    if (tituloPlanEl) tituloPlanEl.textContent = descanso ? `Si entrenas: ${rutina.nombre}` : 'Plan del día';
     const totales = Number(a.series_totales) || 0;
+    if (btnEmpezar) btnEmpezar.classList.toggle('btn-duo--green', !(descanso && hechas === 0));
     if (heroProgreso) heroProgreso.hidden = !(hechas > 0 && totales > 0);
     if (heroProgresoBarra) heroProgresoBarra.style.width = `${totales ? Math.round((hechas / totales) * 100) : 0}%`;
     if (heroProgresoTexto) heroProgresoTexto.textContent = `${hechas} de ${totales} series hechas`;
@@ -339,7 +353,8 @@
       if (estado.ejercicioActual && !itemDe(estado.ejercicioActual.id)) {
         btnEmpezar.textContent = `Empezar con ${estado.ejercicioActual.nombre}`;
       } else {
-        btnEmpezar.textContent = hechas > 0 && esHoy ? 'Continuar entrenamiento' : 'Empezar entrenamiento';
+        btnEmpezar.textContent =
+          hechas > 0 && esHoy ? 'Continuar entrenamiento' : descanso ? 'Entrenar de todos modos' : 'Empezar entrenamiento';
       }
     }
 
@@ -356,13 +371,19 @@
           const clases = ['weekly-day-btn', d.seleccionado ? 'is-selected' : '', d.es_hoy ? 'is-today' : '']
             .filter(Boolean)
             .join(' ');
-          const puntos = '<span class="calendar-dot"></span>'.repeat(Number(d.puntos) || 0);
+          // Un solo punto por día: relleno si se entrenó, hueco si toca y aún no (ver leyenda).
+          const entrenado = Number(d.series_registradas) > 0;
+          const punto = entrenado
+            ? '<span class="calendar-dot"></span><span class="visually-hidden">, entrenado</span>'
+            : d.toca_entrenar
+            ? '<span class="calendar-dot calendar-dot--plan"></span><span class="visually-hidden">, toca entrenar</span>'
+            : '';
           return `
             <button type="button" class="${clases}" data-agenda-fecha="${escapeHtml(d.fecha)}"
               aria-pressed="${d.seleccionado ? 'true' : 'false'}">
               <span class="calendar-day-abbr">${escapeHtml(d.abreviatura)}</span>
               <span class="calendar-day-num">${Number(d.dia_numero)}</span>
-              <span class="calendar-dots-row">${puntos}</span>
+              <span class="calendar-dots-row">${punto}</span>
             </button>`;
         })
         .join('');
@@ -823,17 +844,26 @@
   }
 
   async function sincronizarColaOffline() {
+    // «online» y el arranque pueden coincidir: sin este cerrojo cada serie se enviaría dos veces.
+    if (estado.sincronizando) return;
     const cola = obtenerColaOffline();
     if (cola.length === 0 || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
-    const pendientes = [];
-    for (const item of cola) {
-      try {
+    estado.sincronizando = true;
+    let enviadas = 0;
+    try {
+      // Cada serie sale de la cola en cuanto el servidor la confirma, de modo que un corte
+      // a mitad de la sincronización no la reenvía después.
+      while (true) {
+        const item = obtenerColaOffline()[0];
+        if (!item) break;
         const sesionId = await asegurarSesion();
         const resp = await postSerie(sesionId, item);
-        if (!resp.ok) {
-          pendientes.push(item);
+        if (resp.status === 400 || resp.status === 404) {
+          // Datos que el servidor ya no acepta (p. ej. ejercicio borrado): no bloquear la cola.
+          guardarColaOffline(obtenerColaOffline().slice(1));
           continue;
         }
+        if (!resp.ok) break;
         const data = await resp.json();
         estado.sesion.series.push({
           id: data.id,
@@ -841,14 +871,21 @@
           ejercicio_nombre: item.ejercicio_nombre,
           peso: data.peso,
           repeticiones: data.repeticiones,
-          es_pr: Boolean(data.es_pr),
+          volumen: data.volumen,
+          es_pr: Boolean(data.es_pr) && Number(data.peso_anterior) > 0,
         });
-      } catch (_) {
-        pendientes.push(item);
+        guardarColaOffline(obtenerColaOffline().slice(1));
+        enviadas += 1;
       }
+    } catch (_) {
+      // Sigue sin red: lo pendiente se queda en la cola para el próximo intento.
+    } finally {
+      estado.sincronizando = false;
     }
-    guardarColaOffline(pendientes);
     renderizarListaSeries();
+    if (enviadas > 0) {
+      mostrarToast(enviadas === 1 ? 'Serie enviada al recuperar la conexión' : `${enviadas} series enviadas al recuperar la conexión`);
+    }
   }
 
   // ------------------------------------------------------------------ avisos (toast, PR)

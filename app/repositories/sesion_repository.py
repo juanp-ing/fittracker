@@ -115,6 +115,32 @@ class SesionRepository:
         db.session.commit()
         return sesion
 
+    def listar_activas_anteriores_a(self, usuario_id: int, limite: datetime) -> list[Sesion]:
+        """Sesiones ACTIVA del usuario iniciadas antes de ``limite`` (UTC naive)."""
+        return (
+            db.session.query(Sesion)
+            .filter(
+                Sesion.usuario_id == usuario_id,
+                Sesion.estado == "ACTIVA",
+                Sesion.fecha_inicio < limite,
+            )
+            .all()
+        )
+
+    def cerrar_abandonadas(self, sesiones: list[Sesion]) -> None:
+        """Cierra sesiones olvidadas: finaliza las que tienen series y elimina las vacías.
+
+        La fecha de cierre es la de la última serie registrada, no el momento del cierre.
+        """
+        for sesion in sesiones:
+            fechas = [s.fecha_hora for s in sesion.series if s.fecha_hora]
+            if not fechas:
+                db.session.delete(sesion)
+                continue
+            sesion.estado = "FINALIZADA"
+            sesion.fecha_fin = max(fechas)
+        db.session.commit()
+
     def listar_historial_usuario(
         self,
         usuario_id: int,
