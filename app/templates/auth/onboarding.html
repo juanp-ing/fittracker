@@ -9,10 +9,6 @@
       <span id="wizard-paso-etiqueta" class="stepper-label" aria-live="polite">Paso 1 de 4</span>
       {% if destino and destino != '/' %}
       <a id="btn-cancelar-onboarding" href="{{ destino }}" class="btn-duo btn-duo--sm btn-duo--quiet">Cancelar</a>
-      {% else %}
-      <span style="font-family: var(--font-display); font-weight: 800; font-size: 0.82rem; color: var(--color-eager-green-shade);">
-        Perfil Biométrico
-      </span>
       {% endif %}
     </div>
     <div id="wizard-progress-track" class="wizard-progress-track" role="progressbar" aria-label="Progreso del perfil" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1">

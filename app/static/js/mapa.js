@@ -266,7 +266,7 @@
       const recientes = detalle.ejercicios_recientes || [];
       if (recientes.length === 0) {
         sheetRecientesEl.innerHTML = `
-          <div class="duo-list-row">
+          <div class="duo-list-row duo-list-row--static">
             <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-charcoal);">
               Músculo descansado en los últimos ${detalle.dias_ventana || 7} días.
             </span>
@@ -276,7 +276,7 @@
         sheetRecientesEl.innerHTML = recientes
           .map(
             (ej) => `
-            <div class="duo-list-row">
+            <div class="duo-list-row duo-list-row--static">
               <div>
                 <strong style="font-family: var(--font-display); color: var(--color-night-ink);">
                   ${escapeHtml(ej.nombre)}
@@ -367,10 +367,9 @@
     grupos.forEach((g) => {
       const fila = document.createElement('button');
       fila.type = 'button';
-      fila.className = 'duo-list-row';
+      fila.className = 'duo-list-row duo-list-row--action';
       fila.style.width = '100%';
       fila.style.textAlign = 'left';
-      fila.style.cursor = 'pointer';
       fila.innerHTML = `
         <div>
           <strong style="font-family:var(--font-display); color:var(--color-night-ink);">${escapeHtml(g.nombre)}</strong>

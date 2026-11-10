@@ -960,6 +960,9 @@
   }
 
   // ------------------------------------------------------------------ eventos
+  const REPETICION_ESPERA_MS = 400;
+  const REPETICION_INTERVALO_MS = 110;
+
   function alTocarFilaPlan(contenedor, manejador) {
     if (!contenedor) return;
     contenedor.addEventListener('click', (e) => {
@@ -1016,34 +1019,62 @@
     });
   }
 
-  if (btnPesoMenos) {
-    btnPesoMenos.addEventListener('click', () => {
-      estado.peso = Math.max(0, Math.round((estado.peso - estado.pasoPeso) * 100) / 100);
-      actualizarDisplays();
-      pulsarValor(valorPesoEl);
+  // Un toque suma o resta un paso; mantener pulsado repite el paso sin levantar el pulgar
+  // (los valores no se escriben: AGENTS.md pide registrar sin teclado).
+  function vincularRepeticion(boton, accion) {
+    if (!boton) return;
+    let espera = null;
+    let intervalo = null;
+    let repitio = false;
+    const parar = () => {
+      clearTimeout(espera);
+      clearInterval(intervalo);
+      espera = null;
+      intervalo = null;
+    };
+    boton.addEventListener('pointerdown', (e) => {
+      if (e.button) return;
+      parar();
+      repitio = false;
+      espera = setTimeout(() => {
+        repitio = true;
+        accion();
+        intervalo = setInterval(accion, REPETICION_INTERVALO_MS);
+      }, REPETICION_ESPERA_MS);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach((tipo) => boton.addEventListener(tipo, parar));
+    // El menú contextual del toque largo interrumpiría la repetición en el móvil.
+    boton.addEventListener('contextmenu', (e) => e.preventDefault());
+    boton.addEventListener('click', () => {
+      // El clic que cierra una pulsación larga ya se aplicó al repetir.
+      if (repitio) {
+        repitio = false;
+        return;
+      }
+      accion();
     });
   }
-  if (btnPesoMas) {
-    btnPesoMas.addEventListener('click', () => {
-      estado.peso = Math.round((estado.peso + estado.pasoPeso) * 100) / 100;
-      actualizarDisplays();
-      pulsarValor(valorPesoEl);
-    });
-  }
-  if (btnRepsMenos) {
-    btnRepsMenos.addEventListener('click', () => {
-      estado.reps = Math.max(1, estado.reps - 1);
-      actualizarDisplays();
-      pulsarValor(valorRepsEl);
-    });
-  }
-  if (btnRepsMas) {
-    btnRepsMas.addEventListener('click', () => {
-      estado.reps += 1;
-      actualizarDisplays();
-      pulsarValor(valorRepsEl);
-    });
-  }
+
+  vincularRepeticion(btnPesoMenos, () => {
+    estado.peso = Math.max(0, Math.round((estado.peso - estado.pasoPeso) * 100) / 100);
+    actualizarDisplays();
+    pulsarValor(valorPesoEl);
+  });
+  vincularRepeticion(btnPesoMas, () => {
+    estado.peso = Math.round((estado.peso + estado.pasoPeso) * 100) / 100;
+    actualizarDisplays();
+    pulsarValor(valorPesoEl);
+  });
+  vincularRepeticion(btnRepsMenos, () => {
+    estado.reps = Math.max(1, estado.reps - 1);
+    actualizarDisplays();
+    pulsarValor(valorRepsEl);
+  });
+  vincularRepeticion(btnRepsMas, () => {
+    estado.reps += 1;
+    actualizarDisplays();
+    pulsarValor(valorRepsEl);
+  });
   chipsPasoPeso.forEach((chip) => {
     vincularFeedbackTactil(chip);
     chip.addEventListener('click', () => {
@@ -1082,6 +1113,7 @@
       }
     });
   }
+  // «Hacer otra serie»: cierra el aviso y deja el mismo ejercicio listo para una serie extra.
   if (btnModalDescansoAgua) btnModalDescansoAgua.addEventListener('click', () => cerrarHoja(modalTerminadoEl));
   if (btnCerrarResumen) {
     btnCerrarResumen.addEventListener('click', () => {

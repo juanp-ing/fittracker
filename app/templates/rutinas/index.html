@@ -51,6 +51,8 @@
     <div class="routine-card__actions">
       <a href="/?rutina_id={{ r.id }}" class="btn-duo btn-duo--green btn-duo--block">Entrenar</a>
       <div class="routine-card__secondary">
+        <button type="button" class="btn-duo btn-duo--sm btn-duo--quiet" data-editar-rutina="{{ r.id }}"
+                data-rutina='{{ {"id": r.id, "nombre": r.nombre, "dias_semana": r.dias_semana, "ejercicios": r.ejercicios} | tojson }}'>Editar</button>
         <button type="button" class="btn-duo btn-duo--sm btn-duo--quiet" data-fav-rutina="{{ r.id }}"
                 aria-pressed="{{ 'true' if r.es_favorita else 'false' }}">
           {% if r.es_favorita %}Quitar de principal{% else %}Hacer principal{% endif %}
@@ -115,7 +117,7 @@
 </div>
 
 {# ================================================================== #}
-{# HOJA: CREAR RUTINA                                                  #}
+{# HOJA: CREAR O EDITAR RUTINA                                                  #}
 {# ================================================================== #}
 <div id="sheet-crear-rutina" class="bottom-sheet-backdrop" hidden>
   <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="titulo-crear-rutina">
@@ -288,17 +290,66 @@
       });
     });
 
-    // ---------------------------------------------------------------- hoja «Nueva rutina»
-    function abrirSheet() {
+    // ---------------------------------------------------------------- hoja «Nueva rutina» / «Editar rutina»
+    const DIAS_POR_DEFECTO = ['LUN', 'MIE', 'VIE'];
+    let editandoId = null; // id de la rutina en edición; null al crear una nueva
+    let formularioDe = null; // a qué corresponde lo que hay escrito en la hoja
+
+    function marcarDias(codigos) {
+      document.querySelectorAll('[data-dia-rutina]').forEach((chip) => {
+        const activo = codigos.includes(chip.getAttribute('data-dia-rutina'));
+        chip.classList.toggle('is-active', activo);
+        chip.setAttribute('aria-pressed', activo ? 'true' : 'false');
+      });
+    }
+
+    // Rellena la hoja con la rutina a editar, o la deja en blanco para crear una.
+    function cargarFormulario(rutina) {
+      editandoId = rutina ? rutina.id : null;
+      $('titulo-crear-rutina').textContent = rutina ? 'Editar rutina' : 'Nueva rutina';
+      $('btn-guardar-rutina').textContent = rutina ? 'Guardar cambios' : 'Guardar rutina';
+      $('rutina-nombre').value = rutina ? rutina.nombre : '';
+      marcarDias(
+        rutina
+          ? String(rutina.dias_semana || '').split(',').map((d) => d.trim().toUpperCase()).filter(Boolean)
+          : DIAS_POR_DEFECTO
+      );
+      borrador.length = 0;
+      ((rutina && rutina.ejercicios) || []).forEach((item) => {
+        borrador.push({
+          ejercicio_id: Number(item.ejercicio_id),
+          nombre: item.nombre,
+          series_objetivo: Number(item.series_objetivo) || 3,
+          descanso_segundos: Number(item.descanso_segundos) || 90,
+        });
+      });
+      renderizarBorrador();
+    }
+
+    function abrirSheet(rutina) {
+      // Reabrir «Crear rutina» conserva el borrador a medias; cambiar de rutina lo recarga.
+      const clave = rutina ? `editar-${rutina.id}` : 'crear';
+      if (clave !== formularioDe || rutina) cargarFormulario(rutina || null);
+      formularioDe = clave;
       errorEl.hidden = true;
       sheet.hidden = false;
       document.body.classList.add('has-open-sheet');
     }
+
+    document.querySelectorAll('[data-editar-rutina]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        try {
+          abrirSheet(JSON.parse(btn.getAttribute('data-rutina')));
+        } catch (_) {
+          avisar('No se pudo abrir la rutina para editarla. Recarga la página e inténtalo de nuevo.');
+        }
+      });
+    });
     function cerrarSheet() {
       sheet.hidden = true;
       document.body.classList.remove('has-open-sheet');
     }
-    $('btn-abrir-crear-rutina').addEventListener('click', abrirSheet);
+    $('btn-abrir-crear-rutina').addEventListener('click', () => abrirSheet());
     $('btn-cerrar-crear-rutina').addEventListener('click', cerrarSheet);
     sheet.addEventListener('click', (e) => {
       if (e.target === sheet) cerrarSheet();
@@ -400,27 +451,39 @@
         errorEl.hidden = false;
         return;
       }
+      const cuerpo = {
+        nombre,
+        dias_semana: dias.join(','),
+        ejercicios: borrador.map((item, i) => ({ ...item, orden: i + 1 })),
+      };
+      // Una rutina nueva nace como principal; al editar no se toca ese ajuste.
+      if (!editandoId) cuerpo.es_favorita = true;
+      const btnGuardar = $('btn-guardar-rutina');
       let resp;
+      btnGuardar.disabled = true;
       try {
-        resp = await fetch('/api/rutinas', {
-          method: 'POST',
+        resp = await fetch(editandoId ? `/api/rutinas/${editandoId}` : '/api/rutinas', {
+          method: editandoId ? 'PUT' : 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nombre,
-            es_favorita: true,
-            dias_semana: dias.join(','),
-            ejercicios: borrador.map((item, i) => ({ ...item, orden: i + 1 })),
-          }),
+          body: JSON.stringify(cuerpo),
         });
       } catch (_) {
+        btnGuardar.disabled = false;
         errorEl.textContent = 'Sin conexión: no se pudo guardar la rutina.';
         errorEl.hidden = false;
         return;
       }
       if (resp.ok) {
         const data = await resp.json();
-        window.location.href = `/rutinas?nueva=${data.id}`;
+        if (editandoId) {
+          // Recarga la lista y vuelve a la tarjeta editada.
+          window.location.hash = `rutina-${data.id}`;
+          window.location.reload();
+        } else {
+          window.location.href = `/rutinas?nueva=${data.id}`;
+        }
       } else {
+        btnGuardar.disabled = false;
         const data = await resp.json().catch(() => ({}));
         errorEl.textContent = data.error || 'No se pudo guardar la rutina.';
         errorEl.hidden = false;
