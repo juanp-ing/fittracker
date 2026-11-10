@@ -29,6 +29,9 @@
 {% set dia_sel = (agenda_hoy.dias_semana | selectattr('seleccionado') | first) if agenda_hoy else None %}
 {% set rutina_hoy = agenda_hoy.rutina if agenda_hoy else None %}
 {% set racha = agenda_hoy.racha if agenda_hoy else None %}
+{# Día de descanso: hay rutina principal, pero hoy no toca. Entrenar queda como opción secundaria. #}
+{% set es_descanso = (dia_sel and not dia_sel.toca_entrenar and rutina_hoy) | default(false) %}
+{% set resumen_plan %}{% if agenda_hoy %}{{ agenda_hoy.total_ejercicios }} ejercicios · {{ agenda_hoy.series_totales }} series · ~{{ agenda_hoy.minutos_estimados }} min{% endif %}{% endset %}
 
 <div id="vista-hoy" class="vista-hoy" data-modo="{{ 'foco' if sesion_activa else 'previo' }}">
 
@@ -40,7 +43,7 @@
     <section class="today-hero" aria-labelledby="hero-titulo">
       <div class="today-hero__top">
         <span id="hero-eyebrow" class="today-hero__eyebrow">
-          {% if dia_sel and not dia_sel.toca_entrenar and rutina_hoy %}Hoy es día de descanso{% else %}Hoy toca{% endif %}
+          {% if es_descanso %}Hoy{% else %}Hoy toca{% endif %}
         </span>
         <span id="hero-racha" class="streak-chip" {% if not racha or not racha.semanas_seguidas %}hidden{% endif %}>
           {{ icono('bolt', 'icon icon--sm') }}
@@ -50,11 +53,13 @@
         </span>
       </div>
       <h1 id="hero-titulo" class="today-hero__title">
-        {{ rutina_hoy.nombre if rutina_hoy else 'Entrenamiento libre' }}
+        {% if es_descanso %}Día de descanso{% else %}{{ rutina_hoy.nombre if rutina_hoy else 'Entrenamiento libre' }}{% endif %}
       </h1>
       <p id="hero-meta" class="today-hero__meta">
-        {% if agenda_hoy and agenda_hoy.total_ejercicios %}
-          {{ agenda_hoy.total_ejercicios }} ejercicios · {{ agenda_hoy.series_totales }} series · ~{{ agenda_hoy.minutos_estimados }} min
+        {% if es_descanso %}
+          No toca «{{ rutina_hoy.nombre }}».{% if agenda_hoy.total_ejercicios %} Si quieres entrenar igual: {{ resumen_plan }}{% endif %}
+        {% elif agenda_hoy and agenda_hoy.total_ejercicios %}
+          {{ resumen_plan }}
         {% else %}
           Elige ejercicios sobre la marcha o activa una rutina en la pestaña Rutinas.
         {% endif %}
@@ -87,8 +92,10 @@
       </div>
       {% endif %}
 
-      <button type="button" id="btn-empezar-entrenamiento" class="btn-duo btn-duo--green btn-duo--block btn-duo--giant">
-        {% if agenda_hoy and agenda_hoy.series_hechas %}Continuar entrenamiento{% else %}Empezar entrenamiento{% endif %}
+      {% set ya_empezo = agenda_hoy and agenda_hoy.series_hechas %}
+      <button type="button" id="btn-empezar-entrenamiento"
+              class="btn-duo {% if not es_descanso or ya_empezo %}btn-duo--green{% endif %} btn-duo--block btn-duo--giant">
+        {% if ya_empezo %}Continuar entrenamiento{% elif es_descanso %}Entrenar de todos modos{% else %}Empezar entrenamiento{% endif %}
       </button>
 
       {% if rutinas %}
@@ -138,7 +145,11 @@
               <span class="calendar-day-abbr">{{ d.abreviatura }}</span>
               <span class="calendar-day-num">{{ d.dia_numero }}</span>
               <span class="calendar-dots-row">
-                {% for _ in range(d.puntos) %}<span class="calendar-dot"></span>{% endfor %}
+                {%- if d.series_registradas -%}
+                  <span class="calendar-dot"></span><span class="visually-hidden">, entrenado</span>
+                {%- elif d.toca_entrenar -%}
+                  <span class="calendar-dot calendar-dot--plan"></span><span class="visually-hidden">, toca entrenar</span>
+                {%- endif -%}
               </span>
             </button>
             {% endfor %}
@@ -146,9 +157,13 @@
         </div>
         <button type="button" id="btn-semana-siguiente" class="btn-week-nav" aria-label="Semana siguiente">{{ icono('chevron', 'icon icon--sm') }}</button>
       </div>
+      <p class="calendar-legend">
+        <span class="calendar-legend__item"><span class="calendar-dot calendar-dot--plan"></span>Toca entrenar</span>
+        <span class="calendar-legend__item"><span class="calendar-dot"></span>Entrenado</span>
+      </p>
 
       <div class="plan-section__list-head">
-        <h2 class="plan-section__title">Plan del día</h2>
+        <h2 id="plan-dia-titulo" class="plan-section__title">{% if es_descanso %}Si entrenas: {{ rutina_hoy.nombre }}{% else %}Plan del día{% endif %}</h2>
         <div class="completed-toggle-wrap">
           <span class="completed-toggle-label" id="label-mostrar-completados">Mostrar completados</span>
           <button

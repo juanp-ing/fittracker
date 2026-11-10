@@ -186,10 +186,15 @@ class RutinaService:
         if plantilla is None:
             raise RutinaNoEncontradaError("Plantilla de rutina famosa no encontrada.")
 
+        # Solo la primera rutina del usuario nace como principal: si ya tiene una, clonar otra
+        # no debe competir con ella en «Hoy» (se puede marcar después desde Rutinas).
+        ya_tiene_principal = bool(
+            self.rutina_repo.listar_por_usuario(usuario_id=usuario_id, solo_favoritas=True)
+        )
         clonada = self.rutina_repo.clonar_plantilla_para_usuario(
             plantilla=plantilla,
             usuario_id=usuario_id,
-            es_favorita=True,
+            es_favorita=not ya_tiene_principal,
         )
         return self._serializar_rutina(clonada)
 

@@ -38,6 +38,8 @@ def vista_registro():
 @login_required
 def vista_verificar_correo():
     """Renderiza la pantalla de verificación de correo con código OTP de 6 dígitos."""
+    if current_user.email_verificado:
+        return redirect(url_for("sesion.vista_entrenar"))
     return render_template(
         "auth/verify_email.html",
         codigo_demo=current_user.codigo_verificacion,
