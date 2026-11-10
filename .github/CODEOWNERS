@@ -1,0 +1,10 @@
+# Revisores que GitHub pide automáticamente en cada PR (el autor del PR se omite solo).
+* @juanp-ing @Carlos-C-bty
+
+# Archivos sensibles: CI, configuración, secretos, dependencias y despliegue.
+/.github/          @juanp-ing
+/app/config/       @juanp-ing
+/config.py         @juanp-ing
+/requirements.txt  @juanp-ing
+/Dockerfile        @juanp-ing
+/docker-compose.yml @juanp-ing
