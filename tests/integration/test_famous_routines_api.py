@@ -157,10 +157,9 @@ def test_post_clonar_rutina_famosa_copia_ejercicios_y_dias_semana():
 
         # Verificar vistas HTML de Onboarding (Guía Visual Grasa) y Rutinas (Pestañas)
         html_onb = client.get("/onboarding").get_data(as_text=True)
-        assert "Atlético / Muy Definido" in html_onb
-        assert "Fitness / Saludable" in html_onb
-        assert "Promedio / Normal" in html_onb
-        assert "Alto / Sobrepeso Inicial" in html_onb
+        assert html_onb.count('data-grasa-card="') == 4
+        for nivel in ("Muy definido", "En forma", "Normal", "Por encima"):
+            assert nivel in html_onb
 
         html_rutinas = client.get("/rutinas").get_data(as_text=True)
         assert "Rutinas Famosas (12)" in html_rutinas

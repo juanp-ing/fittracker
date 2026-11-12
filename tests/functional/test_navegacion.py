@@ -152,9 +152,9 @@ def test_perfil_muestra_datos_editar_y_cerrar_sesion(app, client):
 
     assert "Lucía" in html
     assert "perfil@fittracker.local" in html
-    assert "61.5 kg" in html
+    assert "61,5 kg" in html
     assert "Definir" in html
-    assert "Mesomorfo" in html
+    assert "Atlética" in html  # MESOMORFO, sin jerga
     assert 'href="/onboarding?siguiente=/perfil"' in html
     assert 'id="btn-cerrar-sesion"' in html
 

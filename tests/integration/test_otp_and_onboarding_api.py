@@ -56,7 +56,7 @@ def test_flujo_otp_6_digitos_y_onboarding_biometrico(app, client):
     resp_vista_onb = client.get("/onboarding")
     assert resp_vista_onb.status_code == 200
     html_onb = resp_vista_onb.get_data(as_text=True)
-    assert "Perfil Biométrico" in html_onb
+    assert "<title>Tu perfil — FitTracker</title>" in html_onb
     for paso in range(1, 5):
         assert f'data-step="{paso}"' in html_onb
         assert f'data-step-tab="{paso}"' in html_onb

@@ -18,7 +18,7 @@ FitTracker adopta el **Light Theme Gamificado de Duolingo**: superficies planas 
 - `--color-paper-white: #ffffff` — Superficie principal y fondo de tarjetas.
 - `--color-snow-bg: #f7f7f7` — Fondo sutil exterior del contenedor móvil en escritorio.
 - `--color-charcoal: #4b4b4b` — Texto de cuerpo principal y etiquetas.
-- `--color-pencil-gray: #777777` — Texto secundario, metadatos y subtítulos.
+- `--color-pencil-gray: #737373` — Texto secundario, metadatos y subtítulos (4,74:1 sobre blanco, cumple AA; antes #777777, que daba 4,48:1).
 - `--color-faded-gray: #afafaf` — Bordes estructurales (`2px solid`) y estados inactivos.
 - `--color-swan-border: #e5e5e5` — Divisores y bordes de tarjetas en reposo.
 

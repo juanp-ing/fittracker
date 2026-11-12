@@ -8,6 +8,12 @@ services:
       - FLASK_CONFIG=production
       - SECRET_KEY=${SECRET_KEY:?Define SECRET_KEY en el archivo .env (ver README)}
       - DATABASE_URL=sqlite:////app/data/fittracker.db
+      # Correo del código de verificación (opcional; sin él nadie podrá verificar su cuenta).
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-}
     volumes:
       - sqlite_data:/app/data
     restart: unless-stopped

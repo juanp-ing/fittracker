@@ -133,7 +133,9 @@
 
   function marcarVentanaActiva(dias) {
     document.querySelectorAll('[data-mapa-dias]').forEach((b) => {
-      b.classList.toggle('is-active', Number(b.getAttribute('data-mapa-dias')) === Number(dias));
+      const activa = Number(b.getAttribute('data-mapa-dias')) === Number(dias);
+      b.classList.toggle('is-active', activa);
+      b.setAttribute('aria-pressed', activa ? 'true' : 'false');
     });
   }
 
@@ -380,32 +382,28 @@
   function renderizarDetalleGrupos(contenedor, grupos) {
     if (!contenedor) return;
     if (!grupos || grupos.length === 0) {
-      contenedor.innerHTML = `<p style="color: var(--color-charcoal); font-weight: 700; margin: 0;">No hay series en los últimos ${diasVentanaActual} días. ${
-        diasVentanaActual < 30 ? 'Prueba con una ventana más amplia o toca' : 'Toca'
-      } cualquier músculo de la silueta para ver recomendaciones.</p>`;
+      contenedor.innerHTML = `<li class="plain-list__empty">Sin series en los últimos ${diasVentanaActual} días. ${
+        diasVentanaActual < 30 ? 'Prueba con un periodo más largo o toca' : 'Toca'
+      } un músculo de la silueta para ver ejercicios recomendados.</li>`;
       return;
     }
     contenedor.innerHTML = '';
     grupos.forEach((g) => {
-      const fila = document.createElement('button');
-      fila.type = 'button';
-      fila.className = 'duo-list-row duo-list-row--action';
-      fila.style.width = '100%';
-      fila.style.textAlign = 'left';
-      fila.innerHTML = `
-        <div>
-          <strong style="font-family:var(--font-display); color:var(--color-night-ink);">${escapeHtml(g.nombre)}</strong>
-          <div style="font-size:0.8rem; font-weight:700; color:var(--color-charcoal);">
-            ${g.series_primarias} series primarias · ${g.series_secundarias} secundarias
-          </div>
-        </div>
-        <span class="status-badge ${g.es_primario ? 'status-badge--mejoro' : ''}"
-              style="background-color:${g.es_primario ? 'var(--color-storybook-green)' : 'var(--color-fresh-leaf)'}; border-color:var(--color-eager-green);">
-          ${g.es_primario ? 'Primario' : 'Secundario'}
-        </span>
-      `;
-      fila.addEventListener('click', () => abrirDetalleMusculo(g.nombre));
-      contenedor.appendChild(fila);
+      const total = (Number(g.series_primarias) || 0) + (Number(g.series_secundarias) || 0);
+      const item = document.createElement('li');
+      item.innerHTML = `
+        <button type="button" class="plain-list__row plain-list__row--action">
+          <i class="legend-dot ${g.es_primario ? 'legend-dot--primario' : 'legend-dot--secundario'}"
+             aria-label="${g.es_primario ? 'Trabajado como principal' : 'Trabajado de apoyo'}"></i>
+          <span class="plain-list__main">
+            <strong>${escapeHtml(g.nombre)}</strong>
+            <span>${g.series_primarias} como principal · ${g.series_secundarias} de apoyo</span>
+          </span>
+          <span class="plain-list__value">${total} ${total === 1 ? 'serie' : 'series'}</span>
+          <svg class="plain-list__chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        </button>`;
+      item.querySelector('button').addEventListener('click', () => abrirDetalleMusculo(g.nombre));
+      contenedor.appendChild(item);
     });
   }
 

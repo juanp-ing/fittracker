@@ -3,76 +3,162 @@
  */
 (function () {
   let instanciaChart = null;
+  // Peso (~60 kg) y volumen de la mejor serie (~600 kg) no caben en el mismo eje:
+  // se muestra una métrica cada vez y el usuario la cambia con el control segmentado.
+  let metricaProgreso = 'peso';
+  let ultimoProgreso = null;
+
+  const METRICAS = {
+    peso: { campo: 'pesos_maximos', nombre: 'Peso máximo', color: '#58cc02', relleno: 'rgba(88, 204, 2, 0.12)' },
+    volumen: { campo: 'volumenes', nombre: 'Mejor serie', color: '#1cb0f6', relleno: 'rgba(28, 176, 246, 0.12)' },
+  };
+
+  /** '2026-10-02' → '2 oct' (sin desfase de zona: se fija el mediodía local). */
+  function formatearFechaCorta(iso, conAnio = false) {
+    const fecha = new Date(`${iso}T12:00:00`);
+    if (Number.isNaN(fecha.getTime())) return iso;
+    const opciones = { day: 'numeric', month: 'short' };
+    if (conAnio) opciones.year = 'numeric';
+    return fecha.toLocaleDateString('es', opciones).replace(/\./g, '');
+  }
+
+  function formatearNumero(valor) {
+    const n = Number(valor) || 0;
+    return n.toLocaleString('es', { maximumFractionDigits: 2 });
+  }
+
+  function pintarGraficaProgreso() {
+    const canvas = document.getElementById('grafica-progreso-canvas');
+    const contenedor = document.getElementById('progreso-grafica');
+    const vacioEl = document.getElementById('progreso-vacio');
+    const data = ultimoProgreso;
+    if (!canvas || !data) return;
+
+    const fechas = data.fechas || [];
+    if (instanciaChart) {
+      instanciaChart.destroy();
+      instanciaChart = null;
+    }
+    const metricasEl = document.getElementById('progreso-metricas');
+    if (metricasEl) metricasEl.hidden = !fechas.length;
+    if (!fechas.length) {
+      if (contenedor) contenedor.hidden = true;
+      if (vacioEl) {
+        vacioEl.textContent = `Aún no registraste series de ${data.ejercicio_nombre || 'este ejercicio'}. Cuando lo hagas, aquí verás cómo evoluciona.`;
+        vacioEl.hidden = false;
+      }
+      return;
+    }
+    if (contenedor) contenedor.hidden = false;
+    if (vacioEl) vacioEl.hidden = true;
+    if (typeof window.Chart === 'undefined') return;
+
+    const metrica = METRICAS[metricaProgreso];
+    const valores = data[metrica.campo] || [];
+    const puntos = data.puntos || [];
+    const estilos = getComputedStyle(document.documentElement);
+    const fuente = estilos.getPropertyValue('--font-sans').trim() || 'sans-serif';
+    const tinta = estilos.getPropertyValue('--color-charcoal').trim() || '#4b4b4b';
+    const rejilla = estilos.getPropertyValue('--color-border-light').trim() || '#e5e5e5';
+
+    instanciaChart = new window.Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: fechas.map((f) => formatearFechaCorta(f)),
+        datasets: [
+          {
+            label: metrica.nombre,
+            data: valores,
+            borderColor: metrica.color,
+            backgroundColor: metrica.relleno,
+            fill: true,
+            borderWidth: 3,
+            pointRadius: fechas.length > 20 ? 0 : 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: metrica.color,
+            tension: 0.25,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => formatearFechaCorta(fechas[items[0].dataIndex], true),
+              label: (item) => {
+                const punto = puntos[item.dataIndex] || {};
+                if (metricaProgreso === 'peso') {
+                  return ` ${formatearNumero(item.parsed.y)} kg × ${punto.repeticiones || '?'} reps`;
+                }
+                return ` ${formatearNumero(item.parsed.y)} kg movidos en una serie`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: tinta,
+              font: { family: fuente, weight: '700', size: 12 },
+              maxRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: 5,
+            },
+          },
+          y: {
+            grace: '10%',
+            grid: { color: rejilla },
+            border: { display: false },
+            ticks: {
+              color: tinta,
+              font: { family: fuente, weight: '700', size: 12 },
+              maxTicksLimit: 5,
+              callback: (valor) => `${formatearNumero(valor)} kg`,
+            },
+          },
+        },
+      },
+    });
+  }
 
   async function cargarProgresoEjercicio(ejercicioId) {
-    const canvas = document.getElementById('grafica-progreso-canvas');
     const prBadgeEl = document.getElementById('progreso-pr-historico');
-    if (!canvas || !ejercicioId) return;
+    if (!ejercicioId) return;
 
     try {
       const resp = await fetch(`/api/progreso/${encodeURIComponent(ejercicioId)}`, {
         headers: { Accept: 'application/json' },
       });
       if (!resp.ok) return;
-      const data = await resp.json();
+      ultimoProgreso = await resp.json();
 
       if (prBadgeEl) {
-        prBadgeEl.textContent = `PR Histórico: ${data.pr_historico || 0} kg`;
+        const pr = Number(ultimoProgreso.pr_historico) || 0;
+        prBadgeEl.textContent = `Récord: ${formatearNumero(pr)} kg`;
+        prBadgeEl.hidden = pr <= 0;
       }
-
-      if (typeof window.Chart === 'undefined') return;
-      if (instanciaChart) {
-        instanciaChart.destroy();
-      }
-
-      instanciaChart = new window.Chart(canvas.getContext('2d'), {
-        type: 'line',
-        data: {
-          labels: data.fechas || [],
-          datasets: [
-            {
-              label: 'Peso Máximo (kg)',
-              data: data.pesos_maximos || [],
-              borderColor: '#58cc02',
-              backgroundColor: '#d7ffb8',
-              borderWidth: 3,
-              pointRadius: 5,
-              pointBackgroundColor: '#58cc02',
-              tension: 0.2,
-            },
-            {
-              label: 'Volumen Máx Serie (kg)',
-              data: data.volumenes || [],
-              borderColor: '#1cb0f6',
-              backgroundColor: '#ffffff',
-              borderWidth: 3,
-              pointRadius: 4,
-              pointBackgroundColor: '#1cb0f6',
-              tension: 0.2,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              labels: {
-                color: '#000437',
-                font: { family: 'Nunito', weight: '800' },
-              },
-            },
-          },
-          scales: {
-            x: { ticks: { color: '#4b4b4b', font: { weight: '700' } } },
-            y: { ticks: { color: '#4b4b4b', font: { weight: '700' } } },
-          },
-        },
-      });
+      pintarGraficaProgreso();
     } catch (err) {
       console.warn('No se pudo renderizar la gráfica de progreso:', err);
     }
   }
+
+  document.querySelectorAll('[data-metrica-progreso]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      metricaProgreso = btn.getAttribute('data-metrica-progreso');
+      document.querySelectorAll('[data-metrica-progreso]').forEach((b) => {
+        const activa = b === btn;
+        b.classList.toggle('is-active', activa);
+        b.setAttribute('aria-pressed', activa ? 'true' : 'false');
+      });
+      pintarGraficaProgreso();
+    });
+  });
 
   function escapeHtml(str) {
     return String(str == null ? '' : str)
