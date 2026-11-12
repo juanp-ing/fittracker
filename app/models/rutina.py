@@ -1,4 +1,4 @@
-"""Modelos de Rutina y RutinaEjercicio."""
+"""Modelos de Rutina, RutinaDia y RutinaEjercicio."""
 
 from app import db
 
@@ -32,6 +32,12 @@ class Rutina(db.Model):
         passive_deletes=True,
         order_by="RutinaEjercicio.orden",
     )
+    dias = db.relationship(
+        "RutinaDia",
+        back_populates="rutina",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
     sesiones = db.relationship(
         "Sesion",
         back_populates="rutina",
@@ -40,6 +46,30 @@ class Rutina(db.Model):
 
     def __repr__(self) -> str:
         return f"<Rutina id={self.id} nombre={self.nombre!r}>"
+
+
+class RutinaDia(db.Model):
+    """Nombre que recibe un día de entrenamiento dentro de una rutina (p. ej. LUN → «Empuje»)."""
+
+    __tablename__ = "rutina_dias"
+    __table_args__ = (
+        db.UniqueConstraint("rutina_id", "dia_semana", name="uq_rutina_dias_rutina_dia"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    rutina_id = db.Column(
+        db.Integer,
+        db.ForeignKey("rutinas.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    dia_semana = db.Column(db.String(3), nullable=False)
+    nombre = db.Column(db.String(60), nullable=False)
+
+    rutina = db.relationship("Rutina", back_populates="dias")
+
+    def __repr__(self) -> str:
+        return f"<RutinaDia rutina_id={self.rutina_id} dia={self.dia_semana} nombre={self.nombre!r}>"
 
 
 class RutinaEjercicio(db.Model):
@@ -59,6 +89,8 @@ class RutinaEjercicio(db.Model):
         nullable=False,
     )
     orden = db.Column(db.Integer, nullable=False)
+    # Día en que toca este ejercicio (LUN…DOM). NULL = todos los días de la rutina.
+    dia_semana = db.Column(db.String(3), nullable=True)
     descanso_segundos = db.Column(db.Integer, default=90, nullable=False)
     series_objetivo = db.Column(db.Integer, default=3, nullable=False)
 

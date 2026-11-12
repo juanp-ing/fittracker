@@ -330,20 +330,29 @@
       else heroEyebrow.textContent = esHoy ? 'Hoy toca' : `Plan del ${nombreDia} ${dia.dia_numero}`;
     }
     if (heroTitulo) {
-      heroTitulo.textContent = descanso ? 'Día de descanso' : rutina ? rutina.nombre : 'Entrenamiento libre';
+      // En una rutina por días el protagonista es el entrenamiento de hoy («Empuje A»).
+      heroTitulo.textContent = descanso
+        ? 'Día de descanso'
+        : rutina
+          ? rutina.dia_nombre || rutina.nombre
+          : 'Entrenamiento libre';
     }
     if (heroMeta) {
       if (descanso) {
         heroMeta.textContent = items.length
-          ? `No toca «${rutina.nombre}». Si quieres entrenar igual: ${resumenPlan}`
+          ? `No toca «${rutina.nombre}». Si quieres entrenar igual${
+              rutina.dia_nombre ? `, adelanta «${rutina.dia_nombre}»` : ''
+            }: ${resumenPlan}`
           : `No toca «${rutina.nombre}».`;
       } else {
         heroMeta.textContent = items.length
-          ? resumenPlan
+          ? `${rutina && rutina.dia_nombre ? `${rutina.nombre} · ` : ''}${resumenPlan}`
           : 'Elige ejercicios sobre la marcha o activa una rutina en la pestaña Rutinas.';
       }
     }
-    if (tituloPlanEl) tituloPlanEl.textContent = descanso ? `Si entrenas: ${rutina.nombre}` : 'Plan del día';
+    if (tituloPlanEl) {
+      tituloPlanEl.textContent = descanso ? `Si entrenas: ${rutina.dia_nombre || rutina.nombre}` : 'Plan del día';
+    }
     const totales = Number(a.series_totales) || 0;
     if (btnEmpezar) btnEmpezar.classList.toggle('btn-duo--green', !(descanso && hechas === 0));
     if (heroProgreso) heroProgreso.hidden = !(hechas > 0 && totales > 0);

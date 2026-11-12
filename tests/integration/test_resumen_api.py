@@ -36,7 +36,7 @@ def test_resumen_mensual_mapa_muscular_bicolor_progreso_e_historial(app, client)
         # Buscar dos ejercicios predeterminados:
         # - Press de banca con barra (Primario: Pecho, Secundarios: Tríceps, Hombros) -> MEJORO
         # - Sentadilla libre (Primario: Cuádriceps, Glúteos, Secundarios: Isquiotibiales, Core) -> ESTANCADO
-        banca = ej_repo.buscar_visibles_para_usuario(usuario_id, "Press de banca")[0]
+        banca = ej_repo.buscar_visibles_para_usuario(usuario_id, "Press de banca con barra")[0]
         sentadilla = ej_repo.buscar_visibles_para_usuario(usuario_id, "Sentadilla libre")[0]
 
         ahora = datetime.now(timezone.utc)

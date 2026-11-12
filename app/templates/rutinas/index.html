@@ -10,6 +10,41 @@
   {%- endfor -%}
 {%- endmacro %}
 
+{# Línea de resumen: una rutina por días se describe por día, no por el total. #}
+{% macro resumen_rutina(r) -%}
+  {%- if r.por_dias -%}
+    {%- set cuentas = r.dias | map(attribute='ejercicios') | map('length') | list -%}
+    {{ r.dias | length }} entrenamientos distintos ·
+    {% if cuentas | min == cuentas | max %}{{ cuentas | max }}{% else %}{{ cuentas | min }}–{{ cuentas | max }}{% endif %} ejercicios por día
+  {%- else -%}
+    {{ r.ejercicios | length }} ejercicios · {{ r.ejercicios | sum(attribute='series_objetivo') }} series
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro lista_ejercicios(items) -%}
+  <ol class="routine-card__list">
+    {% for item in items %}
+    <li><span>{{ item.nombre }}</span><span class="routine-card__sets">{{ item.series_objetivo }} × {{ item.descanso_segundos }}s</span></li>
+    {% endfor %}
+  </ol>
+{%- endmacro %}
+
+{# Plan de la rutina: un desplegable por día cuando cada día tiene sus ejercicios. #}
+{% macro plan_por_dias(r) -%}
+  <div class="routine-days">
+    {% for d in r.dias %}
+    <details class="routine-day">
+      <summary>
+        <span class="routine-day__when">{{ NOMBRES_DIAS.get(d.codigo, d.codigo) }}</span>
+        <span class="routine-day__name">{{ d.nombre or 'Entrenamiento' }}</span>
+        <span class="routine-day__count">{{ d.ejercicios | length }} ej.</span>
+      </summary>
+      {{ lista_ejercicios(d.ejercicios) }}
+    </details>
+    {% endfor %}
+  </div>
+{%- endmacro %}
+
 {% block content %}
 <div id="rutinas-aviso" class="duo-alert" role="alert" hidden></div>
 <div class="duo-tabs-pill" role="tablist" aria-label="Secciones de Rutinas">
@@ -31,7 +66,6 @@
 <div id="panel-mis-rutinas" class="routine-panel" role="tabpanel" aria-labelledby="tab-btn-mis-rutinas"
      {% if abrir_catalogo %}hidden{% endif %}>
   {% for r in rutinas %}
-  {% set total_series = r.ejercicios | sum(attribute='series_objetivo') %}
   <article class="routine-card {% if r.es_favorita %}is-main{% endif %} {% if nueva_id == r.id %}is-new{% endif %}"
            id="rutina-{{ r.id }}" aria-labelledby="rutina-{{ r.id }}-nombre">
     <div class="routine-card__head">
@@ -40,19 +74,15 @@
       {% elif r.es_favorita %}<span class="status-badge status-badge--mejoro">Principal</span>{% endif %}
     </div>
     <p class="routine-card__meta">
-      {{ r.ejercicios | length }} ejercicios · {{ total_series }} series
-      {% if r.dias_semana %}<br><span class="routine-card__days">{{ dias_legibles(r.dias_semana) }}</span>{% endif %}
+      {{ resumen_rutina(r) }}
+      {% if r.dias_semana and not r.por_dias %}<br><span class="routine-card__days">{{ dias_legibles(r.dias_semana) }}</span>{% endif %}
     </p>
-    <ol class="routine-card__list">
-      {% for item in r.ejercicios %}
-      <li><span>{{ item.nombre }}</span><span class="routine-card__sets">{{ item.series_objetivo }} × {{ item.descanso_segundos }}s</span></li>
-      {% endfor %}
-    </ol>
+    {% if r.por_dias %}{{ plan_por_dias(r) }}{% else %}{{ lista_ejercicios(r.ejercicios) }}{% endif %}
     <div class="routine-card__actions">
       <a href="/?rutina_id={{ r.id }}" class="btn-duo btn-duo--green btn-duo--block">Entrenar</a>
       <div class="routine-card__secondary">
         <button type="button" class="btn-duo btn-duo--sm btn-duo--quiet" data-editar-rutina="{{ r.id }}"
-                data-rutina='{{ {"id": r.id, "nombre": r.nombre, "dias_semana": r.dias_semana, "ejercicios": r.ejercicios} | tojson }}'>Editar</button>
+                data-rutina='{{ {"id": r.id, "nombre": r.nombre, "dias_semana": r.dias_semana, "por_dias": r.por_dias, "nombres_dias": r.nombres_dias, "ejercicios": r.ejercicios} | tojson }}'>Editar</button>
         <button type="button" class="btn-duo btn-duo--sm btn-duo--quiet" data-fav-rutina="{{ r.id }}"
                 aria-pressed="{{ 'true' if r.es_favorita else 'false' }}">
           {% if r.es_favorita %}Quitar de principal{% else %}Hacer principal{% endif %}
@@ -97,18 +127,18 @@
       {% if rf.recomendada_para_ti %}<span class="famous-badge-ideal">IDEAL PARA TU PERFIL</span>{% endif %}
     </div>
     <p class="routine-card__meta">
-      {{ rf.ejercicios | length }} ejercicios · Nivel {{ (rf.nivel or '') | lower }}
-      <br><span class="routine-card__days">{{ dias_legibles(rf.dias_semana) }}</span>
+      {{ resumen_rutina(rf) }} · Nivel {{ (rf.nivel or '') | lower }}
     </p>
     {% if rf.descripcion %}<p class="routine-card__desc">{{ rf.descripcion }}</p>{% endif %}
+    {% if rf.por_dias %}
+    {{ plan_por_dias(rf) }}
+    {% else %}
+    <p class="routine-card__meta"><span class="routine-card__days">{{ dias_legibles(rf.dias_semana) }}</span></p>
     <details class="routine-card__details">
       <summary>Ver ejercicios</summary>
-      <ol class="routine-card__list">
-        {% for item in rf.ejercicios %}
-        <li><span>{{ item.nombre }}</span><span class="routine-card__sets">{{ item.series_objetivo }} × {{ item.descanso_segundos }}s</span></li>
-        {% endfor %}
-      </ol>
+      {{ lista_ejercicios(rf.ejercicios) }}
     </details>
+    {% endif %}
     <button type="button" class="btn-duo btn-duo--green btn-duo--block" data-clonar-famosa="{{ rf.id }}">
       Usar esta rutina
     </button>
@@ -147,14 +177,39 @@
     </div>
 
     <div class="sheet-block">
-      <span class="stepper-label">Ejercicios</span>
+      <div class="switch-row">
+        <span class="switch-row__text" id="label-dias-distintos">
+          <strong>Ejercicios distintos cada día</strong>
+          <span>Por ejemplo, empuje el lunes y pierna el miércoles.</span>
+        </span>
+        <button type="button" id="toggle-dias-distintos" class="duo-switch" role="switch"
+                aria-checked="false" aria-labelledby="label-dias-distintos">
+          <span class="duo-switch__track"><span class="duo-switch__thumb"></span></span>
+        </button>
+      </div>
+    </div>
+
+    <div id="bloque-dia-activo" class="sheet-block" hidden>
+      <span class="stepper-label" id="label-dia-activo">Día que estás editando</span>
+      <div id="tabs-dia-activo" class="segmented" role="group" aria-labelledby="label-dia-activo"></div>
+      <label for="rutina-dia-nombre" class="stepper-label">Nombre de ese día (opcional)</label>
+      <input id="rutina-dia-nombre" type="text" class="duo-input" maxlength="60"
+             placeholder="Ej. Empuje" autocomplete="off">
+    </div>
+
+    <div class="sheet-block">
+      <span id="label-ejercicios-borrador" class="stepper-label">Ejercicios</span>
       <ol id="lista-ejercicios-borrador" class="draft-list"></ol>
       <p id="borrador-vacio" class="empty-note">Añade al menos un ejercicio.</p>
       <div class="draft-add">
         <label for="rutina-ejercicio-select" class="visually-hidden">Ejercicio a añadir</label>
         <select id="rutina-ejercicio-select" class="duo-input">
-          {% for ej in ejercicios %}
-          <option value="{{ ej.id }}" data-nombre="{{ ej.nombre }}">{{ ej.nombre }}</option>
+          {% for grupo, del_grupo in ejercicios_por_grupo %}
+          <optgroup label="{{ grupo }}">
+            {% for ej in del_grupo %}
+            <option value="{{ ej.id }}" data-nombre="{{ ej.nombre }}">{{ ej.nombre }}</option>
+            {% endfor %}
+          </optgroup>
           {% endfor %}
         </select>
         <button type="button" id="btn-agregar-ej-rutina" class="btn-duo btn-duo--blue">Añadir</button>
@@ -292,8 +347,89 @@
 
     // ---------------------------------------------------------------- hoja «Nueva rutina» / «Editar rutina»
     const DIAS_POR_DEFECTO = ['LUN', 'MIE', 'VIE'];
+    const ORDEN_DIAS = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
+    const DIA_CORTO = { LUN: 'Lun', MAR: 'Mar', MIE: 'Mié', JUE: 'Jue', VIE: 'Vie', SAB: 'Sáb', DOM: 'Dom' };
+    const DIA_LARGO = {
+      LUN: 'lunes', MAR: 'martes', MIE: 'miércoles', JUE: 'jueves', VIE: 'viernes', SAB: 'sábado', DOM: 'domingo',
+    };
     let editandoId = null; // id de la rutina en edición; null al crear una nueva
     let formularioDe = null; // a qué corresponde lo que hay escrito en la hoja
+
+    // Plan por días: cada ejercicio del borrador lleva su día («dia»); en una rutina de lista
+    // única todos van con dia = null y se hacen todos los días elegidos.
+    let porDias = false;
+    let diaActivo = null;
+    let nombresDias = {};
+    const toggleDias = $('toggle-dias-distintos');
+    const bloqueDiaActivo = $('bloque-dia-activo');
+    const tabsDiaActivo = $('tabs-dia-activo');
+    const inputNombreDia = $('rutina-dia-nombre');
+
+    function diasElegidos() {
+      return Array.from(document.querySelectorAll('[data-dia-rutina].is-active')).map((c) =>
+        c.getAttribute('data-dia-rutina')
+      );
+    }
+
+    // Índices (en el borrador) de los ejercicios que se están viendo: los del día activo.
+    function indicesVisibles() {
+      return borrador.map((_, i) => i).filter((i) => !porDias || borrador[i].dia === diaActivo);
+    }
+
+    function renderizarDias() {
+      const dias = diasElegidos();
+      if (porDias && !dias.includes(diaActivo)) diaActivo = dias[0] || null;
+      toggleDias.classList.toggle('is-on', porDias);
+      toggleDias.setAttribute('aria-checked', porDias ? 'true' : 'false');
+      bloqueDiaActivo.hidden = !porDias;
+      tabsDiaActivo.innerHTML = dias
+        .map((d) => {
+          const total = borrador.filter((item) => item.dia === d).length;
+          return `<button type="button" class="segmented__item ${d === diaActivo ? 'is-active' : ''}"
+                    data-dia-activo="${d}" aria-pressed="${d === diaActivo ? 'true' : 'false'}"
+                    aria-label="${DIA_LARGO[d]}, ${total} ejercicios">${DIA_CORTO[d]}<small>${total}</small></button>`;
+        })
+        .join('');
+      inputNombreDia.value = (porDias && diaActivo && nombresDias[diaActivo]) || '';
+      $('label-ejercicios-borrador').textContent =
+        porDias && diaActivo ? `Ejercicios del ${DIA_LARGO[diaActivo]}` : 'Ejercicios';
+      renderizarBorrador();
+    }
+
+    function cambiarModoPorDias(activar) {
+      const dias = diasElegidos();
+      if (activar) {
+        if (!dias.length) {
+          errorEl.textContent = 'Elige primero los días que entrenas.';
+          errorEl.hidden = false;
+          return;
+        }
+        // La lista única se copia a cada día: a partir de ahí se cambia día a día.
+        const comunes = borrador.splice(0, borrador.length);
+        dias.forEach((d) => comunes.forEach((item) => borrador.push({ ...item, dia: d })));
+        diaActivo = dias[0];
+      } else {
+        // Vuelta a una sola lista: se conserva cada ejercicio una vez, en el orden en que aparece.
+        const vistos = new Set();
+        const unicos = borrador.filter((item) => !vistos.has(item.ejercicio_id) && vistos.add(item.ejercicio_id));
+        borrador.splice(0, borrador.length, ...unicos.map((item) => ({ ...item, dia: null })));
+        diaActivo = null;
+      }
+      porDias = activar;
+      errorEl.hidden = true;
+      renderizarDias();
+    }
+
+    toggleDias.addEventListener('click', () => cambiarModoPorDias(!porDias));
+    tabsDiaActivo.addEventListener('click', (e) => {
+      const tab = e.target.closest('[data-dia-activo]');
+      if (!tab) return;
+      diaActivo = tab.getAttribute('data-dia-activo');
+      renderizarDias();
+    });
+    inputNombreDia.addEventListener('input', () => {
+      if (diaActivo) nombresDias[diaActivo] = inputNombreDia.value;
+    });
 
     function marcarDias(codigos) {
       document.querySelectorAll('[data-dia-rutina]').forEach((chip) => {
@@ -314,16 +450,24 @@
           ? String(rutina.dias_semana || '').split(',').map((d) => d.trim().toUpperCase()).filter(Boolean)
           : DIAS_POR_DEFECTO
       );
+      porDias = Boolean(rutina && rutina.por_dias);
+      nombresDias = { ...((rutina && rutina.nombres_dias) || {}) };
+      const dias = diasElegidos();
+      diaActivo = porDias ? dias[0] || null : null;
       borrador.length = 0;
       ((rutina && rutina.ejercicios) || []).forEach((item) => {
-        borrador.push({
+        const base = {
           ejercicio_id: Number(item.ejercicio_id),
           nombre: item.nombre,
           series_objetivo: Number(item.series_objetivo) || 3,
           descanso_segundos: Number(item.descanso_segundos) || 90,
-        });
+        };
+        if (!porDias) borrador.push({ ...base, dia: null });
+        else if (item.dia_semana) borrador.push({ ...base, dia: item.dia_semana });
+        // Un ejercicio «de todos los días» dentro de un plan por días se reparte en cada día.
+        else dias.forEach((d) => borrador.push({ ...base, dia: d }));
       });
-      renderizarBorrador();
+      renderizarDias();
     }
 
     function abrirSheet(rutina) {
@@ -363,21 +507,26 @@
         const activo = !chip.classList.contains('is-active');
         chip.classList.toggle('is-active', activo);
         chip.setAttribute('aria-pressed', activo ? 'true' : 'false');
+        renderizarDias();
       });
     });
 
     function renderizarBorrador() {
-      borradorVacioEl.hidden = borrador.length > 0;
-      listaBorradorEl.innerHTML = borrador
-        .map(
-          (item, i) => `
+      const visibles = indicesVisibles();
+      borradorVacioEl.hidden = visibles.length > 0;
+      borradorVacioEl.textContent =
+        porDias && diaActivo ? `Añade los ejercicios del ${DIA_LARGO[diaActivo]}.` : 'Añade al menos un ejercicio.';
+      listaBorradorEl.innerHTML = visibles
+        .map((i, pos) => {
+          const item = borrador[i];
+          return `
           <li class="draft-row">
             <div class="draft-row__head">
-              <span class="draft-row__name">${i + 1}. ${escapeHtml(item.nombre)}</span>
+              <span class="draft-row__name">${pos + 1}. ${escapeHtml(item.nombre)}</span>
               <div class="draft-row__order">
-                <button type="button" class="icon-btn" data-accion="subir" data-i="${i}" ${i === 0 ? 'disabled' : ''}
+                <button type="button" class="icon-btn" data-accion="subir" data-i="${i}" ${pos === 0 ? 'disabled' : ''}
                   aria-label="Subir ${escapeHtml(item.nombre)}">↑</button>
-                <button type="button" class="icon-btn" data-accion="bajar" data-i="${i}" ${i === borrador.length - 1 ? 'disabled' : ''}
+                <button type="button" class="icon-btn" data-accion="bajar" data-i="${i}" ${pos === visibles.length - 1 ? 'disabled' : ''}
                   aria-label="Bajar ${escapeHtml(item.nombre)}">↓</button>
                 <button type="button" class="icon-btn icon-btn--danger" data-accion="quitar" data-i="${i}"
                   aria-label="Quitar ${escapeHtml(item.nombre)}">✕</button>
@@ -396,8 +545,8 @@
                 ).join('')}
               </select>
             </div>
-          </li>`
-        )
+          </li>`;
+        })
         .join('');
     }
 
@@ -406,12 +555,16 @@
       if (!btn) return;
       const i = Number(btn.getAttribute('data-i'));
       const accion = btn.getAttribute('data-accion');
+      // Subir y bajar intercambian con el vecino visible (el del mismo día).
+      const visibles = indicesVisibles();
+      const pos = visibles.indexOf(i);
+      const intercambiar = (j) => ([borrador[i], borrador[j]] = [borrador[j], borrador[i]]);
       if (accion === 'quitar') borrador.splice(i, 1);
-      else if (accion === 'subir' && i > 0) [borrador[i - 1], borrador[i]] = [borrador[i], borrador[i - 1]];
-      else if (accion === 'bajar' && i < borrador.length - 1) [borrador[i + 1], borrador[i]] = [borrador[i], borrador[i + 1]];
+      else if (accion === 'subir' && pos > 0) intercambiar(visibles[pos - 1]);
+      else if (accion === 'bajar' && pos >= 0 && pos < visibles.length - 1) intercambiar(visibles[pos + 1]);
       else if (accion === 'menos') borrador[i].series_objetivo = Math.max(1, borrador[i].series_objetivo - 1);
       else if (accion === 'mas') borrador[i].series_objetivo = Math.min(10, borrador[i].series_objetivo + 1);
-      renderizarBorrador();
+      renderizarDias();
     });
     listaBorradorEl.addEventListener('change', (e) => {
       const sel = e.target.closest('select[data-accion="descanso"]');
@@ -421,8 +574,16 @@
     $('btn-agregar-ej-rutina').addEventListener('click', () => {
       if (!selectEj.value) return;
       const opt = selectEj.options[selectEj.selectedIndex];
-      if (borrador.some((item) => item.ejercicio_id === Number(selectEj.value))) {
-        errorEl.textContent = 'Ese ejercicio ya está en la rutina. Súbele las series si quieres hacer más.';
+      if (porDias && !diaActivo) {
+        errorEl.textContent = 'Elige primero los días que entrenas.';
+        errorEl.hidden = false;
+        return;
+      }
+      const diaDestino = porDias ? diaActivo : null;
+      if (borrador.some((item) => item.dia === diaDestino && item.ejercicio_id === Number(selectEj.value))) {
+        errorEl.textContent = porDias
+          ? 'Ese ejercicio ya está en este día. Súbele las series si quieres hacer más.'
+          : 'Ese ejercicio ya está en la rutina. Súbele las series si quieres hacer más.';
         errorEl.hidden = false;
         return;
       }
@@ -432,29 +593,39 @@
         nombre: opt.getAttribute('data-nombre') || opt.textContent.trim(),
         series_objetivo: 3,
         descanso_segundos: 90,
+        dia: diaDestino,
       });
-      renderizarBorrador();
+      renderizarDias();
     });
 
     $('btn-guardar-rutina').addEventListener('click', async () => {
       errorEl.hidden = true;
       const nombre = $('rutina-nombre').value.trim();
-      const dias = Array.from(document.querySelectorAll('[data-dia-rutina].is-active')).map((c) =>
-        c.getAttribute('data-dia-rutina')
-      );
+      const dias = diasElegidos();
+      // En un plan por días solo se guardan los ejercicios de los días elegidos, día a día.
+      const aGuardar = porDias
+        ? ORDEN_DIAS.filter((d) => dias.includes(d)).flatMap((d) => borrador.filter((item) => item.dia === d))
+        : borrador;
+      const diaVacio = porDias ? dias.find((d) => !borrador.some((item) => item.dia === d)) : null;
       let error = '';
       if (!nombre) error = 'Ponle un nombre a la rutina.';
       else if (!dias.length) error = 'Elige al menos un día.';
-      else if (!borrador.length) error = 'Añade al menos un ejercicio.';
+      else if (diaVacio) error = `El ${DIA_LARGO[diaVacio]} no tiene ejercicios: añádele alguno o quítalo de los días.`;
+      else if (!aGuardar.length) error = 'Añade al menos un ejercicio.';
       if (error) {
         errorEl.textContent = error;
         errorEl.hidden = false;
+        if (diaVacio) {
+          diaActivo = diaVacio;
+          renderizarDias();
+        }
         return;
       }
       const cuerpo = {
         nombre,
         dias_semana: dias.join(','),
-        ejercicios: borrador.map((item, i) => ({ ...item, orden: i + 1 })),
+        nombres_dias: porDias ? Object.fromEntries(dias.map((d) => [d, nombresDias[d] || ''])) : {},
+        ejercicios: aGuardar.map(({ dia, ...item }, i) => ({ ...item, dia_semana: dia, orden: i + 1 })),
       };
       // Una rutina nueva nace como principal; al editar no se toca ese ajuste.
       if (!editandoId) cuerpo.es_favorita = true;
@@ -490,7 +661,7 @@
       }
     });
 
-    renderizarBorrador();
+    renderizarDias();
   })();
 </script>
 {% endblock %}
