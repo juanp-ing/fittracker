@@ -11,6 +11,13 @@ from app.repositories.ejercicio_repository import EjercicioRepository
 from app.repositories.pr_repository import PRRepository
 from app.repositories.rutina_repository import RutinaRepository
 from app.repositories.sesion_repository import SesionRepository
+from app.services.plan_semanal import (
+    DIAS_SEMANA,
+    ejercicios_del_dia,
+    nombres_de_dias,
+    resolver_dia_plan,
+    tiene_plan_por_dias,
+)
 from app.services.pr_service import PRService
 from app.services.zona_horaria import (
     fecha_local,
@@ -235,9 +242,13 @@ class SesionService:
                 conteo_por_ejercicio.get(s.ejercicio_id, 0) + 1
             )
 
+        # Plan del día consultado. En un día de descanso se adelanta el del siguiente día de
+        # entrenamiento, que es lo que se ofrece en «Entrenar de todos modos».
+        codigo_plan = None
         ejercicios_agenda: list[dict] = []
         if rutina_activa is not None:
-            for item in sorted(rutina_activa.ejercicios, key=lambda x: x.orden):
+            codigo_plan = resolver_dia_plan(rutina_activa, codigo_dia_seleccionado)
+            for item in ejercicios_del_dia(rutina_activa, codigo_plan):
                 completadas_hoy = conteo_por_ejercicio.get(item.ejercicio_id, 0)
                 objetivo = int(item.series_objetivo or 3)
                 ultima_serie = self.sesion_repo.obtener_ultima_serie_ejercicio(
@@ -271,6 +282,9 @@ class SesionService:
                     "id": rutina_activa.id,
                     "nombre": rutina_activa.nombre,
                     "dias_semana": rutina_activa.dias_semana or "LUN,MIE,VIE",
+                    "por_dias": tiene_plan_por_dias(rutina_activa),
+                    "dia_codigo": codigo_plan,
+                    "dia_nombre": nombres_de_dias(rutina_activa).get(codigo_plan),
                 }
                 if rutina_activa is not None
                 else None
@@ -328,16 +342,34 @@ class SesionService:
             return sesion.rutina
         return self._resolver_rutina_para_usuario(usuario_id=usuario_id)
 
+    @staticmethod
+    def _plan_de_hoy(rutina_ref: Optional[Rutina], zona_horaria: Optional[str]) -> list:
+        """Ejercicios de la rutina que tocan hoy (o los del siguiente día si hoy es de descanso)."""
+        if rutina_ref is None:
+            return []
+        zona = resolver_zona_horaria(zona_horaria)
+        hoy_local = datetime.now(timezone.utc).astimezone(zona).date()
+        codigo_hoy = DIAS_SEMANA[hoy_local.weekday()]
+        return ejercicios_del_dia(rutina_ref, resolver_dia_plan(rutina_ref, codigo_hoy))
+
+    @staticmethod
+    def _buscar_en_plan(rutina_ref: Optional[Rutina], plan_hoy: list, ejercicio_id: int):
+        """Configuración del ejercicio: la del plan de hoy y, si no está, la de cualquier otro día."""
+        otros_dias = rutina_ref.ejercicios if rutina_ref is not None else []
+        for item in list(plan_hoy) + list(otros_dias):
+            if item.ejercicio_id == ejercicio_id:
+                return item
+        return None
+
     def _obtener_descanso_configurado(
         self,
         rutina_ref: Optional[Rutina],
         ejercicio_id: int,
+        zona_horaria: Optional[str] = None,
     ) -> int:
-        if rutina_ref is not None:
-            for item in rutina_ref.ejercicios:
-                if item.ejercicio_id == ejercicio_id:
-                    return int(item.descanso_segundos)
-        return 90
+        plan_hoy = self._plan_de_hoy(rutina_ref, zona_horaria)
+        item = self._buscar_en_plan(rutina_ref, plan_hoy, ejercicio_id)
+        return int(item.descanso_segundos) if item is not None else 90
 
     def _calcular_progreso_ejercicio_en_rutina(
         self,
@@ -352,14 +384,15 @@ class SesionService:
             1 for s in sesion.series if s.ejercicio_id == ejercicio_id
         )
 
+        # Solo cuenta el plan de hoy: en una rutina por días, el siguiente ejercicio no puede
+        # salir del entrenamiento de otro día.
+        plan_hoy = self._plan_de_hoy(rutina_ref, zona_horaria)
         series_objetivo = 3
         orden_actual = 0
-        if rutina_ref is not None:
-            for item in rutina_ref.ejercicios:
-                if item.ejercicio_id == ejercicio_id:
-                    series_objetivo = int(item.series_objetivo or 3)
-                    orden_actual = int(item.orden or 0)
-                    break
+        item_actual = self._buscar_en_plan(rutina_ref, plan_hoy, ejercicio_id)
+        if item_actual is not None:
+            series_objetivo = int(item_actual.series_objetivo or 3)
+            orden_actual = int(item_actual.orden or 0)
 
         ejercicio_completado_ahora = bool(series_sesion_ej == series_objetivo)
 
@@ -385,7 +418,7 @@ class SesionService:
                     sum(1 for x in sesion.series if x.ejercicio_id == s.ejercicio_id),
                 )
 
-            items_ordenados = sorted(rutina_ref.ejercicios, key=lambda x: x.orden)
+            items_ordenados = plan_hoy
             posteriores = [x for x in items_ordenados if x.orden > orden_actual]
             anteriores = [x for x in items_ordenados if x.orden < orden_actual]
 
@@ -482,7 +515,9 @@ class SesionService:
         self.sesion_repo.confirmar_transaccion()
 
         rutina_ref = self._obtener_rutina_contexto_sesion(usuario_id, sesion)
-        descanso_segundos = self._obtener_descanso_configurado(rutina_ref, ejercicio_id)
+        descanso_segundos = self._obtener_descanso_configurado(
+            rutina_ref, ejercicio_id, zona_horaria
+        )
         progreso_rutina = self._calcular_progreso_ejercicio_en_rutina(
             usuario_id=usuario_id,
             sesion=sesion,

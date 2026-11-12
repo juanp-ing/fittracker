@@ -1,4 +1,4 @@
-"""Pruebas de integración para el catálogo de 40 ejercicios comerciales y el motor de 12 Rutinas Famosas."""
+"""Pruebas de integración para el catálogo de ejercicios comerciales y el motor de 12 Rutinas Famosas."""
 
 from app import create_app, db
 from app.seeds.initial_data import seed_database

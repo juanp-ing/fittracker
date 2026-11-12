@@ -9,6 +9,16 @@ from app.services.rutina_service import RutinaNoEncontradaError, RutinaService
 rutina_bp = Blueprint("rutina", __name__)
 
 
+def _agrupar_por_musculo(ejercicios: list[dict]) -> list[tuple[str, list[dict]]]:
+    """Agrupa los ejercicios por su primer músculo principal para el selector del editor."""
+    grupos: dict[str, list[dict]] = {}
+    for ej in ejercicios:
+        primarios = ej.get("grupos_primarios") or []
+        nombre_grupo = primarios[0]["nombre"] if primarios else "Otros"
+        grupos.setdefault(nombre_grupo, []).append(ej)
+    return sorted(grupos.items())
+
+
 @rutina_bp.route("/rutinas", methods=["GET"])
 @login_required
 def vista_rutinas():
@@ -24,6 +34,7 @@ def vista_rutinas():
         rutinas=rutinas,
         rutinas_famosas=rutinas_famosas,
         ejercicios=ejercicios,
+        ejercicios_por_grupo=_agrupar_por_musculo(ejercicios),
         # Rutina recién creada o clonada a resaltar (redirección tras guardar)
         nueva_id=request.args.get("nueva", type=int),
     )
@@ -94,6 +105,7 @@ def crear_rutina():
             es_favorita=es_favorita,
             dias_semana=dias_semana,
             descripcion=descripcion,
+            nombres_dias=payload.get("nombres_dias"),
         )
     except ValueError as exc:
         return jsonify({"error": str(exc), "code": "DATOS_INVALIDOS"}), 400
@@ -133,6 +145,7 @@ def actualizar_rutina(rutina_id: int):
             nombre=nombre,
             ejercicios_items=ejercicios_items,
             dias_semana=payload.get("dias_semana"),
+            nombres_dias=payload.get("nombres_dias"),
         )
     except RutinaNoEncontradaError as exc:
         return jsonify({"error": str(exc), "code": "NO_ENCONTRADO"}), 404

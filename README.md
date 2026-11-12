@@ -54,7 +54,7 @@ fittracker/
 │   │   ├── state/         # SesionState (Transiciones de ciclo de vida: Activa vs. Finalizada)
 │   │   └── facade/        # ResumenFacade (Orquestador unificado de analítica y mapa muscular)
 │   ├── controllers/       # Blueprints Flask (Rutas HTML Jinja2 + Endpoints API JSON /api/...)
-│   ├── seeds/             # Catálogo de 40 ejercicios comerciales y 12 Rutinas Famosas
+│   ├── seeds/             # Catálogo de 104 ejercicios y 12 Rutinas Famosas con plan por día
 │   ├── templates/         # Vistas mobile-first con shell móvil de 430px (.mobile-shell)
 │   └── static/            # CSS nativo, módulos JavaScript Vanilla (ES6+) e ilustraciones SVG
 ├── tests/                 # Suite de 54 pruebas automatizadas (unit/, integration/, functional/)
@@ -95,9 +95,10 @@ fittracker/
 - Checklist táctil diario para tachar ejercicios con animación POP, tachado visual y vibración háptica.
 - Modal de felicitación al completar todas las series con recordatorio inteligente de hidratación.
 
-### 🌟 Catálogo de 40 Ejercicios y 12 Rutinas Famosas
-- Catálogo de 40 ejercicios predeterminados en español cubriendo todas las máquinas de un gimnasio comercial.
-- Motor de 12 rutinas legendarias (*Push Pull Legs*, *Torso-Pierna*, *Arnold Split*, *PHAT*, *Starting Strength 5x5*, *German Volume Training*, etc.) recomendadas automáticamente según somatotipo y meta, clonables a la cuenta del usuario en un solo toque.
+### 🌟 Catálogo de 104 Ejercicios y 12 Rutinas Famosas
+- Catálogo de 104 ejercicios predeterminados en español (pesos libres, poleas y máquinas de un gimnasio comercial).
+- 12 rutinas famosas (*Push Pull Legs*, *Torso-Pierna*, *PHUL*, *Arnold Split*, *StrongLifts 5x5*, etc.), cada una con su plan real por día: ejercicios distintos cada día y un nombre para cada entrenamiento («Empuje A», «Pierna B»…). Se recomiendan según complexión y meta y se añaden a la cuenta en un toque.
+- Las rutinas propias también pueden tener ejercicios distintos cada día (interruptor «Ejercicios distintos cada día» del editor); «Hoy» muestra solo los que tocan ese día.
 
 ---
 

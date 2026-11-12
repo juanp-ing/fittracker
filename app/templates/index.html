@@ -53,13 +53,13 @@
         </span>
       </div>
       <h1 id="hero-titulo" class="today-hero__title">
-        {% if es_descanso %}Día de descanso{% else %}{{ rutina_hoy.nombre if rutina_hoy else 'Entrenamiento libre' }}{% endif %}
+        {% if es_descanso %}Día de descanso{% else %}{{ (rutina_hoy.dia_nombre or rutina_hoy.nombre) if rutina_hoy else 'Entrenamiento libre' }}{% endif %}
       </h1>
       <p id="hero-meta" class="today-hero__meta">
         {% if es_descanso %}
-          No toca «{{ rutina_hoy.nombre }}».{% if agenda_hoy.total_ejercicios %} Si quieres entrenar igual: {{ resumen_plan }}{% endif %}
+          No toca «{{ rutina_hoy.nombre }}».{% if agenda_hoy.total_ejercicios %} Si quieres entrenar igual{% if rutina_hoy.dia_nombre %}, adelanta «{{ rutina_hoy.dia_nombre }}»{% endif %}: {{ resumen_plan }}{% endif %}
         {% elif agenda_hoy and agenda_hoy.total_ejercicios %}
-          {{ resumen_plan }}
+          {% if rutina_hoy and rutina_hoy.dia_nombre %}{{ rutina_hoy.nombre }} · {% endif %}{{ resumen_plan }}
         {% else %}
           Elige ejercicios sobre la marcha o activa una rutina en la pestaña Rutinas.
         {% endif %}
@@ -163,7 +163,7 @@
       </p>
 
       <div class="plan-section__list-head">
-        <h2 id="plan-dia-titulo" class="plan-section__title">{% if es_descanso %}Si entrenas: {{ rutina_hoy.nombre }}{% else %}Plan del día{% endif %}</h2>
+        <h2 id="plan-dia-titulo" class="plan-section__title">{% if es_descanso %}Si entrenas: {{ rutina_hoy.dia_nombre or rutina_hoy.nombre }}{% else %}Plan del día{% endif %}</h2>
         <div class="completed-toggle-wrap">
           <span class="completed-toggle-label" id="label-mostrar-completados">Mostrar completados</span>
           <button

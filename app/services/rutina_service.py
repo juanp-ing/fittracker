@@ -9,13 +9,21 @@ from app.patterns.strategy.rutina_recomendacion_strategy import (
 from app.repositories.ejercicio_repository import EjercicioRepository
 from app.repositories.rutina_repository import RutinaRepository
 from app.repositories.usuario_repository import UsuarioRepository
+from app.services.plan_semanal import (
+    DIAS_SEMANA,
+    codigos_dias,
+    ejercicios_del_dia,
+    nombres_de_dias,
+    tiene_plan_por_dias,
+)
 
 
 class RutinaNoEncontradaError(LookupError):
     """Excepción lanzada cuando una rutina no existe o no pertenece al usuario."""
 
 
-DIAS_SEMANA_VALIDOS = ("LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM")
+DIAS_SEMANA_VALIDOS = DIAS_SEMANA
+LONGITUD_MAXIMA_NOMBRE_DIA = 60
 
 
 class RutinaService:
@@ -45,6 +53,42 @@ class RutinaService:
             raise ValueError("Elige al menos un día para la rutina.")
         if not codigos <= set(DIAS_SEMANA_VALIDOS):
             raise ValueError("Días no válidos: usa LUN, MAR, MIE, JUE, VIE, SAB o DOM.")
+        return ",".join(d for d in DIAS_SEMANA_VALIDOS if d in codigos)
+
+    @staticmethod
+    def _normalizar_dia_ejercicio(dia_semana) -> Optional[str]:
+        """Día de un ejercicio: None (todos los días) o un código LUN…DOM; si no, ValueError."""
+        if dia_semana is None or dia_semana == "":
+            return None
+        codigo = dia_semana.strip().upper() if isinstance(dia_semana, str) else None
+        if codigo not in DIAS_SEMANA_VALIDOS:
+            raise ValueError("El día de cada ejercicio debe ser LUN, MAR, MIE, JUE, VIE, SAB o DOM.")
+        return codigo
+
+    @staticmethod
+    def _normalizar_nombres_dias(nombres_dias) -> dict[str, str]:
+        """Nombres de los días («LUN» → «Empuje») limpios; los vacíos se descartan."""
+        if nombres_dias is None:
+            return {}
+        if not isinstance(nombres_dias, dict):
+            raise ValueError("Los nombres de los días deben ir como {\"LUN\": \"Empuje\"}.")
+        limpios: dict[str, str] = {}
+        for codigo, nombre in nombres_dias.items():
+            clave = str(codigo).strip().upper()
+            if clave not in DIAS_SEMANA_VALIDOS:
+                raise ValueError("Días no válidos: usa LUN, MAR, MIE, JUE, VIE, SAB o DOM.")
+            texto = " ".join(str(nombre or "").split())
+            if len(texto) > LONGITUD_MAXIMA_NOMBRE_DIA:
+                raise ValueError(
+                    f"El nombre de un día no puede superar los {LONGITUD_MAXIMA_NOMBRE_DIA} caracteres."
+                )
+            if texto:
+                limpios[clave] = texto
+        return limpios
+
+    def _dias_con_los_de_los_ejercicios(self, dias_semana: str, items: list[dict]) -> str:
+        """Días de la rutina más los que tengan ejercicios propios (un día con plan siempre toca)."""
+        codigos = set(codigos_dias(dias_semana)) | {i["dia_semana"] for i in items if i["dia_semana"]}
         return ",".join(d for d in DIAS_SEMANA_VALIDOS if d in codigos)
 
     def _validar_items_ejercicios(
@@ -88,6 +132,7 @@ class RutinaService:
                 {
                     "ejercicio_id": ejercicio_id,
                     "orden": orden,
+                    "dia_semana": self._normalizar_dia_ejercicio(item.get("dia_semana")),
                     "descanso_segundos": descanso_segundos,
                     "series_objetivo": series_objetivo,
                 }
@@ -96,16 +141,31 @@ class RutinaService:
 
     @staticmethod
     def _serializar_rutina(rutina: Rutina) -> dict:
-        ejercicios_serializados = []
-        for re_item in sorted(rutina.ejercicios, key=lambda x: x.orden):
-            ejercicios_serializados.append(
+        def serializar_item(re_item) -> dict:
+            return {
+                "id": re_item.id,
+                "ejercicio_id": re_item.ejercicio_id,
+                "nombre": re_item.ejercicio.nombre if re_item.ejercicio else "",
+                "orden": re_item.orden,
+                "dia_semana": re_item.dia_semana,
+                "descanso_segundos": re_item.descanso_segundos,
+                "series_objetivo": re_item.series_objetivo,
+            }
+
+        ejercicios_serializados = [
+            serializar_item(i) for i in sorted(rutina.ejercicios, key=lambda x: x.orden)
+        ]
+        nombres = nombres_de_dias(rutina)
+        # Plan de cada día de entrenamiento: sus ejercicios más los comunes a todos los días.
+        dias = []
+        for codigo in codigos_dias(rutina.dias_semana):
+            del_dia = [serializar_item(i) for i in ejercicios_del_dia(rutina, codigo)]
+            dias.append(
                 {
-                    "id": re_item.id,
-                    "ejercicio_id": re_item.ejercicio_id,
-                    "nombre": re_item.ejercicio.nombre if re_item.ejercicio else "",
-                    "orden": re_item.orden,
-                    "descanso_segundos": re_item.descanso_segundos,
-                    "series_objetivo": re_item.series_objetivo,
+                    "codigo": codigo,
+                    "nombre": nombres.get(codigo),
+                    "ejercicios": del_dia,
+                    "total_series": sum(i["series_objetivo"] for i in del_dia),
                 }
             )
         return {
@@ -119,6 +179,9 @@ class RutinaService:
             "somatotipo_ideal": rutina.somatotipo_ideal,
             "nivel": rutina.nivel or "INTERMEDIO",
             "dias_semana": rutina.dias_semana or "LUN,MIE,VIE",
+            "por_dias": tiene_plan_por_dias(rutina),
+            "nombres_dias": nombres,
+            "dias": dias,
             "ejercicios": ejercicios_serializados,
         }
 
@@ -130,19 +193,25 @@ class RutinaService:
         es_favorita: bool = False,
         dias_semana: Optional[str] = "LUN,MIE,VIE",
         descripcion: Optional[str] = None,
+        nombres_dias: Optional[dict] = None,
     ) -> dict:
-        """Valida y crea una nueva rutina personalizada para el usuario."""
+        """Valida y crea una nueva rutina personalizada (de lista única o con plan por días)."""
         if not isinstance(nombre, str) or not nombre.strip():
             raise ValueError("El nombre de la rutina es obligatorio.")
 
         items_validados = self._validar_items_ejercicios(usuario_id, ejercicios_items)
+        dias_finales = self._dias_con_los_de_los_ejercicios(
+            dias_semana or "LUN,MIE,VIE", items_validados
+        )
+        nombres = self._normalizar_nombres_dias(nombres_dias)
         rutina = self.rutina_repo.crear(
             usuario_id=usuario_id,
             nombre=nombre.strip(),
             es_favorita=bool(es_favorita),
             ejercicios_items=items_validados,
-            dias_semana=dias_semana or "LUN,MIE,VIE",
+            dias_semana=dias_finales,
             descripcion=descripcion,
+            nombres_dias={c: n for c, n in nombres.items() if c in dias_finales.split(",")},
         )
         return self._serializar_rutina(rutina)
 
@@ -215,8 +284,9 @@ class RutinaService:
         nombre: Optional[str] = None,
         ejercicios_items: Optional[list[dict]] = None,
         dias_semana: Optional[str] = None,
+        nombres_dias: Optional[dict] = None,
     ) -> dict:
-        """Actualiza el nombre, los días y/o los ejercicios de una rutina del usuario."""
+        """Actualiza el nombre, los días (y sus nombres) y/o los ejercicios de una rutina."""
         rutina = self.rutina_repo.obtener_por_id_y_usuario(
             rutina_id=rutina_id,
             usuario_id=usuario_id,
@@ -234,12 +304,27 @@ class RutinaService:
         dias_validados = None
         if dias_semana is not None:
             dias_validados = self._normalizar_dias_semana(dias_semana)
+        if items_validados is not None:
+            # Un día con ejercicios propios siempre es día de entrenamiento.
+            dias_validados = self._dias_con_los_de_los_ejercicios(
+                dias_validados or rutina.dias_semana or "LUN,MIE,VIE", items_validados
+            )
+
+        nombres_validados = None
+        if nombres_dias is not None:
+            dias_vigentes = codigos_dias(dias_validados or rutina.dias_semana)
+            nombres_validados = {
+                c: n
+                for c, n in self._normalizar_nombres_dias(nombres_dias).items()
+                if c in dias_vigentes
+            }
 
         actualizada = self.rutina_repo.actualizar(
             rutina=rutina,
             nombre=nombre.strip() if nombre is not None else None,
             ejercicios_items=items_validados,
             dias_semana=dias_validados,
+            nombres_dias=nombres_validados,
         )
         return self._serializar_rutina(actualizada)
 

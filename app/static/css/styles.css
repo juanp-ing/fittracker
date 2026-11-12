@@ -3358,3 +3358,97 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 
 /* Un correo largo no debe salirse de la tarjeta de verificación. */
 .otp-email { overflow-wrap: anywhere; }
+
+/* ---------- Rutinas con plan por días ---------- */
+.routine-days {
+  display: flex;
+  flex-direction: column;
+}
+
+.routine-day {
+  border-bottom: 2px solid var(--color-border-light);
+}
+.routine-day:last-child { border-bottom: none; }
+
+.routine-day summary {
+  min-height: var(--touch-target-min);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  list-style: none;
+}
+.routine-day summary::-webkit-details-marker { display: none; }
+.routine-day summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-right: 3px solid var(--color-faded-gray);
+  border-bottom: 3px solid var(--color-faded-gray);
+  transform: rotate(45deg);
+  transition: transform 120ms var(--ease-out);
+}
+.routine-day[open] summary::after { transform: rotate(-135deg); }
+
+.routine-day__when {
+  width: 2.4rem;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--text-sm);
+  color: var(--color-eager-green-shade);
+}
+
+.routine-day__name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-base);
+  color: var(--color-night-ink);
+}
+
+.routine-day__count {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-charcoal);
+  font-variant-numeric: tabular-nums;
+}
+
+.routine-day .routine-card__list { padding: 0 0 0.5rem 3rem; }
+
+/* Fila con interruptor (editor de rutinas). */
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.switch-row__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.switch-row__text strong {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-base);
+  color: var(--color-night-ink);
+}
+.switch-row__text span {
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-charcoal);
+}
+
+/* Pestañas de día del editor: el número indica cuántos ejercicios tiene ese día. */
+.segmented__item small {
+  display: block;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  color: var(--color-charcoal);
+}

@@ -3,11 +3,34 @@
 from typing import Optional
 
 from app import db
-from app.models.rutina import Rutina, RutinaEjercicio
+from app.models.rutina import Rutina, RutinaDia, RutinaEjercicio
 
 
 class RutinaRepository:
     """Gestiona las rutinas de entrenamiento garantizando el aislamiento por usuario."""
+
+    @staticmethod
+    def _agregar_ejercicios(rutina: Rutina, ejercicios_items: list[dict]) -> None:
+        """Añade a la sesión los ejercicios de la rutina (con su día, si lo tienen)."""
+        for idx, item in enumerate(ejercicios_items, start=1):
+            db.session.add(
+                RutinaEjercicio(
+                    rutina_id=rutina.id,
+                    ejercicio_id=item["ejercicio_id"],
+                    orden=item.get("orden", idx),
+                    dia_semana=item.get("dia_semana"),
+                    descanso_segundos=item.get("descanso_segundos", 90),
+                    series_objetivo=item.get("series_objetivo", 3),
+                )
+            )
+
+    @staticmethod
+    def _reemplazar_nombres_dias(rutina: Rutina, nombres_dias: dict[str, str]) -> None:
+        """Sustituye los nombres de los días («LUN» → «Empuje») por los indicados."""
+        rutina.dias.clear()
+        db.session.flush()
+        for codigo, nombre in nombres_dias.items():
+            db.session.add(RutinaDia(rutina_id=rutina.id, dia_semana=codigo, nombre=nombre))
 
     def crear(
         self,
@@ -21,6 +44,7 @@ class RutinaRepository:
         somatotipo_ideal: Optional[str] = None,
         nivel: Optional[str] = "INTERMEDIO",
         dias_semana: Optional[str] = "LUN,MIE,VIE",
+        nombres_dias: Optional[dict[str, str]] = None,
     ) -> Rutina:
         """Crea una rutina junto con su lista ordenada de ejercicios configurados."""
         rutina = Rutina(
@@ -37,15 +61,9 @@ class RutinaRepository:
         db.session.add(rutina)
         db.session.flush()
 
-        for idx, item in enumerate(ejercicios_items, start=1):
-            rutina_ejercicio = RutinaEjercicio(
-                rutina_id=rutina.id,
-                ejercicio_id=item["ejercicio_id"],
-                orden=item.get("orden", idx),
-                descanso_segundos=item.get("descanso_segundos", 90),
-                series_objetivo=item.get("series_objetivo", 3),
-            )
-            db.session.add(rutina_ejercicio)
+        self._agregar_ejercicios(rutina, ejercicios_items)
+        if nombres_dias:
+            self._reemplazar_nombres_dias(rutina, nombres_dias)
 
         db.session.commit()
         return rutina
@@ -90,11 +108,12 @@ class RutinaRepository:
         usuario_id: int,
         es_favorita: bool = True,
     ) -> Rutina:
-        """Clona una plantilla de rutina famosa en la cuenta personal del usuario."""
+        """Clona una plantilla de rutina famosa (con el plan de cada día) en la cuenta del usuario."""
         ejercicios_items = [
             {
                 "ejercicio_id": item.ejercicio_id,
                 "orden": item.orden,
+                "dia_semana": item.dia_semana,
                 "descanso_segundos": item.descanso_segundos,
                 "series_objetivo": item.series_objetivo,
             }
@@ -111,6 +130,7 @@ class RutinaRepository:
             somatotipo_ideal=plantilla.somatotipo_ideal,
             nivel=plantilla.nivel,
             dias_semana=plantilla.dias_semana,
+            nombres_dias={d.dia_semana: d.nombre for d in plantilla.dias},
         )
 
     def obtener_por_id_y_usuario(
@@ -135,10 +155,23 @@ class RutinaRepository:
         nombre: Optional[str] = None,
         ejercicios_items: Optional[list[dict]] = None,
         dias_semana: Optional[str] = None,
+        nombres_dias: Optional[dict[str, str]] = None,
+        descripcion: Optional[str] = None,
+        meta_objetivo: Optional[str] = None,
+        somatotipo_ideal: Optional[str] = None,
+        nivel: Optional[str] = None,
     ) -> Rutina:
-        """Actualiza el nombre, los días y/o la configuración de ejercicios de una rutina."""
+        """Actualiza el nombre, los días, sus nombres, la ficha y/o los ejercicios de una rutina."""
         if nombre is not None:
             rutina.nombre = nombre.strip()
+        if descripcion is not None:
+            rutina.descripcion = descripcion
+        if meta_objetivo is not None:
+            rutina.meta_objetivo = meta_objetivo
+        if somatotipo_ideal is not None:
+            rutina.somatotipo_ideal = somatotipo_ideal
+        if nivel is not None:
+            rutina.nivel = nivel
 
         if dias_semana is not None:
             rutina.dias_semana = dias_semana
@@ -146,17 +179,13 @@ class RutinaRepository:
         if ejercicios_items is not None:
             rutina.ejercicios.clear()
             db.session.flush()
-            for idx, item in enumerate(ejercicios_items, start=1):
-                rutina_ejercicio = RutinaEjercicio(
-                    rutina_id=rutina.id,
-                    ejercicio_id=item["ejercicio_id"],
-                    orden=item.get("orden", idx),
-                    descanso_segundos=item.get("descanso_segundos", 90),
-                    series_objetivo=item.get("series_objetivo", 3),
-                )
-                db.session.add(rutina_ejercicio)
+            self._agregar_ejercicios(rutina, ejercicios_items)
+
+        if nombres_dias is not None:
+            self._reemplazar_nombres_dias(rutina, nombres_dias)
 
         db.session.commit()
+        db.session.refresh(rutina)
         return rutina
 
     def alternar_favorita(self, rutina: Rutina) -> Rutina:
