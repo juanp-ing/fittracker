@@ -7,12 +7,13 @@
     <span class="stepper-label">Seguridad de Cuenta</span>
     <h1 style="font-size: 1.55rem; margin: 0.2rem 0 0.35rem 0;">Verifica tu correo</h1>
     <p style="margin: 0; color: var(--color-charcoal); font-weight: 700;">
-      Ingresa el código numérico de 6 dígitos enviado a <strong>{{ email_usuario }}</strong>.
+      Escribe el código de 6 dígitos que enviamos a <strong>{{ email_usuario }}</strong>. Caduca en 10 minutos.
     </p>
   </div>
 
-  <!-- Aviso de código en modo demo/desarrollo para pruebas rápidas -->
-  <div id="otp-demo-banner" class="duo-list-row" style="background-color: var(--color-storybook-green); border-color: var(--color-eager-green);" {% if not codigo_demo %}hidden{% endif %}>
+  {% if codigo_demo %}
+  <!-- Solo en desarrollo y pruebas (EXPONER_CODIGO_OTP): en producción el código viaja por correo. -->
+  <div id="otp-demo-banner" class="duo-list-row" style="background-color: var(--color-storybook-green); border-color: var(--color-eager-green);">
     <div>
       <span class="stepper-label" style="font-size: 0.75rem;">Modo Demo — Código activo:</span>
       <div id="otp-demo-codigo" style="font-family: var(--font-display); font-weight: 900; font-size: 1.35rem; color: var(--color-night-ink); font-variant-numeric: tabular-nums;">
@@ -23,6 +24,9 @@
       Autocompletar
     </button>
   </div>
+  {% else %}
+  <p class="empty-note">¿No te llega? Mira en la carpeta de spam o pide un código nuevo.</p>
+  {% endif %}
 
   <div id="otp-error-msg" class="duo-alert" role="alert" hidden></div>
   <p id="otp-info-msg" class="empty-note empty-note--success" role="status" hidden></p>
@@ -87,10 +91,28 @@
       window.location.href = '/onboarding';
     });
 
+    // Cuenta atrás mientras el servidor no permite otro reenvío (responde 429).
+    function esperarAntesDeReenviar(segundos, textoBoton) {
+      let restantes = segundos;
+      btnReenviar.disabled = true;
+      btnReenviar.textContent = `REENVIAR EN ${restantes} S`;
+      const intervalo = setInterval(() => {
+        restantes -= 1;
+        if (restantes <= 0) {
+          clearInterval(intervalo);
+          btnReenviar.disabled = false;
+          btnReenviar.textContent = textoBoton;
+          return;
+        }
+        btnReenviar.textContent = `REENVIAR EN ${restantes} S`;
+      }, 1000);
+    }
+
     if (btnReenviar) {
+      const textoBoton = btnReenviar.textContent;
       btnReenviar.addEventListener('click', async () => {
         const infoEl = document.getElementById('otp-info-msg');
-        const textoBoton = btnReenviar.textContent;
+        let enEspera = false;
         errorEl.hidden = true;
         infoEl.hidden = true;
         btnReenviar.disabled = true;
@@ -98,6 +120,13 @@
         try {
           const resp = await fetch('/api/auth/resend-code', { method: 'POST' });
           const data = await resp.json().catch(() => ({}));
+          if (resp.status === 429 && data.segundos_restantes) {
+            infoEl.textContent = 'Acabamos de enviarte un código. Revisa tu correo antes de pedir otro.';
+            infoEl.hidden = false;
+            enEspera = true;
+            esperarAntesDeReenviar(data.segundos_restantes, textoBoton);
+            return;
+          }
           if (!resp.ok) {
             errorEl.textContent = data.error || 'No se pudo reenviar el código. Inténtalo de nuevo.';
             errorEl.hidden = false;
@@ -108,14 +137,16 @@
             if (demoBannerEl) demoBannerEl.hidden = false;
             if (inputOtp) inputOtp.value = data.codigo_verificacion;
           }
-          infoEl.textContent = 'Listo: generamos un código nuevo. El anterior ya no sirve.';
+          infoEl.textContent = 'Listo: te enviamos un código nuevo. El anterior ya no sirve.';
           infoEl.hidden = false;
         } catch (_) {
           errorEl.textContent = 'Sin conexión: no se pudo reenviar el código.';
           errorEl.hidden = false;
         } finally {
-          btnReenviar.disabled = false;
-          btnReenviar.textContent = textoBoton;
+          if (!enEspera) {
+            btnReenviar.disabled = false;
+            btnReenviar.textContent = textoBoton;
+          }
         }
       });
     }

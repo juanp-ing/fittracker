@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
+import logging
 import os
 import re
 import secrets
@@ -18,9 +19,23 @@ SEXOS_VALIDOS = {"HOMBRE", "MUJER"}
 METAS_VALIDAS = {"BAJAR_PESO", "DEFINIR", "GANAR_MASA"}
 SOMATOTIPOS_VALIDOS = {"ECTOMORFO", "MESOMORFO", "ENDOMORFO"}
 
+VIGENCIA_CODIGO = timedelta(minutes=10)
+
+logger = logging.getLogger(__name__)
+
 
 class EmailDuplicadoError(ValueError):
     """Excepción lanzada cuando se intenta registrar un correo ya existente."""
+
+
+class ReenvioDemasiadoProntoError(ValueError):
+    """Se pidió otro código antes de que pasara la espera mínima entre reenvíos."""
+
+    def __init__(self, segundos_restantes: int) -> None:
+        super().__init__(
+            f"Espera {segundos_restantes} s antes de pedir otro código."
+        )
+        self.segundos_restantes = segundos_restantes
 
 
 class AuthService:
@@ -41,6 +56,11 @@ class AuthService:
         smtp_user = os.environ.get("SMTP_USER")
         smtp_pass = os.environ.get("SMTP_PASSWORD")
         if not smtp_host or not smtp_user or not smtp_pass:
+            logger.warning(
+                "No hay SMTP configurado (SMTP_HOST, SMTP_USER, SMTP_PASSWORD): "
+                "el código de verificación de %s no se envió por correo.",
+                email_destino,
+            )
             return False
 
         try:
@@ -59,6 +79,7 @@ class AuthService:
                 server.send_message(msg)
             return True
         except Exception:
+            logger.exception("No se pudo enviar el código de verificación a %s.", email_destino)
             return False
 
     @staticmethod
@@ -96,7 +117,7 @@ class AuthService:
             raise EmailDuplicadoError("El correo electrónico ya está registrado.")
 
         codigo_otp = self._generar_codigo_otp()
-        expiracion = datetime.now(timezone.utc) + timedelta(minutes=10)
+        expiracion = datetime.now(timezone.utc) + VIGENCIA_CODIGO
 
         usuario = self.usuario_repo.crear(
             nombre=nombre.strip(),
@@ -149,14 +170,27 @@ class AuthService:
             "mensaje": "Correo verificado exitosamente.",
         }
 
-    def reenviar_codigo_email(self, usuario_id: int) -> str:
-        """Regenera un nuevo código OTP de 6 dígitos con vigencia de 10 minutos."""
+    def reenviar_codigo_email(self, usuario_id: int, espera_segundos: int = 60) -> str:
+        """Regenera un nuevo código OTP de 6 dígitos con vigencia de 10 minutos.
+
+        Exige `espera_segundos` desde el último código emitido para no servir de cañón de spam.
+        """
         usuario = self.usuario_repo.obtener_por_id(usuario_id)
         if usuario is None:
             raise LookupError("Usuario no encontrado.")
 
+        ahora = datetime.now(timezone.utc)
+        if espera_segundos > 0 and usuario.codigo_expiracion is not None:
+            expiracion = usuario.codigo_expiracion
+            if expiracion.tzinfo is None:
+                expiracion = expiracion.replace(tzinfo=timezone.utc)
+            emitido_en = expiracion - VIGENCIA_CODIGO
+            transcurrido = (ahora - emitido_en).total_seconds()
+            if transcurrido < espera_segundos:
+                raise ReenvioDemasiadoProntoError(max(1, int(espera_segundos - transcurrido)))
+
         nuevo_codigo = self._generar_codigo_otp()
-        nueva_expiracion = datetime.now(timezone.utc) + timedelta(minutes=10)
+        nueva_expiracion = ahora + VIGENCIA_CODIGO
         self.usuario_repo.actualizar_codigo_verificacion(
             usuario_id=usuario.id,
             codigo=nuevo_codigo,
