@@ -158,7 +158,9 @@ def test_insignias_y_filas_informativas_no_imitan_botones(app, client):
 
     mapa_js = (ESTATICOS / "js" / "mapa.js").read_text(encoding="utf-8")
     assert "duo-list-row duo-list-row--static" in mapa_js
-    assert "duo-list-row duo-list-row--action" in mapa_js
+    # La lista de músculos bajo el mapa sí es pulsable: fila con chevron.
+    assert "plain-list__row plain-list__row--action" in mapa_js
+    assert "plain-list__chevron" in mapa_js
 
     with app.app_context():
         seed_database()

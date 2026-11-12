@@ -91,10 +91,12 @@ class EjercicioService:
         """Ejercicios visibles ordenados de más a menos series registradas (estable por nombre).
 
         Sirve para que selectores como el de progreso abran con un ejercicio que tenga datos.
+        Cada ejercicio lleva `series_registradas` para poder separar los entrenados del resto.
         """
         ejercicios = self.buscar_ejercicios_usuario(usuario_id=usuario_id)
         conteo = self.sesion_repo.contar_series_por_ejercicio(usuario_id=usuario_id)
-        return sorted(ejercicios, key=lambda ej: -conteo.get(ej["id"], 0))
+        con_conteo = [{**ej, "series_registradas": conteo.get(ej["id"], 0)} for ej in ejercicios]
+        return sorted(con_conteo, key=lambda ej: -ej["series_registradas"])
 
     def crear_ejercicio_personalizado(
         self,

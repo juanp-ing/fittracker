@@ -11,7 +11,7 @@
   --color-night-ink: #000437;
   --color-paper-white: #ffffff;
   --color-charcoal: #4b4b4b;
-  --color-pencil-gray: #777777;
+  --color-pencil-gray: #737373; /* 4,74:1 sobre blanco (AA); #777 se quedaba en 4,48:1 */
   --color-faded-gray: #afafaf;
   --color-border-light: #e5e5e5;
   --color-surface-muted: #f7f7f7;
@@ -1256,7 +1256,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 }
 
 .bodyfat-guide-card__desc {
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 0.75rem;
   color: var(--color-charcoal);
@@ -1368,7 +1368,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 }
 
 .completed-toggle-label {
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 0.82rem;
   color: var(--color-charcoal);
@@ -1496,7 +1496,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 }
 
 .calendar-day-abbr {
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 0.72rem;
   color: var(--color-charcoal);
@@ -1632,7 +1632,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 }
 
 .daily-task-item__meta {
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
   font-weight: 700;
   font-size: 0.78rem;
   color: var(--color-charcoal);
@@ -3218,3 +3218,92 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   .record-celebration__confetti { display: none; }
   .record-celebration.is-celebrating .record-celebration__card { animation: none; }
 }
+
+/* ---------- «Músculos y récords» ---------- */
+.muscles-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Control segmentado de una línea (periodo del mapa, métrica de la gráfica). */
+.segmented {
+  width: 100%;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface-muted);
+  border: 2px solid var(--color-border-light);
+}
+
+.segmented__item {
+  min-height: var(--touch-target-min);
+  padding: 0.3rem 0.4rem;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: transparent;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-sm);
+  color: var(--color-charcoal);
+  cursor: pointer;
+  transition: transform 70ms var(--ease-out);
+}
+.segmented__item:active { transform: translateY(2px); }
+.segmented__item.is-active {
+  background-color: var(--color-paper-white);
+  border-color: var(--color-faded-gray);
+  border-bottom-width: 4px;
+  color: var(--color-night-ink);
+}
+.segmented--sm .segmented__item { font-size: var(--text-xs); }
+.segmented[hidden] { display: none; }
+
+.legend-dot--primario { background-color: var(--color-eager-green); border-color: var(--color-eager-green-shade); }
+.legend-dot--secundario { background-color: var(--color-fresh-leaf); border-color: var(--color-eager-green); }
+.legend-dot--descanso { background-color: var(--color-border-light); border-color: var(--color-faded-gray); }
+
+/* Fila de lista plana que abre un detalle: sin caja, con chevron. */
+.plain-list__row--action {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--color-border-light);
+  cursor: pointer;
+}
+.plain-list > li:last-child .plain-list__row--action { border-bottom: none; }
+.plain-list__row--action:active { background-color: var(--color-surface-muted); }
+.plain-list__row--action .legend-dot { flex-shrink: 0; margin-right: 0; }
+
+.plain-list__chevron {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: var(--color-faded-gray);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.progress-section { gap: 0.75rem; }
+
+.progress-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.progress-chart {
+  position: relative;
+  height: 220px;
+  width: 100%;
+}
+.progress-chart[hidden] { display: none; }

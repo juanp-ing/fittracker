@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Mapa Muscular y PRs — FitTracker{% endblock %}
+{% block title %}Progreso · Músculos y récords — FitTracker{% endblock %}
 {% block head_extra %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 {% endblock %}
@@ -7,19 +7,21 @@
 {% block content %}
 {% include "resumen/_subtabs.html" %}
 
-<section class="duo-card muscle-map-wrapper">
-  <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-    <h1 style="font-size: 1.25rem; margin: 0;">Mapa Muscular Anatómico</h1>
-    <div class="step-chips" role="group" aria-label="Ventana de días">
-      <button type="button" class="step-chip is-active" data-mapa-dias="7">7d</button>
-      <button type="button" class="step-chip" data-mapa-dias="14">14d</button>
-      <button type="button" class="step-chip" data-mapa-dias="30">30d</button>
-    </div>
+<div class="muscles-view">
+<header class="page-head">
+  <h1 class="page-title">Músculos trabajados</h1>
+  <p class="page-subtitle">Toca un músculo para ver sus series y tu récord.</p>
+</header>
+
+<section class="muscle-map-wrapper" aria-label="Mapa de músculos">
+  <div class="segmented" role="group" aria-label="Periodo">
+    <button type="button" class="segmented__item is-active" data-mapa-dias="7" aria-pressed="true">7 días</button>
+    <button type="button" class="segmented__item" data-mapa-dias="14" aria-pressed="false">14 días</button>
+    <button type="button" class="segmented__item" data-mapa-dias="30" aria-pressed="false">30 días</button>
   </div>
 
-  <!-- Selector Tipo Píldora Duolingo (Hombre | Mujer) + Toggle de Etiquetas Anatómicas -->
   <div class="muscle-map-toolbar">
-    <div class="gender-pill-group" role="group" aria-label="Selector de anatomía Hombre o Mujer">
+    <div class="gender-pill-group" role="group" aria-label="Silueta">
       <button type="button" id="btn-silueta-hombre" class="gender-pill-btn {% if (sexo_perfil | default('HOMBRE')) != 'MUJER' %}is-active{% endif %}" data-silueta-genero="hombre">
         Hombre
       </button>
@@ -27,14 +29,11 @@
         Mujer
       </button>
     </div>
-    <button type="button" id="btn-toggle-nombres-anatomicos" class="step-chip" aria-pressed="false" title="Mostrar u ocultar etiquetas anatómicas">
+    <button type="button" id="btn-toggle-nombres-anatomicos" class="step-chip" aria-pressed="false" title="Mostrar u ocultar los nombres de los músculos">
       <svg class="icon icon--sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.5"/></svg>
       Nombres
     </button>
   </div>
-  <span style="font-size: 0.78rem; font-weight: 700; color: var(--color-charcoal); text-align: center;">
-    Toca cualquier músculo para ver PR histórico, fibras y ejercicios recomendados
-  </span>
 
   <!-- Contenedor Anatómico SVG Dual (Frontal y Posterior estilo react-body-highlighter) -->
   <div id="mapa-svg-host" class="muscle-map-svg-container"
@@ -1014,31 +1013,54 @@
   </div>
 
   <div class="muscle-legend">
-    <span><i class="legend-dot" style="background-color: var(--color-eager-green);"></i>Trabajado (principal)</span>
-    <span><i class="legend-dot" style="background-color: var(--color-fresh-leaf);"></i>Trabajado (apoyo)</span>
-    <span><i class="legend-dot" style="background-color: var(--color-border-light);"></i>Descansado</span>
+    <span><i class="legend-dot legend-dot--primario"></i>Principal</span>
+    <span><i class="legend-dot legend-dot--secundario"></i>De apoyo</span>
+    <span><i class="legend-dot legend-dot--descanso"></i>Descansado</span>
   </div>
-
-  <div id="mapa-muscular-lista" style="width: 100%; display: flex; flex-direction: column; gap: 0.45rem;"></div>
 </section>
 
-<!-- Evolución de Peso y PR por Ejercicio -->
-<section class="duo-card" style="display: flex; flex-direction: column; gap: 0.75rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center;">
-    <h2 style="font-size: 1.15rem; margin: 0;">Progreso y PRs</h2>
-    <span id="progreso-pr-historico" class="status-badge status-badge--mejoro">PR: 0 kg</span>
+<section class="list-section" aria-labelledby="titulo-grupos">
+  <h2 id="titulo-grupos" class="list-section__title">Series por músculo</h2>
+  <ul id="mapa-muscular-lista" class="plain-list"></ul>
+</section>
+
+<section class="list-section progress-section" aria-labelledby="titulo-progreso">
+  <div class="progress-section__head">
+    <h2 id="titulo-progreso" class="list-section__title">Progreso por ejercicio</h2>
+    <span id="progreso-pr-historico" class="status-badge status-badge--mejoro" hidden></span>
   </div>
 
+  {% set entrenados = ejercicios | selectattr('series_registradas') | list %}
+  {% set sin_series = ejercicios | rejectattr('series_registradas') | list %}
+  <label for="selector-ejercicio-progreso" class="visually-hidden">Ejercicio</label>
   <select id="selector-ejercicio-progreso" class="duo-input">
-    {% for ej in ejercicios %}
-    <option value="{{ ej.id }}">{{ ej.nombre }}</option>
-    {% endfor %}
+    {% if entrenados %}
+    <optgroup label="Entrenados">
+      {% for ej in entrenados %}
+      <option value="{{ ej.id }}">{{ ej.nombre }}</option>
+      {% endfor %}
+    </optgroup>
+    <optgroup label="Sin series todavía">
+    {% endif %}
+      {% for ej in sin_series %}
+      <option value="{{ ej.id }}">{{ ej.nombre }}</option>
+      {% endfor %}
+    {% if entrenados %}
+    </optgroup>
+    {% endif %}
   </select>
 
-  <div style="height: 220px; width: 100%;">
-    <canvas id="grafica-progreso-canvas"></canvas>
+  <div id="progreso-metricas" class="segmented segmented--sm" role="group" aria-label="Qué medir">
+    <button type="button" class="segmented__item is-active" data-metrica-progreso="peso" aria-pressed="true">Peso máximo</button>
+    <button type="button" class="segmented__item" data-metrica-progreso="volumen" aria-pressed="false">Mejor serie (kg × reps)</button>
   </div>
+
+  <div id="progreso-grafica" class="progress-chart">
+    <canvas id="grafica-progreso-canvas" role="img" aria-label="Evolución del ejercicio elegido"></canvas>
+  </div>
+  <p id="progreso-vacio" class="list-section__note" hidden></p>
 </section>
+</div>
 
 <!-- Bottom Sheet Interactivo de Detalle Muscular y Recomendador de Ejercicios -->
 <div id="modal-detalle-musculo" class="bottom-sheet-backdrop" hidden>
