@@ -94,3 +94,43 @@ def test_gris_de_texto_cumple_contraste_aa():
 
     contraste = (1.0 + 0.05) / (luminancia(color) + 0.05)
     assert contraste >= 4.5, f"{color} sobre blanco da {contraste:.2f}:1"
+
+
+# --------------------------------------------------------------------------- onboarding
+PLANTILLAS = ESTATICOS.parent / "templates"
+
+
+def test_onboarding_habla_en_lenguaje_llano(app, client):
+    seed_database()
+    _usuario_verificado(client, email="onboarding.llano@fittracker.local")
+
+    html = client.get("/onboarding").get_data(as_text=True)
+    # Solo el texto visible: el JS y los data-* usan «somatotipo» como nombre del campo de la API.
+    html = re.sub(r"<script.*?</script>", "", html, flags=re.S)
+    html = re.sub(r"<[^>]+>", " ", html)
+
+    for jerga in ("somatotipo", "Somatotipo", "Biométric", "Ectomorfo", "Mesomorfo", "Endomorfo", "Sobrepeso"):
+        assert jerga not in html, jerga
+    assert "Complexión" in html
+    for opcion in ("Delgada", "Atlética", "Robusta"):
+        assert opcion in html
+
+
+def test_onboarding_sin_estilos_en_linea():
+    plantilla = (PLANTILLAS / "auth" / "onboarding.html").read_text(encoding="utf-8")
+
+    assert 'style="' not in plantilla
+
+
+def test_perfil_muestra_la_complexion_sin_jerga(app, client):
+    seed_database()
+    _usuario_verificado(client, email="perfil.llano@fittracker.local")
+    client.put(
+        "/api/perfil",
+        json={"sexo": "MUJER", "peso_kg": 60, "meta": "DEFINIR", "somatotipo": "MESOMORFO"},
+    )
+
+    html = client.get("/perfil").get_data(as_text=True)
+
+    assert "Mesomorfo" not in html
+    assert "Atlética" in html

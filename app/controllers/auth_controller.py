@@ -22,8 +22,8 @@ def _exponer_codigo_otp() -> bool:
 
 ETIQUETAS_PERFIL = {
     "sexo": {"HOMBRE": "Hombre", "MUJER": "Mujer"},
-    "meta": {"BAJAR_PESO": "Bajar de peso", "DEFINIR": "Definir", "GANAR_MASA": "Ganar masa"},
-    "somatotipo": {"ECTOMORFO": "Ectomorfo", "MESOMORFO": "Mesomorfo", "ENDOMORFO": "Endomorfo"},
+    "meta": {"BAJAR_PESO": "Bajar de peso", "DEFINIR": "Definir", "GANAR_MASA": "Ganar músculo"},
+    "somatotipo": {"ECTOMORFO": "Delgada", "MESOMORFO": "Atlética", "ENDOMORFO": "Robusta"},
 }
 
 

@@ -23,18 +23,18 @@
     </div>
     <div class="profile-list__row">
       <dt>Peso corporal</dt>
-      <dd>{{ '%g' % perfil.peso_kg }} kg</dd>
+      <dd>{{ ('%g' % perfil.peso_kg) | replace('.', ',') }} kg</dd>
     </div>
     <div class="profile-list__row">
       <dt>Grasa corporal</dt>
-      <dd>{% if perfil.porcentaje_grasa is not none %}{{ '%g' % perfil.porcentaje_grasa }} %{% else %}—{% endif %}</dd>
+      <dd>{% if perfil.porcentaje_grasa is not none %}{{ ('%g' % perfil.porcentaje_grasa) | replace('.', ',') }} %{% else %}—{% endif %}</dd>
     </div>
     <div class="profile-list__row">
       <dt>Meta</dt>
       <dd>{{ etiquetas.meta.get(perfil.meta, '—') }}</dd>
     </div>
     <div class="profile-list__row">
-      <dt>Tipo de cuerpo</dt>
+      <dt>Complexión</dt>
       <dd>{{ etiquetas.somatotipo.get(perfil.somatotipo, '—') }}</dd>
     </div>
   </dl>

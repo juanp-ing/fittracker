@@ -3307,3 +3307,54 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   width: 100%;
 }
 .progress-chart[hidden] { display: none; }
+
+/* ---------- Onboarding (sin estilos en línea) ---------- */
+.onboarding {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-top: 0.5rem;
+  scroll-margin-top: 80px;
+}
+
+.onboarding__top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.onboarding__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.onboarding__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.onboarding__title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  color: var(--color-night-ink);
+}
+
+.onboarding__lead {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-charcoal);
+}
+
+.onboarding__tag {
+  font-size: var(--text-xs);
+  font-weight: 800;
+  color: var(--color-eager-green-shade);
+}
+
+/* Un correo largo no debe salirse de la tarjeta de verificación. */
+.otp-email { overflow-wrap: anywhere; }

@@ -1,227 +1,182 @@
 {% extends "base.html" %}
-{% block title %}Configura tu Perfil Biométrico — FitTracker{% endblock %}
+{% block title %}Tu perfil — FitTracker{% endblock %}
 
 {% block content %}
-<section id="onboarding-wizard-card" class="duo-card" data-destino="{{ destino | default('/') }}" style="display: flex; flex-direction: column; gap: 1rem; scroll-margin-top: 80px;">
-  <!-- Barra de Progreso Superior estilo Duolingo (#58cc02) + 4 Pestañas de Paso -->
-  <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+<section id="onboarding-wizard-card" class="onboarding" data-destino="{{ destino | default('/') }}">
+  <div class="onboarding__top">
+    <div class="onboarding__status">
       <span id="wizard-paso-etiqueta" class="stepper-label" aria-live="polite">Paso 1 de 4</span>
       {% if destino and destino != '/' %}
       <a id="btn-cancelar-onboarding" href="{{ destino }}" class="btn-duo btn-duo--sm btn-duo--quiet">Cancelar</a>
       {% endif %}
     </div>
     <div id="wizard-progress-track" class="wizard-progress-track" role="progressbar" aria-label="Progreso del perfil" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1">
-      <div id="wizard-progress-bar" class="wizard-progress-fill" style="width: 25%;"></div>
+      <div id="wizard-progress-bar" class="wizard-progress-fill"></div>
     </div>
     <nav class="onboarding-step-tabs" aria-label="Pasos del perfil">
-      <button type="button" class="onboarding-step-tab is-active" data-step-tab="1" aria-current="step">1. Silueta</button>
-      <button type="button" class="onboarding-step-tab" data-step-tab="2" disabled>2. Cuerpo</button>
-      <button type="button" class="onboarding-step-tab" data-step-tab="3" disabled>3. Meta</button>
-      <button type="button" class="onboarding-step-tab" data-step-tab="4" disabled>4. Tipo</button>
+      <button type="button" class="onboarding-step-tab is-active" data-step-tab="1" aria-current="step">Silueta</button>
+      <button type="button" class="onboarding-step-tab" data-step-tab="2" disabled>Cuerpo</button>
+      <button type="button" class="onboarding-step-tab" data-step-tab="3" disabled>Meta</button>
+      <button type="button" class="onboarding-step-tab" data-step-tab="4" disabled>Complexión</button>
     </nav>
   </div>
 
   <div id="onboarding-error-msg" class="duo-alert" role="alert" hidden></div>
 
-  <!-- PASO 1: Sexo Biológico para Mapa Anatómico -->
+  <!-- PASO 1: silueta del mapa muscular -->
   <div class="onboarding-step-pane" data-step="1">
-    <div>
-      <h1 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">1. Elige tu silueta anatómica</h1>
-      <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
-        Así ajustamos tu mapa muscular y la guía de grasa corporal.
-      </p>
-    </div>
+    <header class="onboarding__head">
+      <h1 class="onboarding__title">¿Qué silueta usamos en tu mapa?</h1>
+      <p class="onboarding__lead">La verás en «Músculos y récords» y en la guía de grasa corporal.</p>
+    </header>
 
     <button type="button" class="onboarding-option-card is-selected" data-select-sexo="HOMBRE">
       <span class="onboarding-option-card__title">Hombre</span>
-      <span class="onboarding-option-card__desc">Silueta anatómica masculina (hombros y dorsales amplios).</span>
     </button>
 
     <button type="button" class="onboarding-option-card" data-select-sexo="MUJER">
       <span class="onboarding-option-card__title">Mujer</span>
-      <span class="onboarding-option-card__desc">Silueta anatómica femenina (cintura definida y énfasis en tren inferior).</span>
     </button>
   </div>
 
-  <!-- PASO 2: Métricas Corporales (Peso y % Grasa con Botones +/- y Guía Visual en un Vistazo) -->
+  <!-- PASO 2: peso y grasa corporal con +/- y guía de referencia -->
   <div class="onboarding-step-pane" data-step="2" hidden>
-    <div>
-      <h2 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">2. Tus métricas corporales</h2>
-      <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
-        Ajusta con el pulgar o toca una tarjeta de referencia visual rápida.
-      </p>
-    </div>
+    <header class="onboarding__head">
+      <h2 class="onboarding__title">Tu cuerpo hoy</h2>
+      <p class="onboarding__lead">Ajusta con − y +. Si no sabes tu grasa corporal, toca la descripción que más se parezca.</p>
+    </header>
 
-    <!-- Stepper de Peso Corporal (kg) -->
     <div class="stepper-group">
       <div class="stepper-header">
-        <span class="stepper-label">Peso actual (KG)</span>
-        <div class="step-chips" role="group" aria-label="Paso de peso corporal">
-          <button type="button" class="step-chip" data-onb-peso-step="0.5">0.5 kg</button>
+        <span class="stepper-label">Peso</span>
+        <div class="step-chips" role="group" aria-label="Cuánto sube cada toque">
+          <button type="button" class="step-chip" data-onb-peso-step="0.5">0,5 kg</button>
           <button type="button" class="step-chip is-active" data-onb-peso-step="1">1 kg</button>
-          <button type="button" class="step-chip" data-onb-peso-step="2.5">2.5 kg</button>
+          <button type="button" class="step-chip" data-onb-peso-step="2.5">2,5 kg</button>
         </div>
       </div>
       <div class="stepper-control">
-        <button type="button" id="btn-onb-peso-menos" class="btn-stepper" aria-label="Disminuir peso corporal">−</button>
+        <button type="button" id="btn-onb-peso-menos" class="btn-stepper" aria-label="Bajar peso">−</button>
         <div class="stepper-display">
           <span id="onb-peso-valor" class="stepper-value">{{ perfil.peso_kg | default(70.0) }}</span>
-          <span class="stepper-unit">kilogramos</span>
+          <span class="stepper-unit">kg</span>
         </div>
-        <button type="button" id="btn-onb-peso-mas" class="btn-stepper" aria-label="Aumentar peso corporal">＋</button>
+        <button type="button" id="btn-onb-peso-mas" class="btn-stepper" aria-label="Subir peso">＋</button>
       </div>
     </div>
 
-    <!-- Stepper de % de Grasa Corporal con Guía Visual de Referencia en un Vistazo -->
     <div class="stepper-group">
       <div class="stepper-header">
-        <span class="stepper-label">% Grasa Corporal (Estimado)</span>
-        <span id="guia-grasa-genero-tag" style="font-size: 0.78rem; font-weight: 800; color: var(--color-eager-green-shade);">
-          Referencia: Hombre
-        </span>
+        <span class="stepper-label">Grasa corporal (aprox.)</span>
+        <span id="guia-grasa-genero-tag" class="onboarding__tag">Referencia: hombre</span>
       </div>
       <div class="stepper-control">
-        <button type="button" id="btn-onb-grasa-menos" class="btn-stepper" aria-label="Disminuir porcentaje de grasa">−</button>
+        <button type="button" id="btn-onb-grasa-menos" class="btn-stepper" aria-label="Bajar porcentaje de grasa">−</button>
         <div class="stepper-display">
           <span id="onb-grasa-valor" class="stepper-value">{{ perfil.porcentaje_grasa or 15.0 }}</span>
-          <span class="stepper-unit">% grasa corporal</span>
+          <span class="stepper-unit">% de grasa</span>
         </div>
-        <button type="button" id="btn-onb-grasa-mas" class="btn-stepper" aria-label="Aumentar porcentaje de grasa">＋</button>
+        <button type="button" id="btn-onb-grasa-mas" class="btn-stepper" aria-label="Subir porcentaje de grasa">＋</button>
       </div>
 
-      <!-- Cuadrícula de 4 Tarjetas Stickers de Referencia Visual Rápida (Hombre / Mujer) -->
-      <div class="bodyfat-guide-grid" role="group" aria-label="Guía visual de porcentaje de grasa corporal">
-        <button
-          type="button"
-          class="bodyfat-guide-card"
-          data-grasa-card="atletico"
-          data-grasa-preset="10"
-          data-hombre-range="8% – 12%"
-          data-mujer-range="15% – 19%"
-          data-hombre-desc="Abdominales marcados y vascularidad"
-          data-mujer-desc="Tono muscular marcado y cintura definida"
-          data-hombre-val="10"
-          data-mujer-val="17"
-        >
+      <div class="bodyfat-guide-grid" role="group" aria-label="Guía de grasa corporal">
+        <button type="button" class="bodyfat-guide-card" data-grasa-card="atletico" data-grasa-preset="10"
+                data-hombre-range="8 – 12 %" data-mujer-range="15 – 19 %"
+                data-hombre-desc="Abdominales marcados y venas visibles"
+                data-mujer-desc="Músculo marcado y cintura definida"
+                data-hombre-val="10" data-mujer-val="17">
           <div class="bodyfat-guide-card__header">
-            <span class="bodyfat-guide-card__range" data-card-range>8% – 12%</span>
-            <span class="bodyfat-guide-card__title">Atlético / Muy Definido</span>
+            <span class="bodyfat-guide-card__range" data-card-range>8 – 12 %</span>
+            <span class="bodyfat-guide-card__title">Muy definido</span>
           </div>
-          <span class="bodyfat-guide-card__desc" data-card-desc>Abdominales marcados y vascularidad</span>
+          <span class="bodyfat-guide-card__desc" data-card-desc>Abdominales marcados y venas visibles</span>
         </button>
 
-        <button
-          type="button"
-          class="bodyfat-guide-card is-selected"
-          data-grasa-card="fitness"
-          data-grasa-preset="15"
-          data-hombre-range="13% – 17%"
-          data-mujer-range="20% – 24%"
-          data-hombre-desc="Cuerpo firme, abdomen plano sin marcar del todo"
-          data-mujer-desc="Silueta atlética y saludable"
-          data-hombre-val="15"
-          data-mujer-val="22"
-        >
+        <button type="button" class="bodyfat-guide-card is-selected" data-grasa-card="fitness" data-grasa-preset="15"
+                data-hombre-range="13 – 17 %" data-mujer-range="20 – 24 %"
+                data-hombre-desc="Firme, abdomen plano sin marcar del todo"
+                data-mujer-desc="Firme y con algo de músculo a la vista"
+                data-hombre-val="15" data-mujer-val="22">
           <div class="bodyfat-guide-card__header">
-            <span class="bodyfat-guide-card__range" data-card-range>13% – 17%</span>
-            <span class="bodyfat-guide-card__title">Fitness / Saludable</span>
+            <span class="bodyfat-guide-card__range" data-card-range>13 – 17 %</span>
+            <span class="bodyfat-guide-card__title">En forma</span>
           </div>
-          <span class="bodyfat-guide-card__desc" data-card-desc>Cuerpo firme, abdomen plano sin marcar del todo</span>
+          <span class="bodyfat-guide-card__desc" data-card-desc>Firme, abdomen plano sin marcar del todo</span>
         </button>
 
-        <button
-          type="button"
-          class="bodyfat-guide-card"
-          data-grasa-card="promedio"
-          data-grasa-preset="20"
-          data-hombre-range="18% – 24%"
-          data-mujer-range="25% – 31%"
-          data-hombre-desc="Poca definición muscular, algo de grasa abdominal"
-          data-mujer-desc="Contextura media natural"
-          data-hombre-val="20"
-          data-mujer-val="28"
-        >
+        <button type="button" class="bodyfat-guide-card" data-grasa-card="promedio" data-grasa-preset="20"
+                data-hombre-range="18 – 24 %" data-mujer-range="25 – 31 %"
+                data-hombre-desc="Poco músculo a la vista, algo de barriga"
+                data-mujer-desc="Contorno suave, sin músculo marcado"
+                data-hombre-val="20" data-mujer-val="28">
           <div class="bodyfat-guide-card__header">
-            <span class="bodyfat-guide-card__range" data-card-range>18% – 24%</span>
-            <span class="bodyfat-guide-card__title">Promedio / Normal</span>
+            <span class="bodyfat-guide-card__range" data-card-range>18 – 24 %</span>
+            <span class="bodyfat-guide-card__title">Normal</span>
           </div>
-          <span class="bodyfat-guide-card__desc" data-card-desc>Poca definición muscular, algo de grasa abdominal</span>
+          <span class="bodyfat-guide-card__desc" data-card-desc>Poco músculo a la vista, algo de barriga</span>
         </button>
 
-        <button
-          type="button"
-          class="bodyfat-guide-card"
-          data-grasa-card="alto"
-          data-grasa-preset="28"
-          data-hombre-range="25%+"
-          data-mujer-range="32%+"
-          data-hombre-desc="Abdomen prominente, meta ideal recomposición/bajar peso"
-          data-mujer-desc="Acumulación mayor, ideal quema grasa"
-          data-hombre-val="28"
-          data-mujer-val="34"
-        >
+        <button type="button" class="bodyfat-guide-card" data-grasa-card="alto" data-grasa-preset="28"
+                data-hombre-range="25 % o más" data-mujer-range="32 % o más"
+                data-hombre-desc="Barriga marcada"
+                data-mujer-desc="Más grasa en cintura, caderas y piernas"
+                data-hombre-val="28" data-mujer-val="34">
           <div class="bodyfat-guide-card__header">
-            <span class="bodyfat-guide-card__range" data-card-range>25%+</span>
-            <span class="bodyfat-guide-card__title">Alto / Sobrepeso Inicial</span>
+            <span class="bodyfat-guide-card__range" data-card-range>25 % o más</span>
+            <span class="bodyfat-guide-card__title">Por encima</span>
           </div>
-          <span class="bodyfat-guide-card__desc" data-card-desc>Abdomen prominente, meta ideal recomposición/bajar peso</span>
+          <span class="bodyfat-guide-card__desc" data-card-desc>Barriga marcada</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- PASO 3: Meta Principal -->
+  <!-- PASO 3: meta principal -->
   <div class="onboarding-step-pane" data-step="3" hidden>
-    <div>
-      <h2 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">3. ¿Cuál es tu meta principal?</h2>
-      <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
-        Enfocaremos tus métricas y tus Rutinas Famosas recomendadas en este objetivo.
-      </p>
-    </div>
+    <header class="onboarding__head">
+      <h2 class="onboarding__title">¿Qué quieres conseguir?</h2>
+      <p class="onboarding__lead">Con esto te recomendamos rutinas famosas que encajen contigo.</p>
+    </header>
 
     <button type="button" class="onboarding-option-card" data-select-meta="BAJAR_PESO">
       <span class="onboarding-option-card__title">Bajar de peso</span>
-      <span class="onboarding-option-card__desc">Reducir el porcentaje de grasa manteniendo tu fuerza en el gimnasio.</span>
+      <span class="onboarding-option-card__desc">Perder grasa sin perder la fuerza que ya tienes.</span>
     </button>
 
     <button type="button" class="onboarding-option-card" data-select-meta="DEFINIR">
-      <span class="onboarding-option-card__title">Definir músculo</span>
-      <span class="onboarding-option-card__desc">Recomposición corporal: marcar grupos musculares y elevar densidad.</span>
+      <span class="onboarding-option-card__title">Definir</span>
+      <span class="onboarding-option-card__desc">Que se note más el músculo que ya tienes.</span>
     </button>
 
     <button type="button" class="onboarding-option-card is-selected" data-select-meta="GANAR_MASA">
-      <span class="onboarding-option-card__title">Aumentar masa muscular</span>
-      <span class="onboarding-option-card__desc">Hipertrofia y sobrecarga progresiva buscando nuevos PRs cada mes.</span>
+      <span class="onboarding-option-card__title">Ganar músculo</span>
+      <span class="onboarding-option-card__desc">Subir de tamaño y levantar más peso cada mes.</span>
     </button>
   </div>
 
-  <!-- PASO 4: Tipo de Metabolismo / Somatotipo -->
+  <!-- PASO 4: complexión (el valor que se guarda sigue siendo ECTOMORFO/MESOMORFO/ENDOMORFO) -->
   <div class="onboarding-step-pane" data-step="4" hidden>
-    <div>
-      <h2 style="font-size: 1.4rem; margin: 0 0 0.25rem 0;">4. Tu tipo de metabolismo</h2>
-      <p style="margin: 0; font-weight: 700; color: var(--color-charcoal); font-size: 0.9rem;">
-        Selecciona el somatotipo que mejor describe tu estructura física.
-      </p>
-    </div>
+    <header class="onboarding__head">
+      <h2 class="onboarding__title">¿Cómo es tu complexión?</h2>
+      <p class="onboarding__lead">Piensa en cómo eras antes de entrenar. Si dudas, elige la que más se acerque.</p>
+    </header>
 
     <button type="button" class="onboarding-option-card is-selected" data-select-somatotipo="ECTOMORFO">
-      <span class="onboarding-option-card__title">Ectomorfo</span>
-      <span class="onboarding-option-card__desc">Complexión delgada y extremidades largas; metabolismo rápido al que le cuesta subir de peso.</span>
+      <span class="onboarding-option-card__title">Delgada</span>
+      <span class="onboarding-option-card__desc">Huesos finos; te cuesta subir de peso aunque comas mucho.</span>
     </button>
 
     <button type="button" class="onboarding-option-card" data-select-somatotipo="MESOMORFO">
-      <span class="onboarding-option-card__title">Mesomorfo</span>
-      <span class="onboarding-option-card__desc">Estructura atlética natural; gana masa muscular y fuerza con facilidad.</span>
+      <span class="onboarding-option-card__title">Atlética</span>
+      <span class="onboarding-option-card__desc">Ganas músculo y fuerza con relativa facilidad.</span>
     </button>
 
     <button type="button" class="onboarding-option-card" data-select-somatotipo="ENDOMORFO">
-      <span class="onboarding-option-card__title">Endomorfo</span>
-      <span class="onboarding-option-card__desc">Contextura ósea ancha y gran fuerza base; almacena energía con facilidad.</span>
+      <span class="onboarding-option-card__title">Robusta</span>
+      <span class="onboarding-option-card__desc">Estructura ancha y fuerte; ganas peso con facilidad.</span>
     </button>
   </div>
 
-  <!-- Botonera de Navegación del Wizard (por paso) -->
   <div class="onboarding-nav">
     <button type="button" id="btn-wizard-atras" class="btn-duo onboarding-nav__back" hidden>
       ← Atrás
@@ -261,7 +216,7 @@
     function actualizarGuiaVisualGrasa(ajustarValorPorDefecto) {
       const esMujer = sexo === 'MUJER';
       if (tagGeneroGrasa) {
-        tagGeneroGrasa.textContent = esMujer ? 'Referencia: Mujer' : 'Referencia: Hombre';
+        tagGeneroGrasa.textContent = esMujer ? 'Referencia: mujer' : 'Referencia: hombre';
       }
       document.querySelectorAll('[data-grasa-card]').forEach((card) => {
         const rango = esMujer
@@ -329,7 +284,7 @@
       }
       if (btnSiguiente) {
         btnSiguiente.textContent =
-          pasoActual === totalPasos ? '¡Guardar y empezar! →' : 'Continuar →';
+          pasoActual === totalPasos ? 'Guardar →' : 'Continuar →';
       }
 
       if (direccion && tarjetaWizardEl) {
@@ -351,16 +306,9 @@
     }
 
     function actualizarDisplaysMetricas() {
-      if (displayPeso) {
-        displayPeso.textContent = Number.isInteger(pesoKg)
-          ? String(pesoKg)
-          : pesoKg.toFixed(1);
-      }
-      if (displayGrasa) {
-        displayGrasa.textContent = Number.isInteger(porcentajeGrasa)
-          ? String(porcentajeGrasa)
-          : porcentajeGrasa.toFixed(1);
-      }
+      const decimalEs = (n) => n.toLocaleString('es', { maximumFractionDigits: 1 });
+      if (displayPeso) displayPeso.textContent = decimalEs(pesoKg);
+      if (displayGrasa) displayGrasa.textContent = decimalEs(porcentajeGrasa);
     }
 
     // Selección de tarjetas en Pasos 1, 3 y 4
