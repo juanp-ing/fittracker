@@ -20,6 +20,12 @@
   --color-danger-bg: #ffe5e5;
   --color-warning-bg: #fff4cc;
   --color-warning-border: #ffc800;
+  /* Texto sobre botones de color (verde, azul, rojo). No usar paper-white: es la superficie. */
+  --color-on-accent: #ffffff;
+  /* Fondo que oscurece la pantalla tras una hoja inferior. */
+  --color-overlay: rgba(0, 4, 55, 0.5);
+
+  color-scheme: light;
 
   /* Tipografía */
   --font-display: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -34,6 +40,62 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ==========================================================================
+   Tema oscuro (paleta oscura de Duolingo). «Automático» sigue al sistema;
+   data-theme="light"/"dark" en <html> lo fuerza (selector de Perfil).
+   Los dos bloques deben declarar los mismos valores (lo comprueba una prueba).
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-eager-green: #93d333;
+    --color-eager-green-shade: #79b933;
+    --color-storybook-green: #24391a;
+    --color-spark-blue: #49c0f8;
+    --color-spark-blue-shade: #1cb0f6;
+    --color-fresh-leaf: #3f6e1e;
+    --color-night-ink: #f1f7fb;
+    --color-paper-white: #131f24;
+    --color-charcoal: #dce6ec;
+    --color-pencil-gray: #8fa3ad;
+    --color-faded-gray: #37464f;
+    --color-border-light: #37464f;
+    --color-surface-muted: #202f36;
+    --color-danger-red: #ff6b6b;
+    --color-danger-red-shade: #ee5555;
+    --color-danger-bg: #3a1f22;
+    --color-warning-bg: #3a3214;
+    --color-warning-border: #ffc800;
+    --color-on-accent: #131f24;
+  --color-overlay: rgba(0, 0, 0, 0.6);
+    --color-overlay: rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-eager-green: #93d333;
+  --color-eager-green-shade: #79b933;
+  --color-storybook-green: #24391a;
+  --color-spark-blue: #49c0f8;
+  --color-spark-blue-shade: #1cb0f6;
+  --color-fresh-leaf: #3f6e1e;
+  --color-night-ink: #f1f7fb;
+  --color-paper-white: #131f24;
+  --color-charcoal: #dce6ec;
+  --color-pencil-gray: #8fa3ad;
+  --color-faded-gray: #37464f;
+  --color-border-light: #37464f;
+  --color-surface-muted: #202f36;
+  --color-danger-red: #ff6b6b;
+  --color-danger-red-shade: #ee5555;
+  --color-danger-bg: #3a1f22;
+  --color-warning-bg: #3a3214;
+  --color-warning-border: #ffc800;
+  --color-on-accent: #131f24;
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
 }
 
 *,
@@ -515,19 +577,19 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 .btn-duo--green {
   background-color: var(--color-eager-green);
   border-color: var(--color-eager-green-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
 }
 
 .btn-duo--blue {
   background-color: var(--color-spark-blue);
   border-color: var(--color-spark-blue-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
 }
 
 .btn-duo--danger {
   background-color: var(--color-danger-red);
   border-color: var(--color-danger-red-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
 }
 
 .btn-duo--soft {
@@ -760,7 +822,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 .muscle-chip.is-primary {
   background-color: var(--color-eager-green);
   border-color: var(--color-eager-green-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
 }
 
 .muscle-chip.is-secondary {
@@ -777,7 +839,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   border: 2px solid var(--color-spark-blue-shade);
   border-bottom-width: 4px;
   background-color: var(--color-spark-blue);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
   padding: 0.85rem 1rem;
   display: flex;
   align-items: center;
@@ -960,6 +1022,16 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   opacity: 0.95;
 }
 
+/* Títulos «VISTA …» y líneas guía del SVG: siguen la tinta del tema (el SVG trae #000437 fijo).
+   Las cajas de nombre son blancas con texto oscuro en ambos temas, así que no se tocan. */
+#mapa-svg-host svg > text,
+#mapa-muscular-svg > text {
+  fill: var(--color-night-ink);
+}
+.anatomical-labels-layer line {
+  stroke: var(--color-night-ink);
+}
+
 .anatomical-labels-layer[hidden] {
   display: none;
 }
@@ -1002,7 +1074,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 .bottom-sheet-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 4, 55, 0.45);
+  background-color: var(--color-overlay);
   z-index: 60;
   display: flex;
   align-items: flex-end;
@@ -1311,7 +1383,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   align-items: center;
   gap: 0.25rem;
   background-color: var(--color-eager-green);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
   border: 2px solid var(--color-eager-green-shade);
   border-radius: 8px;
   padding: 0.2rem 0.55rem;
@@ -1432,7 +1504,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   transform: translateX(22px);
   background-color: var(--color-eager-green);
   border-color: var(--color-eager-green-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
 }
 
 .weekly-strip-wrap {
@@ -1521,7 +1593,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 .weekly-day-btn.is-selected .calendar-day-num {
   background-color: var(--color-eager-green);
   border-color: var(--color-eager-green-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
 }
 
 .weekly-day-btn.is-today:not(.is-selected) .calendar-day-num {
@@ -1662,7 +1734,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 .task-checkbox.is-checked {
   background-color: var(--color-eager-green);
   border-color: var(--color-eager-green-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
 }
 
 @keyframes task-pop-explosion {
@@ -1690,7 +1762,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 .daily-task-item.is-exploding-pop .task-checkbox {
   background-color: var(--color-eager-green);
   border-color: var(--color-eager-green-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
   transform: scale(1.18);
 }
 
@@ -2002,7 +2074,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 .task-progress.is-done {
   background-color: var(--color-eager-green);
   border-color: var(--color-eager-green-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
 }
 
 /* ---------- Estado 2: modo foco ---------- */
@@ -2307,7 +2379,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   border: 2px solid rgba(255, 255, 255, 0.7);
   border-bottom-width: 4px;
   background-color: rgba(255, 255, 255, 0.16);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
   font-family: var(--font-display);
   font-weight: 900;
   font-size: var(--text-base);
@@ -2758,7 +2830,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 .day-chip.is-active {
   background-color: var(--color-eager-green);
   border-color: var(--color-eager-green-shade);
-  color: var(--color-paper-white);
+  color: var(--color-on-accent);
 }
 
 .draft-list {
@@ -3138,7 +3210,7 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background-color: rgba(0, 4, 55, 0.5);
+  background-color: var(--color-overlay);
   overflow: hidden;
 }
 

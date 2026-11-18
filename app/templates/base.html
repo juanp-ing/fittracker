@@ -3,7 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#58cc02">
+  <meta name="theme-color" content="#58cc02" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#131f24" media="(prefers-color-scheme: dark)">
+  <script>
+    // Tema elegido en Perfil (auto | light | dark). Se fija antes de cargar el CSS para que no
+    // haya un destello del tema contrario. «auto» (o sin valor) deja mandar al sistema.
+    (function () {
+      var tema = 'auto';
+      try { tema = localStorage.getItem('fittracker_tema') || 'auto'; } catch (_) {}
+      window.ftAplicarTema = function (t) {
+        var raiz = document.documentElement;
+        if (t === 'light' || t === 'dark') raiz.setAttribute('data-theme', t);
+        else raiz.removeAttribute('data-theme');
+        var metas = document.querySelectorAll('meta[name="theme-color"]');
+        for (var i = 0; i < metas.length; i++) {
+          var oscura = metas[i].content === '#131f24';
+          // Forzado: ambas metas apuntan al color del tema elegido; auto: cada una a su media.
+          metas[i].media = t === 'light' || t === 'dark'
+            ? 'all and (' + ((t === 'dark') === oscura ? 'min-width: 0' : 'max-width: 0') + ')'
+            : '(prefers-color-scheme: ' + (oscura ? 'dark' : 'light') + ')';
+        }
+      };
+      window.ftAplicarTema(tema);
+    })();
+  </script>
   <script>
     // Zona horaria del navegador para que el servidor calcule el "hoy" local (no UTC).
     try {

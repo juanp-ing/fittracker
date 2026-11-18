@@ -42,6 +42,18 @@
   <a href="/onboarding?siguiente=/perfil" class="btn-duo btn-duo--block btn-duo--quiet">Editar perfil</a>
 </section>
 
+<section class="profile-section" aria-labelledby="titulo-apariencia">
+  <div class="profile-section__head">
+    <h2 id="titulo-apariencia" class="profile-section__title">Apariencia</h2>
+    <p class="profile-section__hint">«Automático» usa el modo claro u oscuro de tu móvil.</p>
+  </div>
+  <div class="segmented" role="group" aria-labelledby="titulo-apariencia">
+    <button type="button" class="segmented__item" data-tema-opcion="auto" aria-pressed="false">Automático</button>
+    <button type="button" class="segmented__item" data-tema-opcion="light" aria-pressed="false">Claro</button>
+    <button type="button" class="segmented__item" data-tema-opcion="dark" aria-pressed="false">Oscuro</button>
+  </div>
+</section>
+
 <section class="profile-section" aria-labelledby="titulo-cuenta">
   <h2 id="titulo-cuenta" class="profile-section__title">Cuenta</h2>
   <button type="button" id="btn-cerrar-sesion" class="btn-duo btn-duo--block btn-duo--signout">Cerrar sesión</button>
@@ -50,6 +62,32 @@
 
 {% block scripts %}
 <script>
+  (function () {
+    // Selector de tema: se guarda en este dispositivo y se aplica al instante.
+    const opciones = document.querySelectorAll('[data-tema-opcion]');
+    let actual = 'auto';
+    try { actual = localStorage.getItem('fittracker_tema') || 'auto'; } catch (_) {}
+    function marcar(tema) {
+      opciones.forEach((b) => {
+        const activo = b.getAttribute('data-tema-opcion') === tema;
+        b.classList.toggle('is-active', activo);
+        b.setAttribute('aria-pressed', activo ? 'true' : 'false');
+      });
+    }
+    opciones.forEach((b) => {
+      b.addEventListener('click', () => {
+        const tema = b.getAttribute('data-tema-opcion');
+        try {
+          if (tema === 'auto') localStorage.removeItem('fittracker_tema');
+          else localStorage.setItem('fittracker_tema', tema);
+        } catch (_) {}
+        window.ftAplicarTema(tema);
+        marcar(tema);
+      });
+    });
+    marcar(actual);
+  })();
+
   (function () {
     const btn = document.getElementById('btn-cerrar-sesion');
     btn.addEventListener('click', async () => {

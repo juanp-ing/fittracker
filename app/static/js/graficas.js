@@ -9,8 +9,9 @@
   let ultimoProgreso = null;
 
   const METRICAS = {
-    peso: { campo: 'pesos_maximos', nombre: 'Peso máximo', color: '#58cc02', relleno: 'rgba(88, 204, 2, 0.12)' },
-    volumen: { campo: 'volumenes', nombre: 'Mejor serie', color: '#1cb0f6', relleno: 'rgba(28, 176, 246, 0.12)' },
+    // El color sale del token del tema (claro u oscuro); el hex es solo el respaldo.
+    peso: { campo: 'pesos_maximos', nombre: 'Peso máximo', token: '--color-eager-green', color: '#58cc02' },
+    volumen: { campo: 'volumenes', nombre: 'Mejor serie', token: '--color-spark-blue', color: '#1cb0f6' },
   };
 
   /** '2026-10-02' → '2 oct' (sin desfase de zona: se fija el mediodía local). */
@@ -60,6 +61,9 @@
     const fuente = estilos.getPropertyValue('--font-sans').trim() || 'sans-serif';
     const tinta = estilos.getPropertyValue('--color-charcoal').trim() || '#4b4b4b';
     const rejilla = estilos.getPropertyValue('--color-border-light').trim() || '#e5e5e5';
+    const color = estilos.getPropertyValue(metrica.token).trim() || metrica.color;
+    // Relleno: el mismo color al 12 % (#rrggbb + alfa 1f).
+    const relleno = /^#[0-9a-f]{6}$/i.test(color) ? `${color}1f` : 'transparent';
 
     instanciaChart = new window.Chart(canvas.getContext('2d'), {
       type: 'line',
@@ -69,13 +73,13 @@
           {
             label: metrica.nombre,
             data: valores,
-            borderColor: metrica.color,
-            backgroundColor: metrica.relleno,
+            borderColor: color,
+            backgroundColor: relleno,
             fill: true,
             borderWidth: 3,
             pointRadius: fechas.length > 20 ? 0 : 4,
             pointHoverRadius: 6,
-            pointBackgroundColor: metrica.color,
+            pointBackgroundColor: color,
             tension: 0.25,
           },
         ],
