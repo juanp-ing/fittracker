@@ -3,7 +3,7 @@
 ## 1. Visión y Objetivo Crítico de UX
 FitTracker es una aplicación web mobile-first para registrar entrenamientos de gimnasio (series, repeticiones, peso) en menos de 10 segundos sin usar el teclado del móvil.
 - **Regla de Oro UX:** Toda acción durante el entrenamiento debe ejecutarse con una sola mano (pulgar), botones grandes (`+/-`) y peticiones `fetch` asíncronas (0 recargas de página).
-- **Tema Visual Oficial:** **Light Theme Gamificado de Duolingo (`DESIGN.md`)** sobre superficie plana `#ffffff`, tipografía redondeada (`Nunito` 800/900 y `Nunito Sans` 500/700), botones táctiles sticker/3D con borde inferior presionable de `4px` y paleta cromática `--color-eager-green: #58cc02`, `--color-storybook-green: #d7ffb8`, `--color-spark-blue: #1cb0f6`, `--color-fresh-leaf: #a5ed6e`.
+- **Tema Visual Oficial:** **Gamificado de Duolingo (`DESIGN.md`), en claro y en oscuro** (el oscuro sigue la paleta oscura de Duolingo; «Automático» obedece al sistema y Perfil permite forzarlo). En claro: sobre superficie plana `#ffffff`, tipografía redondeada (`Nunito` 800/900 y `Nunito Sans` 500/700), botones táctiles sticker/3D con borde inferior presionable de `4px` y paleta cromática `--color-eager-green: #58cc02`, `--color-storybook-green: #d7ffb8`, `--color-spark-blue: #1cb0f6`, `--color-fresh-leaf: #a5ed6e`.
 
 ## 2. Stack Tecnológico Oficial
 - **Backend:** Python 3.11+, Flask, SQLAlchemy (ORM), Flask-Login, Flask-Migrate.
