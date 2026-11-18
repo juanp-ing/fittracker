@@ -9,14 +9,25 @@ from app.services.rutina_service import RutinaNoEncontradaError, RutinaService
 rutina_bp = Blueprint("rutina", __name__)
 
 
-def _agrupar_por_musculo(ejercicios: list[dict]) -> list[tuple[str, list[dict]]]:
-    """Agrupa los ejercicios por su primer músculo principal para el selector del editor."""
-    grupos: dict[str, list[dict]] = {}
+def _catalogo_para_buscador(ejercicios: list[dict]) -> list[dict]:
+    """Catálogo compacto para el buscador del editor de rutinas.
+
+    ``grupo`` es el primer músculo principal (lo que filtran los chips) y ``grupos`` todos los
+    músculos que trabaja, para que buscar «glúteo» encuentre también la sentadilla.
+    """
+    catalogo = []
     for ej in ejercicios:
-        primarios = ej.get("grupos_primarios") or []
-        nombre_grupo = primarios[0]["nombre"] if primarios else "Otros"
-        grupos.setdefault(nombre_grupo, []).append(ej)
-    return sorted(grupos.items())
+        primarios = [g["nombre"] for g in (ej.get("grupos_primarios") or [])]
+        secundarios = [g["nombre"] for g in (ej.get("grupos_secundarios") or [])]
+        catalogo.append(
+            {
+                "id": ej["id"],
+                "nombre": ej["nombre"],
+                "grupo": primarios[0] if primarios else "Otros",
+                "grupos": primarios + secundarios,
+            }
+        )
+    return sorted(catalogo, key=lambda e: e["nombre"].lower())
 
 
 @rutina_bp.route("/rutinas", methods=["GET"])
@@ -28,13 +39,15 @@ def vista_rutinas():
     rutinas = rutina_service.listar_rutinas_usuario(usuario_id=current_user.id)
     rutinas_famosas = rutina_service.listar_rutinas_famosas(usuario_id=current_user.id)
     ejercicios = ej_service.buscar_ejercicios_usuario(usuario_id=current_user.id)
+    catalogo = _catalogo_para_buscador(ejercicios)
     return render_template(
         "rutinas/index.html",
         active_tab="rutinas",
         rutinas=rutinas,
         rutinas_famosas=rutinas_famosas,
         ejercicios=ejercicios,
-        ejercicios_por_grupo=_agrupar_por_musculo(ejercicios),
+        catalogo_rutina=catalogo,
+        grupos_catalogo=sorted({e["grupo"] for e in catalogo}),
         # Rutina recién creada o clonada a resaltar (redirección tras guardar)
         nueva_id=request.args.get("nueva", type=int),
     )

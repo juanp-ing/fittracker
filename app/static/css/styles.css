@@ -1833,6 +1833,16 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 }
 .empty-note--success { color: var(--color-eager-green-shade); }
 
+/* Enlace dentro de un texto: tinta oscura (contraste AA) con subrayado azul de marca. */
+.text-link {
+  color: var(--color-night-ink);
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: var(--color-spark-blue);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
 .vista-hoy {
   display: flex;
   flex-direction: column;
@@ -2833,11 +2843,31 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   font-variant-numeric: tabular-nums;
 }
 
+/* Añadir ejercicio: buscador + chips de músculo (filtrar sin teclado) + resultados de un toque. */
 .draft-add {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.6rem;
 }
-.draft-add .duo-input { flex: 1; min-width: 0; }
+.filter-chips {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+}
+.filter-chips::-webkit-scrollbar { display: none; }
+.filter-chips .step-chip { flex-shrink: 0; }
+.exercise-option__add {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-sm);
+  color: var(--color-night-ink);
+}
+.exercise-option[aria-disabled="true"] { cursor: default; }
+.exercise-option__title,
+.exercise-option__meta { display: block; }
 
 /* ==========================================================================
    Capa visual (paso 4): racha, meta semanal, «Tu mes», estados vacíos y
