@@ -1,0 +1,18 @@
+# Nada local entra en la imagen: bases con cuentas reales, entornos, secretos ni git.
+*.db
+*.db-wal
+*.db-shm
+data/
+.venv
+venv
+.env
+.env.*
+!.env.example
+.vercel
+.git
+.github
+__pycache__
+*.pyc
+.pytest_cache
+htmlcov
+.coverage
