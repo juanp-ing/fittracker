@@ -158,7 +158,7 @@
         <button type="button" id="btn-semana-siguiente" class="btn-week-nav" aria-label="Semana siguiente">{{ icono('chevron', 'icon icon--sm') }}</button>
       </div>
       <p class="calendar-legend">
-        <span class="calendar-legend__item"><span class="calendar-dot calendar-dot--plan"></span>Toca entrenar</span>
+        <span id="leyenda-toca-entrenar" class="calendar-legend__item" {% if not rutina_hoy %}hidden{% endif %}><span class="calendar-dot calendar-dot--plan"></span>Toca entrenar</span>
         <span class="calendar-legend__item"><span class="calendar-dot"></span>Entrenado</span>
       </p>
 
@@ -203,7 +203,8 @@
           {% endfor %}
         {% else %}
           <p id="checklist-sin-rutina" class="empty-note">
-            No hay ejercicios planificados para este día. Activa o clona una rutina en la pestaña <strong>Rutinas</strong>.
+            {% if rutina_hoy %}No hay ejercicios planificados para este día.
+            {% else %}Aún no tienes rutina: elige ejercicios sobre la marcha o <a href="/rutinas" class="text-link">elige una rutina</a>.{% endif %}
           </p>
         {% endif %}
       </div>

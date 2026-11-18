@@ -202,18 +202,18 @@
       <ol id="lista-ejercicios-borrador" class="draft-list"></ol>
       <p id="borrador-vacio" class="empty-note">Añade al menos un ejercicio.</p>
       <div class="draft-add">
-        <label for="rutina-ejercicio-select" class="visually-hidden">Ejercicio a añadir</label>
-        <select id="rutina-ejercicio-select" class="duo-input">
-          {% for grupo, del_grupo in ejercicios_por_grupo %}
-          <optgroup label="{{ grupo }}">
-            {% for ej in del_grupo %}
-            <option value="{{ ej.id }}" data-nombre="{{ ej.nombre }}">{{ ej.nombre }}</option>
-            {% endfor %}
-          </optgroup>
+        <label for="rutina-ejercicio-buscar" class="stepper-label">Añadir ejercicio</label>
+        <input id="rutina-ejercicio-buscar" type="search" class="duo-input" autocomplete="off" enterkeyhint="search"
+               placeholder="Busca: press, sentadilla, glúteo…" aria-controls="rutina-ejercicio-resultados">
+        <div class="filter-chips" role="group" aria-label="Filtrar por músculo">
+          {% for grupo in grupos_catalogo %}
+          <button type="button" class="step-chip" data-filtro-grupo="{{ grupo }}" aria-pressed="false">{{ grupo }}</button>
           {% endfor %}
-        </select>
-        <button type="button" id="btn-agregar-ej-rutina" class="btn-duo btn-duo--blue">Añadir</button>
+        </div>
+        <p id="rutina-ejercicio-pista" class="empty-note">Escribe un nombre o toca un músculo; cada toque añade el ejercicio.</p>
+        <div id="rutina-ejercicio-resultados" class="exercise-results" aria-live="polite"></div>
       </div>
+      <script type="application/json" id="datos-catalogo-rutina">{{ catalogo_rutina | tojson }}</script>
     </div>
 
     <button type="button" id="btn-guardar-rutina" class="btn-duo btn-duo--green btn-duo--block btn-duo--giant">
@@ -236,7 +236,16 @@
     const errorEl = $('rutina-error-msg');
     const listaBorradorEl = $('lista-ejercicios-borrador');
     const borradorVacioEl = $('borrador-vacio');
-    const selectEj = $('rutina-ejercicio-select');
+    const inputBuscarEj = $('rutina-ejercicio-buscar');
+    const resultadosEj = $('rutina-ejercicio-resultados');
+    const pistaEj = $('rutina-ejercicio-pista');
+    let catalogoRutina = [];
+    try {
+      catalogoRutina = JSON.parse($('datos-catalogo-rutina').textContent) || [];
+    } catch (_) {
+      catalogoRutina = [];
+    }
+    let grupoFiltro = null;
 
     function escapeHtml(str) {
       return String(str == null ? '' : str)
@@ -455,6 +464,8 @@
       const dias = diasElegidos();
       diaActivo = porDias ? dias[0] || null : null;
       borrador.length = 0;
+      inputBuscarEj.value = '';
+      grupoFiltro = null;
       ((rutina && rutina.ejercicios) || []).forEach((item) => {
         const base = {
           ejercicio_id: Number(item.ejercicio_id),
@@ -548,6 +559,7 @@
           </li>`;
         })
         .join('');
+      renderizarResultadosEj();
     }
 
     listaBorradorEl.addEventListener('click', (e) => {
@@ -571,16 +583,73 @@
       if (sel) borrador[Number(sel.getAttribute('data-i'))].descanso_segundos = Number(sel.value);
     });
 
-    $('btn-agregar-ej-rutina').addEventListener('click', () => {
-      if (!selectEj.value) return;
-      const opt = selectEj.options[selectEj.selectedIndex];
+    // ------------------------------------------------- buscador de ejercicios
+    // Sin tildes ni mayúsculas: «gluteo» encuentra «Glúteos».
+    const normalizar = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    catalogoRutina.forEach((e) => {
+      e._nombre = normalizar(e.nombre);
+      e._grupo = normalizar(e.grupo);
+      e._grupos = (e.grupos || []).map(normalizar).join(' ');
+    });
+    // Relevancia: nombre que empieza por lo escrito, nombre que lo contiene, músculo principal, apoyo.
+    const relevancia = (e, t) =>
+      !t ? 0 : e._nombre.startsWith(t) ? 0 : e._nombre.includes(t) ? 1 : e._grupo.includes(t) ? 2 : 3;
+    const diaDestino = () => (porDias ? diaActivo : null);
+    const yaEnBorrador = (id) => borrador.some((item) => item.dia === diaDestino() && item.ejercicio_id === id);
+
+    function renderizarResultadosEj() {
+      const termino = normalizar(inputBuscarEj.value);
+      document.querySelectorAll('[data-filtro-grupo]').forEach((chip) => {
+        const activo = chip.getAttribute('data-filtro-grupo') === grupoFiltro;
+        chip.classList.toggle('is-active', activo);
+        chip.setAttribute('aria-pressed', activo ? 'true' : 'false');
+      });
+      if (!termino && !grupoFiltro) {
+        resultadosEj.innerHTML = '';
+        pistaEj.textContent = 'Escribe un nombre o toca un músculo; cada toque añade el ejercicio.';
+        pistaEj.hidden = false;
+        return;
+      }
+      const encontrados = catalogoRutina
+        .filter((e) => !grupoFiltro || e.grupo === grupoFiltro)
+        .filter((e) => !termino || e._nombre.includes(termino) || e._grupos.includes(termino))
+        .sort((a, b) => relevancia(a, termino) - relevancia(b, termino));
+      pistaEj.hidden = encontrados.length > 0;
+      pistaEj.textContent = 'Ningún ejercicio coincide. Prueba con otra palabra o quita el filtro.';
+      resultadosEj.innerHTML = encontrados
+        .map((e) => {
+          const anadido = yaEnBorrador(e.id);
+          return `<button type="button" class="exercise-option ${anadido ? 'is-selected' : ''}" data-anadir-ej="${e.id}"
+              ${anadido ? 'aria-disabled="true"' : ''}>
+              <span>
+                <span class="exercise-option__title">${escapeHtml(e.nombre)}</span>
+                <span class="exercise-option__meta">${escapeHtml((e.grupos || []).join(', ') || e.grupo)}</span>
+              </span>
+              <span class="exercise-option__add">${anadido ? '✓ Añadido' : '＋ Añadir'}</span>
+            </button>`;
+        })
+        .join('');
+    }
+
+    inputBuscarEj.addEventListener('input', renderizarResultadosEj);
+    document.querySelectorAll('[data-filtro-grupo]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const g = chip.getAttribute('data-filtro-grupo');
+        grupoFiltro = grupoFiltro === g ? null : g;
+        renderizarResultadosEj();
+      });
+    });
+    resultadosEj.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-anadir-ej]');
+      if (!btn) return;
+      const ej = catalogoRutina.find((x) => x.id === Number(btn.getAttribute('data-anadir-ej')));
+      if (!ej) return;
       if (porDias && !diaActivo) {
         errorEl.textContent = 'Elige primero los días que entrenas.';
         errorEl.hidden = false;
         return;
       }
-      const diaDestino = porDias ? diaActivo : null;
-      if (borrador.some((item) => item.dia === diaDestino && item.ejercicio_id === Number(selectEj.value))) {
+      if (yaEnBorrador(ej.id)) {
         errorEl.textContent = porDias
           ? 'Ese ejercicio ya está en este día. Súbele las series si quieres hacer más.'
           : 'Ese ejercicio ya está en la rutina. Súbele las series si quieres hacer más.';
@@ -589,11 +658,11 @@
       }
       errorEl.hidden = true;
       borrador.push({
-        ejercicio_id: Number(selectEj.value),
-        nombre: opt.getAttribute('data-nombre') || opt.textContent.trim(),
+        ejercicio_id: ej.id,
+        nombre: ej.nombre,
         series_objetivo: 3,
         descanso_segundos: 90,
-        dia: diaDestino,
+        dia: diaDestino(),
       });
       renderizarDias();
     });

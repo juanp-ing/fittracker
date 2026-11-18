@@ -180,10 +180,11 @@ class SesionService:
             rutina_id=rutina_id,
         )
 
+        # Sin rutina no hay plan: ningún día «toca»; la tira solo marca los días entrenados.
         dias_rutina_set = (
             self._extraer_codigos_dias(rutina_activa.dias_semana)
             if rutina_activa is not None
-            else {"LUN", "MIE", "VIE"}
+            else set()
         )
 
         # Consultar todas las series registradas por el usuario en la semana de 7 días

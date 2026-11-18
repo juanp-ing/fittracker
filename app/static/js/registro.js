@@ -404,9 +404,14 @@
         : `<p id="checklist-sin-rutina" class="empty-note">${
             estado.libre
               ? 'Modo libre: elegirás cada ejercicio al empezar.'
-              : 'No hay ejercicios planificados para este día. Activa o clona una rutina en la pestaña <strong>Rutinas</strong>.'
+              : a.rutina
+              ? 'No hay ejercicios planificados para este día.'
+              : 'Aún no tienes rutina: elige ejercicios sobre la marcha o <a href="/rutinas" class="text-link">elige una rutina</a>.'
           }</p>`;
     }
+    // La leyenda «Toca entrenar» solo tiene sentido si hay una rutina que planifique días.
+    const leyendaToca = $('leyenda-toca-entrenar');
+    if (leyendaToca) leyendaToca.hidden = !a.rutina;
     aplicarVisibilidadChecklist();
   }
 
