@@ -6,6 +6,7 @@ Auditoría funcional del 2026-11-18:
 - Al crear una rutina, los ejercicios se elegían en un <select> de 104 opciones sin búsqueda.
 """
 
+from sqlalchemy.orm import close_all_sessions
 import json
 import re
 
@@ -28,6 +29,7 @@ def client():
         )
         yield cliente
         db.session.remove()
+        close_all_sessions()  # Postgres: ninguna sesión abierta puede bloquear el DROP
         db.drop_all()
 
 

@@ -1280,10 +1280,12 @@ RUTINAS_FAMOSAS_BASE: list[dict] = [
 
 
 def _asegurar_esquema_actualizado() -> None:
-    """Asegura que tablas y nuevas columnas de OTP/PerfilUsuario/Rutinas Famosas existan en SQLite local."""
+    """Asegura que tablas y columnas nuevas existan; repara bases SQLite locales antiguas."""
     inspector = inspect(db.engine)
     tablas = set(inspector.get_table_names())
-    if "rutinas" in tablas:
+    # Rehacer el esquema desde cero solo se permite en SQLite (bases locales de desarrollo muy
+    # antiguas). En Postgres (producción) borrar tablas perdería los datos de los usuarios.
+    if "rutinas" in tablas and db.engine.dialect.name == "sqlite":
         columnas_rutinas = {c["name"]: c for c in inspector.get_columns("rutinas")}
         if (
             "es_plantilla_famosa" not in columnas_rutinas

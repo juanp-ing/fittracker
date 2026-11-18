@@ -1,5 +1,6 @@
 """Configuración y fixtures globales de pytest para FitTracker."""
 
+from sqlalchemy.orm import close_all_sessions
 import pytest
 from app import create_app, db as _db
 from app.config.settings import TestingConfig
@@ -13,6 +14,7 @@ def app():
         _db.create_all()
         yield application
         _db.session.remove()
+        close_all_sessions()  # Postgres: ninguna sesión abierta puede bloquear el DROP
         _db.drop_all()
 
 

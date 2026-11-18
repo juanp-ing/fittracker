@@ -1,5 +1,6 @@
 """Modo oscuro (paleta oscura de Duolingo): tokens, activación sin parpadeo y selector en Perfil."""
 
+from sqlalchemy.orm import close_all_sessions
 import re
 from pathlib import Path
 
@@ -31,6 +32,7 @@ def client():
         )
         yield cliente
         db.session.remove()
+        close_all_sessions()  # Postgres: ninguna sesión abierta puede bloquear el DROP
         db.drop_all()
 
 

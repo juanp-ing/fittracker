@@ -9,7 +9,8 @@ app = create_app(config_name)
 
 with app.app_context():
     db.create_all()
-    seed_database()
+    # El usuario demo tiene contraseña pública: nunca en producción.
+    seed_database(incluir_demo=config_name != "production")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
