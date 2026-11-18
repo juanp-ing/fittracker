@@ -1,5 +1,6 @@
 """Modo oscuro (paleta oscura de Duolingo): tokens, activación sin parpadeo y selector en Perfil."""
 
+from sqlalchemy.orm import close_all_sessions
 import re
 from pathlib import Path
 
@@ -29,10 +30,9 @@ def client():
             "/api/auth/register",
             json={"nombre": "Noche", "email": "noche@fittracker.local", "password": "Password123!"},
         )
-        codigo = resp.get_json()["codigo_verificacion"]
-        assert cliente.post("/api/auth/verify-code", json={"codigo": codigo}).status_code == 200
         yield cliente
         db.session.remove()
+        close_all_sessions()  # Postgres: ninguna sesión abierta puede bloquear el DROP
         db.drop_all()
 
 

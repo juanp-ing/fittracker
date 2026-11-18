@@ -18,9 +18,6 @@ def _usuario(client, email="visual@fittracker.local"):
         json={"nombre": "Atleta Visual", "email": email, "password": "Password123!"},
     )
     assert resp.status_code == 201
-    client.post(
-        "/api/auth/verify-code", json={"codigo": resp.get_json()["codigo_verificacion"]}
-    )
     return resp.get_json()["id"]
 
 

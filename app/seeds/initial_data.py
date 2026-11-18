@@ -1280,10 +1280,12 @@ RUTINAS_FAMOSAS_BASE: list[dict] = [
 
 
 def _asegurar_esquema_actualizado() -> None:
-    """Asegura que tablas y nuevas columnas de OTP/PerfilUsuario/Rutinas Famosas existan en SQLite local."""
+    """Asegura que tablas y columnas nuevas existan; repara bases SQLite locales antiguas."""
     inspector = inspect(db.engine)
     tablas = set(inspector.get_table_names())
-    if "rutinas" in tablas:
+    # Rehacer el esquema desde cero solo se permite en SQLite (bases locales de desarrollo muy
+    # antiguas). En Postgres (producción) borrar tablas perdería los datos de los usuarios.
+    if "rutinas" in tablas and db.engine.dialect.name == "sqlite":
         columnas_rutinas = {c["name"]: c for c in inspector.get_columns("rutinas")}
         if (
             "es_plantilla_famosa" not in columnas_rutinas
@@ -1294,19 +1296,13 @@ def _asegurar_esquema_actualizado() -> None:
             return
 
     if "usuarios" in tablas:
+        # La verificación por correo (OTP) se retiró: se quitan sus columnas de las bases antiguas.
+        # email_verificado era NOT NULL sin valor por defecto y haría fallar los registros nuevos.
         columnas_usuarios = {c["name"] for c in inspector.get_columns("usuarios")}
-        if "email_verificado" not in columnas_usuarios:
-            db.session.execute(
-                text("ALTER TABLE usuarios ADD COLUMN email_verificado BOOLEAN NOT NULL DEFAULT 0")
-            )
-        if "codigo_verificacion" not in columnas_usuarios:
-            db.session.execute(
-                text("ALTER TABLE usuarios ADD COLUMN codigo_verificacion VARCHAR(6)")
-            )
-        if "codigo_expiracion" not in columnas_usuarios:
-            db.session.execute(
-                text("ALTER TABLE usuarios ADD COLUMN codigo_expiracion DATETIME")
-            )
+        retiradas = ("email_verificado", "codigo_verificacion", "codigo_expiracion")
+        for columna in retiradas:
+            if columna in columnas_usuarios:
+                db.session.execute(text(f"ALTER TABLE usuarios DROP COLUMN {columna}"))
         db.session.commit()
 
     if "rutina_ejercicios" in tablas:
@@ -1445,11 +1441,8 @@ def seed_database(incluir_demo: bool = True) -> dict:
                 nombre=DEMO_USER_NOMBRE,
                 email=DEMO_USER_EMAIL,
                 password=DEMO_USER_PASSWORD,
-                email_verificado=True,
             )
             demo_creado = True
-        elif not existente_demo.email_verificado:
-            usuario_repo.marcar_email_verificado(existente_demo.id)
 
         usuario_repo.guardar_perfil_usuario(
             usuario_id=existente_demo.id,

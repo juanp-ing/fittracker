@@ -1,12 +1,6 @@
-"""Servicio de dominio para registro, autenticación, verificación OTP y onboarding biométrico."""
+"""Servicio de dominio para registro, autenticación y onboarding biométrico."""
 
-from datetime import datetime, timedelta, timezone
-from email.message import EmailMessage
-import logging
-import os
 import re
-import secrets
-import smtplib
 from typing import Optional
 
 from app.models.perfil import PerfilUsuario
@@ -19,68 +13,16 @@ SEXOS_VALIDOS = {"HOMBRE", "MUJER"}
 METAS_VALIDAS = {"BAJAR_PESO", "DEFINIR", "GANAR_MASA"}
 SOMATOTIPOS_VALIDOS = {"ECTOMORFO", "MESOMORFO", "ENDOMORFO"}
 
-VIGENCIA_CODIGO = timedelta(minutes=10)
-
-logger = logging.getLogger(__name__)
-
 
 class EmailDuplicadoError(ValueError):
     """Excepción lanzada cuando se intenta registrar un correo ya existente."""
 
 
-class ReenvioDemasiadoProntoError(ValueError):
-    """Se pidió otro código antes de que pasara la espera mínima entre reenvíos."""
-
-    def __init__(self, segundos_restantes: int) -> None:
-        super().__init__(
-            f"Espera {segundos_restantes} s antes de pedir otro código."
-        )
-        self.segundos_restantes = segundos_restantes
-
-
 class AuthService:
-    """Lógica de negocio de autenticación, verificación OTP y perfil biométrico desacoplada de HTTP."""
+    """Lógica de negocio de autenticación, y perfil biométrico desacoplada de HTTP."""
 
     def __init__(self, usuario_repo: Optional[UsuarioRepository] = None) -> None:
         self.usuario_repo = usuario_repo or UsuarioRepository()
-
-    @staticmethod
-    def _generar_codigo_otp() -> str:
-        """Genera un código numérico criptográficamente seguro de 6 dígitos."""
-        return f"{secrets.randbelow(900000) + 100000:06d}"
-
-    @staticmethod
-    def _enviar_correo_otp_si_configurado(email_destino: str, codigo: str) -> bool:
-        """Envía el código OTP por SMTP si existen variables de entorno configuradas."""
-        smtp_host = os.environ.get("SMTP_HOST")
-        smtp_user = os.environ.get("SMTP_USER")
-        smtp_pass = os.environ.get("SMTP_PASSWORD")
-        if not smtp_host or not smtp_user or not smtp_pass:
-            logger.warning(
-                "No hay SMTP configurado (SMTP_HOST, SMTP_USER, SMTP_PASSWORD): "
-                "el código de verificación de %s no se envió por correo.",
-                email_destino,
-            )
-            return False
-
-        try:
-            smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-            msg = EmailMessage()
-            msg["Subject"] = f"Tu código de verificación FitTracker: {codigo}"
-            msg["From"] = os.environ.get("SMTP_FROM", smtp_user)
-            msg["To"] = email_destino
-            msg.set_content(
-                f"¡Hola!\n\nTu código de verificación de 6 dígitos para FitTracker es: {codigo}\n"
-                "Este código expira en 10 minutos.\n"
-            )
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=5) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
-            return True
-        except Exception:
-            logger.exception("No se pudo enviar el código de verificación a %s.", email_destino)
-            return False
 
     @staticmethod
     def serializar_perfil(perfil: PerfilUsuario, usuario: Optional[Usuario] = None) -> dict:
@@ -98,11 +40,10 @@ class AuthService:
             "meta": perfil.meta,
             "somatotipo": perfil.somatotipo,
             "onboarding_completado": bool(perfil.onboarding_completado),
-            "email_verificado": bool(usuario.email_verificado) if usuario else True,
         }
 
     def registrar_usuario(self, nombre: str, email: str, password: str) -> Usuario:
-        """Valida las reglas de negocio, genera código OTP de 6 dígitos y registra un nuevo usuario."""
+        """Valida las reglas de negocio y registra un nuevo usuario."""
         if not isinstance(nombre, str) or not nombre.strip():
             raise ValueError("El nombre del usuario es obligatorio.")
 
@@ -116,19 +57,11 @@ class AuthService:
         if existente is not None:
             raise EmailDuplicadoError("El correo electrónico ya está registrado.")
 
-        codigo_otp = self._generar_codigo_otp()
-        expiracion = datetime.now(timezone.utc) + VIGENCIA_CODIGO
-
-        usuario = self.usuario_repo.crear(
+        return self.usuario_repo.crear(
             nombre=nombre.strip(),
             email=email.strip().lower(),
             password=password,
-            email_verificado=False,
-            codigo_verificacion=codigo_otp,
-            codigo_expiracion=expiracion,
         )
-        self._enviar_correo_otp_si_configurado(usuario.email, codigo_otp)
-        return usuario
 
     def autenticar_usuario(self, email: str, password: str) -> Optional[Usuario]:
         """Verifica las credenciales de acceso y retorna el Usuario si son válidas."""
@@ -141,63 +74,6 @@ class AuthService:
         if usuario is not None and usuario.check_password(password):
             return usuario
         return None
-
-    def verificar_codigo_email(self, usuario_id: int, codigo: str) -> dict:
-        """Valida que el código OTP de 6 dígitos coincida y no haya expirado."""
-        usuario = self.usuario_repo.obtener_por_id(usuario_id)
-        if usuario is None:
-            raise LookupError("Usuario no encontrado.")
-
-        codigo_limpio = str(codigo or "").strip()
-        if not codigo_limpio or len(codigo_limpio) != 6 or not codigo_limpio.isdigit():
-            raise ValueError("El código debe contener exactamente 6 dígitos numéricos.")
-
-        if not usuario.codigo_verificacion or usuario.codigo_verificacion != codigo_limpio:
-            raise ValueError("El código de verificación es incorrecto.")
-
-        if usuario.codigo_expiracion is not None:
-            expiracion = usuario.codigo_expiracion
-            if expiracion.tzinfo is None:
-                expiracion = expiracion.replace(tzinfo=timezone.utc)
-            if datetime.now(timezone.utc) > expiracion:
-                raise ValueError("El código de verificación ha expirado. Solicita uno nuevo.")
-
-        actualizado = self.usuario_repo.marcar_email_verificado(usuario.id)
-        return {
-            "usuario_id": actualizado.id,
-            "email": actualizado.email,
-            "email_verificado": True,
-            "mensaje": "Correo verificado exitosamente.",
-        }
-
-    def reenviar_codigo_email(self, usuario_id: int, espera_segundos: int = 60) -> str:
-        """Regenera un nuevo código OTP de 6 dígitos con vigencia de 10 minutos.
-
-        Exige `espera_segundos` desde el último código emitido para no servir de cañón de spam.
-        """
-        usuario = self.usuario_repo.obtener_por_id(usuario_id)
-        if usuario is None:
-            raise LookupError("Usuario no encontrado.")
-
-        ahora = datetime.now(timezone.utc)
-        if espera_segundos > 0 and usuario.codigo_expiracion is not None:
-            expiracion = usuario.codigo_expiracion
-            if expiracion.tzinfo is None:
-                expiracion = expiracion.replace(tzinfo=timezone.utc)
-            emitido_en = expiracion - VIGENCIA_CODIGO
-            transcurrido = (ahora - emitido_en).total_seconds()
-            if transcurrido < espera_segundos:
-                raise ReenvioDemasiadoProntoError(max(1, int(espera_segundos - transcurrido)))
-
-        nuevo_codigo = self._generar_codigo_otp()
-        nueva_expiracion = ahora + VIGENCIA_CODIGO
-        self.usuario_repo.actualizar_codigo_verificacion(
-            usuario_id=usuario.id,
-            codigo=nuevo_codigo,
-            expiracion=nueva_expiracion,
-        )
-        self._enviar_correo_otp_si_configurado(usuario.email, nuevo_codigo)
-        return nuevo_codigo
 
     def obtener_perfil_usuario(self, usuario_id: int) -> dict:
         """Obtiene los datos biométricos y de meta/somatotipo del usuario."""

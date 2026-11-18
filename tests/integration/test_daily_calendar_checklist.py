@@ -1,5 +1,6 @@
 """Pruebas de integración para el Mini-Calendario Semanal, Checklist Diario y Progreso por Ejercicio (Fase V2.4)."""
 
+from sqlalchemy.orm import close_all_sessions
 from app import create_app, db
 from app.seeds.initial_data import seed_database
 
@@ -15,11 +16,6 @@ def _autenticar_usuario_con_rutina(client):
         },
     )
     assert resp_reg.status_code == 201
-    otp = resp_reg.get_json()["codigo_verificacion"]
-
-    resp_ver = client.post("/api/auth/verify-code", json={"codigo": otp})
-    assert resp_ver.status_code == 200
-
     ejercicios_cat = client.get("/api/ejercicios").get_json()["ejercicios"]
     ej_1 = ejercicios_cat[0]
     ej_2 = ejercicios_cat[1]
@@ -106,6 +102,7 @@ def test_get_agenda_diaria_devuelve_7_dias_puntos_y_checklist_favorita():
         resp_bad = client.get("/api/sesiones/agenda-diaria?fecha=fecha-invalida")
         assert resp_bad.status_code == 400
 
+        close_all_sessions()  # Postgres: ninguna sesión abierta puede bloquear el DROP
         db.drop_all()
 
 
@@ -190,5 +187,6 @@ def test_registrar_series_dispara_ejercicio_completado_ahora_y_siguiente_ejercic
         assert "modal-ejercicio-terminado" in html_index
         assert "Recuerda tomar agua: hidrátate bien antes de tu siguiente bloque" in html_index
 
+        close_all_sessions()  # Postgres: ninguna sesión abierta puede bloquear el DROP
         db.drop_all()
 

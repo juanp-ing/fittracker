@@ -22,7 +22,6 @@ def _usuario_verificado(client, email="ux@fittracker.local"):
     )
     assert resp.status_code == 201
     datos = resp.get_json()
-    client.post("/api/auth/verify-code", json={"codigo": datos["codigo_verificacion"]})
     return datos["id"]
 
 

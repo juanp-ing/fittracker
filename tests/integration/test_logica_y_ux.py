@@ -2,7 +2,7 @@
 
 Cubre: una sola rutina principal al clonar, meta semanal con todas las principales, cierre
 automático de sesiones abandonadas, día de descanso coherente en Hoy, leyenda del calendario,
-ventana por defecto del mapa y acceso a /verificar-correo ya verificado.
+y ventana por defecto del mapa.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -18,16 +18,12 @@ ESTATICOS = Path(__file__).resolve().parents[2] / "app" / "static"
 MARTES = datetime(2026, 11, 10, 15, 0, tzinfo=timezone.utc)
 
 
-def _usuario(client, email="logica@fittracker.local", verificar=True):
+def _usuario(client, email="logica@fittracker.local"):
     resp = client.post(
         "/api/auth/register",
         json={"nombre": "Atleta Lógica", "email": email, "password": "Password123!"},
     )
     assert resp.status_code == 201
-    if verificar:
-        client.post(
-            "/api/auth/verify-code", json={"codigo": resp.get_json()["codigo_verificacion"]}
-        )
     return resp.get_json()["id"]
 
 
@@ -160,16 +156,3 @@ def test_mapa_elige_la_ventana_mas_corta_con_datos(app, client):
     js = (ESTATICOS / "js" / "mapa.js").read_text(encoding="utf-8")
     assert "cargarVentanaInicial" in js
     assert "cargarMapaMuscular(7);\n    }\n  });" not in js
-
-
-def test_verificar_correo_redirige_si_ya_esta_verificado(app, client):
-    with app.app_context():
-        seed_database()
-    _usuario(client, verificar=False)
-    assert client.get("/verificar-correo").status_code == 200
-
-    codigo = client.post("/api/auth/resend-code").get_json()["codigo_verificacion"]
-    client.post("/api/auth/verify-code", json={"codigo": codigo})
-    resp = client.get("/verificar-correo")
-    assert resp.status_code == 302
-    assert "verificar-correo" not in resp.headers["Location"]

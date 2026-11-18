@@ -1,6 +1,5 @@
 """Repositorio para operaciones de persistencia de Usuario y PerfilUsuario."""
 
-from datetime import datetime
 from typing import Optional
 from sqlalchemy import func
 
@@ -10,24 +9,18 @@ from app.models.usuario import Usuario
 
 
 class UsuarioRepository:
-    """Gestiona las consultas y persistencia de usuarios, códigos OTP y perfiles biométricos."""
+    """Gestiona las consultas y persistencia de usuarios, y perfiles biométricos."""
 
     def crear(
         self,
         nombre: str,
         email: str,
         password: str,
-        email_verificado: bool = False,
-        codigo_verificacion: Optional[str] = None,
-        codigo_expiracion: Optional[datetime] = None,
     ) -> Usuario:
         """Crea y persiste un nuevo usuario con contraseña hasheada y su perfil inicial."""
         usuario = Usuario(
             nombre=nombre.strip(),
             email=email.strip().lower(),
-            email_verificado=email_verificado,
-            codigo_verificacion=codigo_verificacion,
-            codigo_expiracion=codigo_expiracion,
         )
         usuario.set_password(password)
         db.session.add(usuario)
@@ -50,32 +43,6 @@ class UsuarioRepository:
             .filter(func.lower(Usuario.email) == email_normalizado)
             .first()
         )
-
-    def actualizar_codigo_verificacion(
-        self,
-        usuario_id: int,
-        codigo: str,
-        expiracion: datetime,
-    ) -> Optional[Usuario]:
-        """Guarda o regenera el código OTP de 6 dígitos y su fecha de expiración."""
-        usuario = self.obtener_por_id(usuario_id)
-        if usuario is None:
-            return None
-        usuario.codigo_verificacion = codigo
-        usuario.codigo_expiracion = expiracion
-        db.session.commit()
-        return usuario
-
-    def marcar_email_verificado(self, usuario_id: int) -> Optional[Usuario]:
-        """Marca el correo del usuario como verificado y limpia el código OTP temporal."""
-        usuario = self.obtener_por_id(usuario_id)
-        if usuario is None:
-            return None
-        usuario.email_verificado = True
-        usuario.codigo_verificacion = None
-        usuario.codigo_expiracion = None
-        db.session.commit()
-        return usuario
 
     def obtener_perfil(self, usuario_id: int) -> PerfilUsuario:
         """Obtiene el PerfilUsuario asociado al usuario o lo inicializa si no existía."""

@@ -1,5 +1,6 @@
 """Pruebas de integración para el catálogo de ejercicios comerciales y el motor de 12 Rutinas Famosas."""
 
+from sqlalchemy.orm import close_all_sessions
 from app import create_app, db
 from app.seeds.initial_data import seed_database
 
@@ -22,13 +23,6 @@ def _registrar_y_configurar_perfil(
         },
     )
     assert resp_reg.status_code == 201
-    codigo_otp = resp_reg.get_json()["codigo_verificacion"]
-
-    resp_ver = client.post(
-        "/api/auth/verify-code",
-        json={"codigo": codigo_otp},
-    )
-    assert resp_ver.status_code == 200
 
     resp_perfil = client.put(
         "/api/perfil",
@@ -59,6 +53,7 @@ def test_seed_database_crea_al_menos_38_ejercicios_y_12_rutinas_famosas():
         assert segundo_seed["ejercicios_creados"] == 0
         assert segundo_seed["rutinas_famosas_creadas"] == 0
         assert segundo_seed["total_rutinas_famosas"] == 12
+        close_all_sessions()  # Postgres: ninguna sesión abierta puede bloquear el DROP
         db.drop_all()
 
 
@@ -107,6 +102,7 @@ def test_get_rutinas_famosas_prioriza_ectomorfo_ganar_masa():
         assert all(r["somatotipo_ideal"] == "ENDOMORFO" for r in filtradas)
         assert all(r["meta_objetivo"] == "BAJAR_PESO" for r in filtradas)
 
+        close_all_sessions()  # Postgres: ninguna sesión abierta puede bloquear el DROP
         db.drop_all()
 
 
@@ -165,4 +161,5 @@ def test_post_clonar_rutina_famosa_copia_ejercicios_y_dias_semana():
         assert "Rutinas Famosas (12)" in html_rutinas
         assert "IDEAL PARA TU PERFIL" in html_rutinas
 
+        close_all_sessions()  # Postgres: ninguna sesión abierta puede bloquear el DROP
         db.drop_all()

@@ -1,0 +1,18 @@
+# No subir a Vercel: bases locales (contienen cuentas reales), entornos, pruebas ni secretos.
+*.db
+*.db-wal
+*.db-shm
+.venv
+venv
+.env
+.env.*
+tests
+.pytest_cache
+__pycache__
+htmlcov
+.coverage
+migrations
+docs
+Dockerfile
+docker-compose.yml
+.github
