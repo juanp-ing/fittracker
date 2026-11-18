@@ -26,8 +26,6 @@ def client():
             "/api/auth/register",
             json={"nombre": "Sin Rutina", "email": "sinrutina@fittracker.local", "password": "Password123!"},
         )
-        codigo = resp.get_json()["codigo_verificacion"]
-        assert cliente.post("/api/auth/verify-code", json={"codigo": codigo}).status_code == 200
         yield cliente
         db.session.remove()
         db.drop_all()

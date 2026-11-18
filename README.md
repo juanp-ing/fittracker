@@ -82,8 +82,8 @@ fittracker/
   - **Capa 4 (Etiquetas Guía):** Capa interactiva estilo atlas anatómico con líneas indicadoras, activable con el chip **«🏷️ Nombres»**.
   - **Bottom Sheet Interactivo:** Toca cualquier músculo para consultar series realizadas, mejor PR histórico y ejercicios recomendados para entrenar hoy.
 
-### 🔐 Verificación OTP y Wizard de Onboarding Biométrico
-- Flujo de registro seguro con código OTP numérico de 6 dígitos con expiración automática.
+### 🔐 Registro y Wizard de Onboarding Biométrico
+- Registro directo: al crear la cuenta se inicia sesión y se pasa al onboarding (la verificación por correo con código OTP se retiró; nunca salió de beta).
 - Wizard de onboarding interactivo en **4 ventanas independientes** con micro-transiciones suaves (`180ms`):
   1. **Silueta:** Selección de fisionomía masculina o femenina.
   2. **Cuerpo:** Control táctil de peso y porcentaje de grasa corporal con tarjetas visuales de referencia rápida.
@@ -146,18 +146,6 @@ Producción necesita una `SECRET_KEY` propia; sin ella el contenedor no arranca.
 ```bash
 echo "SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')" > .env
 ```
-
-En producción el código de verificación de 6 dígitos **solo** viaja por correo (en desarrollo se muestra en pantalla para probar rápido). Añade al mismo `.env` los datos de tu servidor SMTP (con STARTTLS):
-
-```bash
-SMTP_HOST=smtp.tu-proveedor.com
-SMTP_PORT=587
-SMTP_USER=usuario
-SMTP_PASSWORD=contraseña
-SMTP_FROM="FitTracker <no-responder@tu-dominio.com>"
-```
-
-Si falta, la app arranca igual pero deja un aviso en los logs y nadie podrá verificar su correo. El botón «Reenviar código» exige 60 s entre envíos.
 
 ```bash
 # Construir y levantar el contenedor en segundo plano

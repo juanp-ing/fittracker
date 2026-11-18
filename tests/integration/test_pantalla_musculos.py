@@ -13,8 +13,6 @@ def _usuario_verificado(client, email="musculos@fittracker.local"):
         "/api/auth/register",
         json={"nombre": "Músculos", "email": email, "password": "Secreta123"},
     )
-    codigo = client.post("/api/auth/resend-code").get_json()["codigo_verificacion"]
-    client.post("/api/auth/verify-code", json={"codigo": codigo})
 
 
 def _registrar_serie(client, ejercicio_id, peso):

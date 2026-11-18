@@ -22,13 +22,6 @@ def _registrar_y_configurar_perfil(
         },
     )
     assert resp_reg.status_code == 201
-    codigo_otp = resp_reg.get_json()["codigo_verificacion"]
-
-    resp_ver = client.post(
-        "/api/auth/verify-code",
-        json={"codigo": codigo_otp},
-    )
-    assert resp_ver.status_code == 200
 
     resp_perfil = client.put(
         "/api/perfil",

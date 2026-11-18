@@ -1,23 +1,14 @@
-"""Controlador de vistas HTML y endpoints REST para autenticación, OTP y onboarding biométrico."""
+"""Controlador de vistas HTML y endpoints REST para autenticación y onboarding biométrico."""
 
-from flask import Blueprint, current_app, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
-from app.services.auth_service import (
-    AuthService,
-    EmailDuplicadoError,
-    ReenvioDemasiadoProntoError,
-)
+from app.services.auth_service import AuthService, EmailDuplicadoError
 
 auth_bp = Blueprint("auth", __name__)
 
 # Destinos internos permitidos al terminar el onboarding (evita redirecciones abiertas).
 DESTINOS_ONBOARDING = {"/", "/perfil"}
-
-
-def _exponer_codigo_otp() -> bool:
-    """Solo desarrollo y pruebas devuelven el código: en producción viaja únicamente por correo."""
-    return bool(current_app.config.get("EXPONER_CODIGO_OTP", False))
 
 
 ETIQUETAS_PERFIL = {
@@ -42,19 +33,6 @@ def vista_registro():
     if current_user.is_authenticated:
         return redirect(url_for("sesion.vista_entrenar"))
     return render_template("auth/register.html")
-
-
-@auth_bp.route("/verificar-correo", methods=["GET"])
-@login_required
-def vista_verificar_correo():
-    """Renderiza la pantalla de verificación de correo con código OTP de 6 dígitos."""
-    if current_user.email_verificado:
-        return redirect(url_for("sesion.vista_entrenar"))
-    return render_template(
-        "auth/verify_email.html",
-        codigo_demo=current_user.codigo_verificacion if _exponer_codigo_otp() else None,
-        email_usuario=current_user.email,
-    )
 
 
 @auth_bp.route("/onboarding", methods=["GET"])
@@ -89,7 +67,7 @@ def vista_perfil():
 @auth_bp.route("/api/auth/register", methods=["POST"])
 @auth_bp.route("/api/auth/registro", methods=["POST"])
 def register():
-    """Registra un nuevo usuario, genera su código OTP de 6 dígitos e inicia su sesión."""
+    """Registra un nuevo usuario e inicia su sesión (el siguiente paso es el onboarding)."""
     payload = request.get_json(silent=True) or {}
     nombre = payload.get("nombre", "")
     email = payload.get("email", "")
@@ -128,11 +106,8 @@ def register():
         "id": usuario.id,
         "nombre": usuario.nombre,
         "email": usuario.email,
-        "email_verificado": usuario.email_verificado,
         "mensaje": "Usuario registrado exitosamente",
     }
-    if _exponer_codigo_otp():
-        respuesta["codigo_verificacion"] = usuario.codigo_verificacion
     return jsonify(respuesta), 201
 
 
@@ -163,7 +138,6 @@ def login():
                 "id": usuario.id,
                 "nombre": usuario.nombre,
                 "email": usuario.email,
-                "email_verificado": usuario.email_verificado,
                 "mensaje": "Sesión iniciada correctamente",
             }
         ),
@@ -184,61 +158,6 @@ def logout():
         ),
         200,
     )
-
-
-@auth_bp.route("/api/auth/verify-code", methods=["POST"])
-@login_required
-def verify_code():
-    """Verifica el código OTP de 6 dígitos del usuario autenticado."""
-    payload = request.get_json(silent=True) or {}
-    codigo = payload.get("codigo") or payload.get("code") or ""
-
-    service = AuthService()
-    try:
-        resultado = service.verificar_codigo_email(
-            usuario_id=current_user.id,
-            codigo=str(codigo),
-        )
-    except ValueError as exc:
-        return (
-            jsonify(
-                {
-                    "error": str(exc),
-                    "code": "CODIGO_INVALIDO",
-                }
-            ),
-            400,
-        )
-
-    return jsonify(resultado), 200
-
-
-@auth_bp.route("/api/auth/resend-code", methods=["POST"])
-@login_required
-def resend_code():
-    """Regenera y reenvía un nuevo código OTP de 6 dígitos al usuario autenticado."""
-    service = AuthService()
-    try:
-        nuevo_codigo = service.reenviar_codigo_email(
-            usuario_id=current_user.id,
-            espera_segundos=int(current_app.config.get("OTP_ESPERA_REENVIO_SEGUNDOS", 60)),
-        )
-    except ReenvioDemasiadoProntoError as exc:
-        return (
-            jsonify(
-                {
-                    "error": str(exc),
-                    "code": "REENVIO_DEMASIADO_PRONTO",
-                    "segundos_restantes": exc.segundos_restantes,
-                }
-            ),
-            429,
-        )
-
-    respuesta = {"mensaje": "Nuevo código de verificación enviado."}
-    if _exponer_codigo_otp():
-        respuesta["codigo_verificacion"] = nuevo_codigo
-    return jsonify(respuesta), 200
 
 
 @auth_bp.route("/api/perfil", methods=["GET"])

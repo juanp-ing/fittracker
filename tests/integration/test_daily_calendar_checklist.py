@@ -15,11 +15,6 @@ def _autenticar_usuario_con_rutina(client):
         },
     )
     assert resp_reg.status_code == 201
-    otp = resp_reg.get_json()["codigo_verificacion"]
-
-    resp_ver = client.post("/api/auth/verify-code", json={"codigo": otp})
-    assert resp_ver.status_code == 200
-
     ejercicios_cat = client.get("/api/ejercicios").get_json()["ejercicios"]
     ej_1 = ejercicios_cat[0]
     ej_2 = ejercicios_cat[1]

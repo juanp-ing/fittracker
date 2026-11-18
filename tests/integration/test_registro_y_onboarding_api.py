@@ -1,11 +1,11 @@
-"""Pruebas de integración para Verificación OTP de 6 dígitos y Onboarding Biométrico (Fase V2.2)."""
+"""Pruebas de integración del registro directo y el Onboarding Biométrico (Fase V2.2)."""
 
 import pytest
 
 
-def test_flujo_otp_6_digitos_y_onboarding_biometrico(app, client):
-    """Verifica generación OTP, rechazo de código inválido, éxito con código real y onboarding completo."""
-    # 1. Registrar nueva usuaria y verificar generación de código OTP de 6 dígitos
+def test_registro_directo_y_onboarding_biometrico(app, client):
+    """El registro inicia sesión sin verificación por correo y lleva al onboarding completo."""
+    # 1. Registrar nueva usuaria: entra directamente, sin código de verificación.
     resp_reg = client.post(
         "/api/auth/register",
         json={
@@ -16,41 +16,13 @@ def test_flujo_otp_6_digitos_y_onboarding_biometrico(app, client):
     )
     assert resp_reg.status_code == 201
     reg_data = resp_reg.get_json()
-    assert reg_data["email_verificado"] is False
-    codigo_otp = reg_data["codigo_verificacion"]
-    assert isinstance(codigo_otp, str)
-    assert len(codigo_otp) == 6
-    assert codigo_otp.isdigit()
+    assert "codigo_verificacion" not in reg_data
+    assert "email_verificado" not in reg_data
 
-    # 2. Vista HTML /verificar-correo responde 200 y muestra el código en modo demo
-    resp_vista_otp = client.get("/verificar-correo")
-    assert resp_vista_otp.status_code == 200
-    assert codigo_otp in resp_vista_otp.get_data(as_text=True)
-
-    # 3. Intentar verificar con un código incorrecto retorna 400
-    codigo_incorrecto = "000000" if codigo_otp != "000000" else "999999"
-    resp_bad_otp = client.post(
-        "/api/auth/verify-code",
-        json={"codigo": codigo_incorrecto},
-    )
-    assert resp_bad_otp.status_code == 400
-    assert resp_bad_otp.get_json()["code"] == "CODIGO_INVALIDO"
-
-    # 4. Probar reenvío de código OTP (POST /api/auth/resend-code)
-    resp_resend = client.post("/api/auth/resend-code")
-    assert resp_resend.status_code == 200
-    nuevo_otp = resp_resend.get_json()["codigo_verificacion"]
-    assert len(nuevo_otp) == 6
-    assert nuevo_otp.isdigit()
-
-    # 5. Verificar con el código correcto retorna 200 y marca email_verificado = True
-    resp_ok_otp = client.post(
-        "/api/auth/verify-code",
-        json={"codigo": nuevo_otp},
-    )
-    assert resp_ok_otp.status_code == 200
-    ok_data = resp_ok_otp.get_json()
-    assert ok_data["email_verificado"] is True
+    # La verificación por correo se retiró: sus rutas ya no existen.
+    assert client.get("/verificar-correo").status_code == 404
+    assert client.post("/api/auth/verify-code", json={"codigo": "123456"}).status_code == 404
+    assert client.post("/api/auth/resend-code").status_code == 404
 
     # 6. Vista HTML /onboarding responde 200 como wizard de 4 paneles independientes
     resp_vista_onb = client.get("/onboarding")
@@ -87,7 +59,6 @@ def test_flujo_otp_6_digitos_y_onboarding_biometrico(app, client):
     assert perfil_guardado["meta"] == "DEFINIR"
     assert perfil_guardado["somatotipo"] == "ECTOMORFO"
     assert perfil_guardado["onboarding_completado"] is True
-    assert perfil_guardado["email_verificado"] is True
 
     resp_get_perfil = client.get("/api/perfil")
     assert resp_get_perfil.status_code == 200
@@ -157,3 +128,32 @@ def test_onboarding_rechaza_enums_y_rangos_invalidos(app, client, payload_invali
     assert resp.status_code == 400
     assert resp.get_json()["code"] == "DATOS_INVALIDOS"
 
+
+
+def test_base_antigua_con_columnas_otp_sigue_registrando(tmp_path, monkeypatch):
+    """Una base creada con la verificación por correo (email_verificado NOT NULL) no rompe el registro."""
+    import sqlite3
+
+    from app import create_app, db
+    from app.config.settings import DevelopmentConfig
+    from app.seeds import seed_database
+
+    ruta = tmp_path / "antigua.db"
+    monkeypatch.setattr(DevelopmentConfig, "SQLALCHEMY_DATABASE_URI", f"sqlite:///{ruta}")
+    app = create_app("development")
+    with app.app_context():
+        db.create_all()
+        db.session.execute(db.text("ALTER TABLE usuarios ADD COLUMN email_verificado BOOLEAN NOT NULL DEFAULT 0"))
+        db.session.execute(db.text("ALTER TABLE usuarios ADD COLUMN codigo_verificacion VARCHAR(6)"))
+        db.session.commit()
+        seed_database(incluir_demo=False)
+        db.session.remove()
+
+    columnas = {fila[1] for fila in sqlite3.connect(ruta).execute("PRAGMA table_info(usuarios)")}
+    assert not {"email_verificado", "codigo_verificacion"} & columnas
+
+    resp = app.test_client().post(
+        "/api/auth/register",
+        json={"nombre": "Antigua", "email": "antigua@fittracker.local", "password": "Password123!"},
+    )
+    assert resp.status_code == 201

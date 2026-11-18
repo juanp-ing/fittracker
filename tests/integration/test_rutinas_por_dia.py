@@ -17,8 +17,6 @@ def _usuario(client, email="por.dia@fittracker.local"):
         "/api/auth/register",
         json={"nombre": "Por Día", "email": email, "password": "Secreta123"},
     )
-    codigo = client.post("/api/auth/resend-code").get_json()["codigo_verificacion"]
-    client.post("/api/auth/verify-code", json={"codigo": codigo})
 
 
 def _famosas(client):

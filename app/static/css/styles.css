@@ -367,16 +367,6 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   font-weight: 500;
 }
 
-.otp-input {
-  text-align: center;
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 1.85rem;
-  letter-spacing: 0.35em;
-  font-variant-numeric: tabular-nums;
-  min-height: 62px;
-}
-
 /* ==========================================================================
    Wizard de Onboarding Biométrico estilo Duolingo (4 Pasos)
    ========================================================================== */
@@ -3510,9 +3500,6 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
   font-weight: 800;
   color: var(--color-eager-green-shade);
 }
-
-/* Un correo largo no debe salirse de la tarjeta de verificación. */
-.otp-email { overflow-wrap: anywhere; }
 
 /* ---------- Rutinas con plan por días ---------- */
 .routine-days {
