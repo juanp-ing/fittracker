@@ -4,10 +4,11 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/framework-Flask%203.0%2B-black.svg)](https://flask.palletsprojects.com/)
-[![SQLite WAL](https://img.shields.io/badge/database-SQLite%20WAL%20mode-orange.svg)](https://www.sqlite.org/wal.html)
+[![Base de datos](https://img.shields.io/badge/database-SQLite%20%7C%20Postgres-orange.svg)](https://www.sqlite.org/wal.html)
 [![Docker](https://img.shields.io/badge/container-Docker%20%2B%20Compose-2496ED.svg)](https://www.docker.com/)
-[![Style](https://img.shields.io/badge/design-Duolingo%20Light%20Theme-58cc02.svg)](DESIGN.md)
-[![Tests](https://img.shields.io/badge/tests-54%20passed%20%28100%25%29-brightgreen.svg)](tests/)
+[![Style](https://img.shields.io/badge/design-Duolingo%20claro%20y%20oscuro-58cc02.svg)](DESIGN.md)
+[![Tests](https://github.com/juanp-ing/fittracker/actions/workflows/tests.yml/badge.svg)](https://github.com/juanp-ing/fittracker/actions/workflows/tests.yml)
+[![Demo en línea](https://img.shields.io/badge/demo-fittracker--pi--three.vercel.app-000.svg)](https://fittracker-pi-three.vercel.app)
 
 ---
 
@@ -102,63 +103,100 @@ fittracker/
 
 ---
 
-## 5. Instalación y Puesta en Marcha
+## 5. Cómo ejecutar el proyecto
 
-### Prerrequisitos
-- Python 3.11 o superior.
-- Git.
-- SQLite3.
+Hay tres formas. Para evaluarlo, la más rápida es la **0** (no instala nada) y la más completa la **A** (Docker).
 
-### Opción A: Entorno Virtual Local
+### 0. Usarlo en línea (sin instalar nada)
+
+La app está desplegada en Vercel con una base de datos Postgres (Neon):
+
+👉 **https://fittracker-pi-three.vercel.app**
+
+Entra en **«Crear cuenta nueva»**: el registro no pide verificación de correo y te lleva directamente al onboarding. Se ve mejor en el móvil, o en el navegador con la vista de dispositivo (F12 → `Ctrl+Shift+M`).
+
+---
+
+### A. Con Docker (recomendado para evaluar)
+
+**Requisitos:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows o macOS) o Docker Engine con el plugin Compose (Linux), abierto y en marcha. No hace falta instalar Python.
+
+**1. Descargar el proyecto**
 
 ```bash
-# 1. Clonar el repositorio y navegar a la carpeta
-git clone https://github.com/<tu-usuario>/fittracker.git
+git clone https://github.com/juanp-ing/fittracker.git
+cd fittracker
+```
+
+**2. Crear el archivo `.env` con la clave secreta.** La app se niega a arrancar en modo producción sin una `SECRET_KEY` propia. Basta con copiar la plantilla:
+
+```bash
+# Linux / macOS
+cp .env.example .env
+
+# Windows (PowerShell o CMD)
+copy .env.example .env
+```
+
+Puedes dejar el valor de ejemplo para probar en tu equipo. Si lo vas a exponer en internet, cámbialo por uno aleatorio: `python -c "import secrets; print(secrets.token_hex(32))"`.
+
+**3. Construir y arrancar**
+
+```bash
+docker compose up --build -d
+```
+
+La primera vez tarda uno o dos minutos (descarga la imagen de Python e instala las dependencias). Al arrancar, la app crea la base de datos y carga sola el catálogo: 10 grupos musculares, 104 ejercicios y 12 rutinas famosas.
+
+**4. Abrir la app:** 👉 **http://localhost:5000** y crea una cuenta en «Crear cuenta nueva».
+
+**Comandos útiles**
+
+| Qué | Comando |
+|---|---|
+| Ver los registros (logs) | `docker compose logs -f` |
+| Parar (conserva los datos) | `docker compose down` |
+| Volver a arrancar | `docker compose up -d` |
+| Borrar también los datos y empezar de cero | `docker compose down -v` |
+
+Los datos se guardan en el volumen de Docker `sqlite_data`, así que sobreviven a reinicios.
+
+**Problemas frecuentes**
+
+| Síntoma | Solución |
+|---|---|
+| `Define SECRET_KEY en el archivo .env` | Falta el paso 2: crea `.env` a partir de `.env.example`. |
+| `port is already allocated` / el puerto 5000 está ocupado (en macOS lo usa AirPlay) | En `docker-compose.yml`, cambia `"5000:5000"` por `"5001:5000"` y abre http://localhost:5001. |
+| `Cannot connect to the Docker daemon` | Abre Docker Desktop (o en Linux: `sudo systemctl start docker`) y repite el paso 3. |
+
+---
+
+### B. En local con Python (para desarrollar)
+
+**Requisitos:** Python 3.11 o superior y Git.
+
+```bash
+# 1. Descargar el proyecto
+git clone https://github.com/juanp-ing/fittracker.git
 cd fittracker
 
-# 2. Crear y activar el entorno virtual
-python3 -m venv .venv
-source .venv/bin/activate  # En Windows: .venv\Scripts\activate
+# 2. Crear y activar un entorno virtual
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
 # 3. Instalar dependencias
 pip install -r requirements.txt
 
-# 4. Inicializar base de datos y sembrar catálogo con usuario demo
-flask seed --demo
-
-# 5. Iniciar la aplicación
+# 4. Arrancar (crea la base SQLite local y carga el catálogo y el usuario demo)
 python run.py
 ```
 
-Accede desde tu navegador móvil o de escritorio a:
-👉 **`http://localhost:5000`**
+Abre 👉 **http://localhost:5000**. En desarrollo existe un usuario de demostración:
 
-#### Credenciales del Usuario de Demostración:
 - **Email:** `demo@fittracker.local`
 - **Contraseña:** `FitTracker123!`
 
----
-
-### Opción B: Despliegue con Docker y Docker Compose
-
-Producción necesita una `SECRET_KEY` propia; sin ella el contenedor no arranca. Créala una sola vez en un archivo `.env` (está en `.gitignore`, no se sube al repositorio):
-
-```bash
-echo "SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex(32))')" > .env
-```
-
-```bash
-# Construir y levantar el contenedor en segundo plano
-docker compose up --build -d
-
-# Ver logs en tiempo real
-docker compose logs -f
-```
-
-La base de datos SQLite se almacena y persiste en el volumen `sqlite_data`. Para detener el servicio:
-```bash
-docker compose down
-```
+Este usuario **solo** se crea en desarrollo. En Docker y en el despliegue en línea no existe, porque su contraseña es pública.
 
 ---
 
@@ -167,7 +205,7 @@ docker compose down
 FitTracker cuenta con una suite completa de pruebas unitarias, de integración y funcionales E2E ejecutadas sobre SQLite en memoria (`sqlite:///:memory:`):
 
 ```bash
-# Ejecutar las 54 pruebas con reporte detallado
+# Ejecutar toda la suite con reporte detallado
 pytest -v
 
 # Ejecutar con análisis de cobertura de código
