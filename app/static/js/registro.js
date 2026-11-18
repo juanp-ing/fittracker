@@ -1023,6 +1023,9 @@
   }
 
   if (btnEmpezar) btnEmpezar.addEventListener('click', () => empezarEntrenamiento());
+  // Bienvenida sin rutina: «Entrenar sin rutina» empieza igual que el botón de siempre.
+  const btnSinRutina = $('btn-entrenar-sin-rutina');
+  if (btnSinRutina) btnSinRutina.addEventListener('click', () => empezarEntrenamiento());
 
   alTocarFilaPlan(listaChecklistEl, (id) => {
     if (estado.sesion) {

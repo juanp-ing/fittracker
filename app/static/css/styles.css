@@ -1997,6 +1997,59 @@ h3 { font-size: var(--text-lg); line-height: 1.25; }
 
 .today-hero .btn-duo--giant { margin-top: 0.35rem; }
 
+/* Bienvenida sin rutina: misma tarjeta que el hero, con tres caminos grandes (pulgar). */
+.start-card {
+  background-color: var(--color-storybook-green);
+  border: 2px solid var(--color-eager-green);
+  border-bottom-width: 5px;
+  border-radius: 16px;
+  padding: 1.25rem 1.1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.start-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+.start-option {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  min-height: 72px;
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  color: var(--color-night-ink);
+  background-color: var(--color-paper-white);
+  border: 2px solid var(--color-faded-gray);
+  border-bottom-width: 4px;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  transform: translateY(0);
+  transition: transform 75ms var(--ease-out);
+}
+.start-option:active { transform: translateY(2px); border-bottom-width: 2px; }
+.start-option--main { border-color: var(--color-eager-green); border-bottom-color: var(--color-eager-green-shade); }
+.start-option__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--color-storybook-green);
+  color: var(--color-eager-green-shade);
+}
+.start-option__text { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.start-option__text strong { font-family: var(--font-display); font-weight: 800; font-size: var(--text-base); }
+.start-option__text span { font-weight: 700; font-size: var(--text-sm); color: var(--color-charcoal); }
+.start-option__chevron { flex-shrink: 0; color: var(--color-pencil-gray); }
+
 .today-hero__switch {
   align-self: center;
   width: 100%;
