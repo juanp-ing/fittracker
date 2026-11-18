@@ -102,3 +102,37 @@ def test_editor_trae_el_catalogo_completo_y_los_grupos_para_filtrar(client):
     chips = re.findall(r'data-filtro-grupo="([^"]*)"', html)
     grupos = {e["grupo"] for e in catalogo}
     assert set(chips) == grupos
+
+
+# ------------------------------------------------- bienvenida sin rutina
+
+
+def _seccion(html: str, id_: str) -> str:
+    m = re.search(rf'<section[^>]*id="{id_}"[^>]*>.*?</section>', html, re.S)
+    assert m, f"falta la sección {id_}"
+    return m.group(0)
+
+
+def test_sin_rutina_hoy_ofrece_tres_caminos(client):
+    html = client.get("/").get_data(as_text=True)
+    bienvenida = _seccion(html, "bienvenida-sin-rutina")
+    assert "hidden" not in bienvenida.split(">", 1)[0]
+    assert 'href="/rutinas"' in bienvenida  # rutina famosa (Rutinas abre en el catálogo)
+    assert 'href="/rutinas?crear=1"' in bienvenida  # crear la mía
+    assert 'id="btn-entrenar-sin-rutina"' in bienvenida  # entrenar libre
+    # La tarjeta de siempre («Entrenamiento libre») queda oculta para no repetir la opción.
+    hero = re.search(r'<section class="today-hero"[^>]*>', html).group(0)
+    assert "hidden" in hero
+
+
+def test_con_rutina_no_sale_la_bienvenida(client):
+    _crear_rutina(client)
+    html = client.get("/").get_data(as_text=True)
+    assert 'id="bienvenida-sin-rutina"' not in html
+    hero = re.search(r'<section class="today-hero"[^>]*>', html).group(0)
+    assert "hidden" not in hero
+
+
+def test_rutinas_abre_la_hoja_de_crear_con_crear_1(client):
+    html = client.get("/rutinas?crear=1").get_data(as_text=True)
+    assert "params.get('crear')" in html

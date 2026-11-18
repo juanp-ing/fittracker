@@ -731,6 +731,17 @@
     });
 
     renderizarDias();
+
+    // /rutinas?crear=1 (desde la bienvenida de Hoy): abre directamente la hoja de crear.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('crear')) {
+      document.querySelector('[data-rutina-tab="mis-rutinas"]').click();
+      abrirSheet();
+      // Sin el parámetro, recargar o volver atrás no reabre la hoja.
+      params.delete('crear');
+      const resto = params.toString();
+      history.replaceState(null, '', window.location.pathname + (resto ? `?${resto}` : '') + window.location.hash);
+    }
   })();
 </script>
 {% endblock %}

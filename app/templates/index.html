@@ -16,6 +16,10 @@
   <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 01-8 0V4zM8 6H4v1a3 3 0 003 3M16 6h4v1a3 3 0 01-3 3M12 13v4M8 20h8"/></svg>
   {%- elif nombre == 'bolt' -%}
   <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3L5 13.5h6L10 21l8-10.5h-6L13 3z"/></svg>
+  {%- elif nombre == 'star' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9L12 3.5z"/></svg>
+  {%- elif nombre == 'plus' -%}
+  <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
   {%- elif nombre == 'clock' -%}
   <svg class="{{ clase }}" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
   {%- endif -%}
@@ -40,7 +44,42 @@
   {# ================================================================== #}
   <div id="hoy-previo" class="hoy-previo" {% if sesion_activa %}hidden{% endif %}>
 
-    <section class="today-hero" aria-labelledby="hero-titulo">
+    {# Sin ninguna rutina (p. ej. cuenta recién creada): tres caminos en vez de «Entrenamiento libre». #}
+    {% if not rutinas %}
+    <section id="bienvenida-sin-rutina" class="start-card" aria-labelledby="bienvenida-titulo">
+      <span class="today-hero__eyebrow">Para empezar</span>
+      <h1 id="bienvenida-titulo" class="today-hero__title">¿Cómo quieres entrenar?</h1>
+      <p class="today-hero__meta">Puedes cambiarlo cuando quieras en la pestaña Rutinas.</p>
+      <div class="start-options">
+        <a href="/rutinas" class="start-option start-option--main">
+          <span class="start-option__icon">{{ icono('star', 'icon') }}</span>
+          <span class="start-option__text">
+            <strong>Elegir una rutina famosa</strong>
+            <span>Programas probados, ordenados según tu meta</span>
+          </span>
+          {{ icono('chevron', 'icon icon--sm start-option__chevron') }}
+        </a>
+        <a href="/rutinas?crear=1" class="start-option">
+          <span class="start-option__icon">{{ icono('plus', 'icon') }}</span>
+          <span class="start-option__text">
+            <strong>Crear mi rutina</strong>
+            <span>Tú eliges los días y los ejercicios</span>
+          </span>
+          {{ icono('chevron', 'icon icon--sm start-option__chevron') }}
+        </a>
+        <button type="button" id="btn-entrenar-sin-rutina" class="start-option">
+          <span class="start-option__icon">{{ icono('bolt', 'icon') }}</span>
+          <span class="start-option__text">
+            <strong>Entrenar sin rutina</strong>
+            <span>Empiezas ya y eliges cada ejercicio sobre la marcha</span>
+          </span>
+          {{ icono('chevron', 'icon icon--sm start-option__chevron') }}
+        </button>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="today-hero" aria-labelledby="hero-titulo" {% if not rutinas %}hidden{% endif %}>
       <div class="today-hero__top">
         <span id="hero-eyebrow" class="today-hero__eyebrow">
           {% if es_descanso %}Hoy{% else %}Hoy toca{% endif %}
